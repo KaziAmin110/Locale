@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services.supabase_client import SupabaseService
 from services.ml_engine import MLEngine
-from data.mock_data import MOCK_PEOPLE
 import uuid
 
 people_bp = Blueprint('people', __name__)
@@ -29,8 +28,15 @@ def get_people_feed():
         if swipes_data['success']:
             swiped_ids = [swipe['swiped_id'] for swipe in swipes_data['data']]
         
-        # Filter people by city and unswiped (exclude self)
-        available_people = [person for person in MOCK_PEOPLE 
+        # Get people from Supabase, excluding swiped ones and self
+        people_data = SupabaseService.get_data('people', {})
+        if not people_data['success']:
+            return jsonify({"error": "Failed to fetch people"}), 500
+        
+        all_people = people_data['data']
+        
+        # Filter people by unswiped (exclude self)
+        available_people = [person for person in all_people 
                            if person['id'] not in swiped_ids 
                            and person['id'] != user_id]
         

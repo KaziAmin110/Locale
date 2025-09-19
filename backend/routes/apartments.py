@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services.supabase_client import SupabaseService
 from services.ml_engine import MLEngine
-from data.mock_data import MOCK_APARTMENTS
 import uuid
 
 apartments_bp = Blueprint('apartments', __name__)
@@ -29,9 +28,16 @@ def get_apartment_feed():
         if swipes_data['success']:
             swiped_ids = [swipe['apartment_id'] for swipe in swipes_data['data']]
         
+        # Get apartments from Supabase, filtered by city and excluding swiped ones
+        apartments_data = SupabaseService.get_data('apartments', {})
+        if not apartments_data['success']:
+            return jsonify({"error": "Failed to fetch apartments"}), 500
+        
+        all_apartments = apartments_data['data']
+        
         # Filter apartments by city and unswiped
-        city_apartments = [apt for apt in MOCK_APARTMENTS 
-                          if user['city'].lower() in apt['address'].lower() 
+        city_apartments = [apt for apt in all_apartments 
+                          if user.get('city') and user['city'].lower() in apt['address'].lower() 
                           and apt['id'] not in swiped_ids]
         
         if not city_apartments:
@@ -186,4 +192,3 @@ def apply_apartment_filters():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-            "bedrooms": [1, 2, 3, 4],

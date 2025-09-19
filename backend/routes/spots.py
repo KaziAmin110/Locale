@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services.supabase_client import SupabaseService
 from services.ml_engine import MLEngine
-from data.mock_data import MOCK_SPOTS
 import uuid
 
 spots_bp = Blueprint('spots', __name__)
@@ -29,9 +28,16 @@ def get_spots_feed():
         if swipes_data['success']:
             swiped_ids = [swipe['spot_id'] for swipe in swipes_data['data']]
         
+        # Get spots from Supabase, filtered by city and excluding swiped ones
+        spots_data = SupabaseService.get_data('spots', {})
+        if not spots_data['success']:
+            return jsonify({"error": "Failed to fetch spots"}), 500
+        
+        all_spots = spots_data['data']
+        
         # Filter spots by city and unswiped
-        available_spots = [spot for spot in MOCK_SPOTS 
-                          if user['city'].lower() in spot['address'].lower() 
+        available_spots = [spot for spot in all_spots 
+                          if user.get('city') and user['city'].lower() in spot['address'].lower() 
                           and spot['id'] not in swiped_ids]
         
         if not available_spots:
