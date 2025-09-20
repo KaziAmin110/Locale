@@ -134,8 +134,9 @@ def get_apartment_matches():
         # Get apartment details for each match
         matched_apartments = []
         for match in matches_data['data']:
-            apartment = next((apt for apt in MOCK_APARTMENTS if apt['id'] == match['apartment_id']), None)
-            if apartment:
+            apartment_data = SupabaseService.get_data('apartments', {'id': match['apartment_id']})
+            if apartment_data['success'] and apartment_data['data']:
+                apartment = apartment_data['data'][0]
                 apartment['match_score'] = match['match_score']
                 apartment['matched_at'] = match['created_at']
                 matched_apartments.append(apartment)
@@ -165,8 +166,12 @@ def apply_apartment_filters():
         
         user = user_data['data'][0]
         
-        # Apply filters to mock data
-        filtered_apartments = MOCK_APARTMENTS.copy()
+        # Get apartments from Supabase
+        apartments_data = SupabaseService.get_data('apartments', {})
+        if not apartments_data['success']:
+            return jsonify({"error": "Failed to fetch apartments"}), 500
+        
+        filtered_apartments = apartments_data['data']
         
         # Price filter
         if 'price_min' in data and 'price_max' in data:

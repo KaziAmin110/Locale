@@ -17,8 +17,16 @@ class MLEngine:
     
     def create_user_vector(self, user_data):
         """Create user feature vector for ML"""
-        age_norm = (user_data.get('age', 25) - 18) / (65 - 18)  # Normalize age 18-65
-        budget_norm = (user_data.get('budget_max', 2000) - 500) / (5000 - 500)  # Normalize budget
+        age = user_data.get('age', 25)
+        if age is None:
+            age = 25
+        age_norm = (age - 18) / (65 - 18)  # Normalize age 18-65
+        
+        budget_max = user_data.get('budget_max', 2000)
+        if budget_max is None:
+            budget_max = 2000
+        budget_norm = (budget_max - 500) / (5000 - 500)  # Normalize budget
+        
         interests_vector = self.encode_interests(user_data.get('interests', []))
         
         # Combine features: [age, budget, interests...]
@@ -121,6 +129,10 @@ class MLEngine:
     
     def calculate_distance(self, coord1, coord2):
         """Calculate distance between two coordinates (simplified)"""
+        # Handle None coordinates
+        if coord1[0] is None or coord1[1] is None or coord2[0] is None or coord2[1] is None:
+            return 10.0  # Default distance
+        
         lat_diff = coord1[0] - coord2[0]
         lng_diff = coord1[1] - coord2[1]
         return np.sqrt(lat_diff**2 + lng_diff**2) * 111  # Rough km conversion
