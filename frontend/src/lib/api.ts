@@ -1,5 +1,5 @@
 // API service to connect frontend to Flask backend
-const API_BASE_URL = "http://localhost:5002";
+const API_BASE_URL = "http://localhost:5003";
 
 // Type definitions
 export interface Apartment {
@@ -352,5 +352,34 @@ export class ApiService {
     const data = await response.json();
     if (!data.success) throw new Error(data.error);
     return data;
+  }
+
+  static async submitOnboarding(data: any) {
+    const token = this.getToken();
+    if (!token) {
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/onboarding`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    return result;
   }
 }
