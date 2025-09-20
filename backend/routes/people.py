@@ -20,7 +20,11 @@ def get_people_feed():
             return jsonify({"error": "User not found"}), 404
         
         user = user_data['data'][0]
-        user_location = [user.get('lat'), user.get('lng')]
+        
+        # Get user location - use default coordinates if not available
+        user_lat = user.get('lat', 30.2672)  # Default to Austin coordinates
+        user_lng = user.get('lng', -97.7431)
+        user_location = [user_lat, user_lng]
         
         # Get user's previous swipes to exclude them
         swipes_data = SupabaseService.get_data('people_swipes', {'swiper_id': user_id})
@@ -28,8 +32,8 @@ def get_people_feed():
         if swipes_data['success']:
             swiped_ids = [swipe['swiped_id'] for swipe in swipes_data['data']]
         
-        # Get people from Supabase, excluding swiped ones and self
-        people_data = SupabaseService.get_data('people', {})
+        # Get people from Supabase users table, excluding swiped ones and self
+        people_data = SupabaseService.get_data('users', {})
         if not people_data['success']:
             return jsonify({"error": "Failed to fetch people"}), 500
         

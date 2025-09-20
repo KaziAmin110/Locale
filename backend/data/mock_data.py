@@ -25,9 +25,12 @@ def generate_mock_apartments():
             'lat': base_lat + (i % 10 - 5) * 0.01,
             'lng': base_lng + (i % 10 - 5) * 0.01,
             'photos': [
-                f'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop',
-                f'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop'
-            ],
+                f'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1560448075-4b4b4b4b4b4b?w=800&h=600&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?w=800&h=600&fit=crop&auto=format&q=80'
+            ][i % 5:i % 5 + 2],
             'amenities': ['parking', 'gym', 'pool', 'laundry'][:(i % 4) + 1],
             'contact_info': {
                 'phone': f'555-{1000 + i}',
@@ -60,9 +63,12 @@ def generate_mock_people():
             'bio': f'New to {city_name} and looking to meet cool people! Love exploring the city.',
             'interests': interests_pool[(i % 3):(i % 3) + 3 + (i % 3)],
             'photos': [
-                f'https://images.unsplash.com/photo-1494790108755-2616b5c0804?w=400&h=400&fit=crop',
-                f'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop'
-            ],
+                f'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1494790108755-2616b5c0804?w=400&h=400&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&auto=format&q=80'
+            ][i % 5:i % 5 + 2],
             'lat': base_lat + (i % 20 - 10) * 0.005,
             'lng': base_lng + (i % 20 - 10) * 0.005,
             'is_synthetic': True,
@@ -108,8 +114,12 @@ def generate_mock_spots():
             'lat': base_lat + (i % 30 - 15) * 0.003,
             'lng': base_lng + (i % 30 - 15) * 0.003,
             'photos': [
-                f'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&h=400&fit=crop'
-            ],
+                f'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&h=400&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=400&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=600&h=400&fit=crop&auto=format&q=80',
+                f'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop&auto=format&q=80'
+            ][i % 5:i % 5 + 1],
             'description': f'Great {category.replace("_", " ")} in {city_name}. Popular with locals!',
             'created_at': datetime.now().isoformat()
         }

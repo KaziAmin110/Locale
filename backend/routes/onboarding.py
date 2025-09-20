@@ -12,8 +12,11 @@ def save_onboarding_data():
         user_id = get_jwt_identity()
         data = request.get_json()
         
+        print(f"Onboarding data received: {data}")
+        print(f"Photos data: {data.get('photos')} (type: {type(data.get('photos'))})")
+        
         # Validate required fields
-        required_fields = ['name', 'age', 'location', 'budgetMin', 'budgetMax', 'bedrooms', 'interests', 'lookingFor']
+        required_fields = ['name', 'age', 'location', 'budgetMin', 'budgetMax', 'interests', 'lookingFor']
         for field in required_fields:
             if field not in data or not data[field]:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
@@ -26,12 +29,11 @@ def save_onboarding_data():
         update_data = {
             'name': data.get('name'),
             'age': int(data.get('age')),
-            'city': data.get('location'),  # Assuming 'city' field in DB
+            'city': data.get('location'),
             'budget_min': int(data.get('budgetMin')),
             'budget_max': int(data.get('budgetMax')),
-            'bedrooms': data.get('bedrooms'),
             'interests': data.get('interests'),
-            'looking_for': data.get('lookingFor'),
+            'photos': data.get('photos', []),  # Add photos support
             'onboarding_complete': True,
             'updated_at': 'now()'
         }

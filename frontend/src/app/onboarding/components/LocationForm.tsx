@@ -9,7 +9,6 @@ import {
 
 const libraries: "places"[] = ["places"];
 
-// Props no longer include 'location'
 type LocationFormProps = {
   updateFormData: (
     field: "location" | "lat" | "lng",
@@ -23,7 +22,6 @@ const LocationForm = ({
   setCurrentStep,
 }: LocationFormProps) => {
   const [locationInput, setLocationInput] = useState("");
-
   const [isLocating, setIsLocating] = useState(false);
   const [autocomplete, setAutocomplete] =
     useState<google.maps.places.Autocomplete | null>(null);
@@ -46,7 +44,6 @@ const LocationForm = ({
     borderRadius: "0.75rem",
   };
 
-  // This function now only updates the component's internal state
   const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocationInput(e.target.value);
     if (mapCenter) {
@@ -73,8 +70,8 @@ const LocationForm = ({
             if (data.status === "OK" && data.results[0]) {
               address = data.results[0].formatted_address;
             }
-            setLocationInput(address); // Update internal input state
-            updateFormData("location", address); // Update parent form state
+            setLocationInput(address);
+            updateFormData("location", address);
           } catch (error) {
             console.error("Error fetching address:", error);
             alert("Failed to fetch address from coordinates.");
@@ -108,8 +105,8 @@ const LocationForm = ({
       const lngValue = place.geometry?.location?.lng();
 
       if (address && latValue !== undefined && lngValue !== undefined) {
-        setLocationInput(address); // Update internal input state
-        updateFormData("location", address); // Update parent form state
+        setLocationInput(address);
+        updateFormData("location", address);
         updateFormData("lat", latValue);
         updateFormData("lng", lngValue);
         setMapCenter({ lat: latValue, lng: lngValue });
@@ -177,13 +174,21 @@ const LocationForm = ({
         </div>
       </div>
 
-      <button
-        onClick={() => setCurrentStep(3)}
-        disabled={!locationInput.trim()}
-        className="w-full p-3 mt-8 font-medium text-white transition-colors bg-red-500 hover:bg-red-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Continue
-      </button>
+      <div className="flex gap-3 mt-8">
+        <button
+          onClick={() => setCurrentStep(2)}
+          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-xl font-medium transition-colors"
+        >
+          Back
+        </button>
+        <button
+          onClick={() => setCurrentStep(4)}
+          disabled={!locationInput.trim()}
+          className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Continue
+        </button>
+      </div>
     </div>
   );
 };

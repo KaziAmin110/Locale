@@ -14,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body suppressHydrationWarning={true}>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <div className="min-h-screen bg-white">
           <Suspense fallback={
             <div className="flex items-center justify-center min-h-screen">
