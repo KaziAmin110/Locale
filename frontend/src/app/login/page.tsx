@@ -1,39 +1,41 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5002/api/auth/google-auth-url?redirect_uri=http://localhost:3000/auth/google/callback');
+      const response = await fetch(
+        "http://localhost:5002/api/auth/google-auth-url?redirect_uri=http://localhost:3000/auth/google/callback"
+      );
       const data = await response.json();
-      
+
       if (data.success) {
         window.location.href = data.auth_url;
       } else {
-        console.error('Failed to get Google auth URL:', data.error);
-        alert('Failed to initiate Google authentication');
+        console.error("Failed to get Google auth URL:", data.error);
+        alert("Failed to initiate Google authentication");
       }
     } catch (error) {
-      console.error('Google OAuth error:', error);
-      alert('Network error. Please try again.');
+      console.error("Google OAuth error:", error);
+      alert("Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -42,12 +44,12 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
-      const response = await fetch('http://localhost:5002/api/auth/login', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5002/api/auth/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
@@ -55,15 +57,15 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (data.success) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        router.push('/dashboard');
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        router.push("/dashboard");
       } else {
-        alert(data.error || 'Login failed');
+        alert(data.error || "Login failed");
       }
     } catch (error) {
-      console.error('Login error:', error);
-      alert('Network error. Please try again.');
+      console.error("Login error:", error);
+      alert("Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -78,14 +80,19 @@ export default function LoginPage() {
             <span className="text-white text-2xl font-bold">L</span>
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-white/70 text-lg">Sign in to continue your journey</p>
+          <p className="text-white/70 text-lg">
+            Sign in to continue your journey
+          </p>
         </div>
 
         {/* Login Form */}
         <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-white/90 text-sm font-semibold mb-2">
+              <label
+                htmlFor="email"
+                className="block text-white/90 text-sm font-semibold mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -101,7 +108,10 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-white/90 text-sm font-semibold mb-2">
+              <label
+                htmlFor="password"
+                className="block text-white/90 text-sm font-semibold mb-2"
+              >
                 Password
               </label>
               <input
@@ -121,7 +131,7 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-300 shadow-2xl hover:shadow-purple-500/25 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
@@ -132,7 +142,9 @@ export default function LoginPage() {
                 <div className="w-full border-t border-white/20"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-transparent text-white/70">Or continue with</span>
+                <span className="px-4 bg-transparent text-white/70">
+                  Or continue with
+                </span>
               </div>
             </div>
           </div>
@@ -151,16 +163,16 @@ export default function LoginPage() {
               className="mr-3"
             />
             <span className="font-semibold">
-              {isLoading ? 'Redirecting...' : 'Continue with Google'}
+              {isLoading ? "Redirecting..." : "Continue with Google"}
             </span>
           </button>
 
           {/* Sign Up Link */}
           <div className="text-center mt-8">
             <p className="text-white/70">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{" "}
               <button
-                onClick={() => router.push('/register')}
+                onClick={() => router.push("/register")}
                 className="text-purple-300 hover:text-purple-200 font-semibold transition-colors"
               >
                 Sign up here
@@ -171,7 +183,7 @@ export default function LoginPage() {
           {/* Back to Home */}
           <div className="text-center mt-8">
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push("/")}
               className="text-white/70 hover:text-white transition-colors"
             >
               ← Back to Home

@@ -50,12 +50,12 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError(null);
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
     try {
+      if (formData.password !== formData.confirmPassword) {
+        setError("Passwords do not match");
+        throw new Error("Passwords do not match");
+      }
+
       const response = await fetch("http://localhost:5002/api/auth/register", {
         method: "POST",
         headers: {
