@@ -1,0 +1,79 @@
+.swipe-card {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+  
+  .swipe-card.swipe-left::before {
+    content: 'PASS';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-20deg);
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    padding: 8px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 18px;
+    z-index: 10;
+    border: 3px solid #ef4444;
+  }
+  
+  .swipe-card.swipe-right::before {
+    content: 'LIKE';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(20deg);
+    background: rgba(34, 197, 94, 0.9);
+    color: white;
+    padding: 8px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 18px;
+    z-index: 10;
+    border: 3px solid #22c55e;
+  }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* Card stack effect */
+  .swipe-stack .swipe-card:not(:first-child) {
+    pointer-events: none;
+  }
+  
+  /* Smooth transitions for card interactions */
+  .swipe-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 640px) {
+    .swipe-card {
+      max-width: calc(100vw - 2rem);
+    }
+    
+    .swipe-card.swipe-left::before,
+    .swipe-card.swipe-right::before {
+      font-size: 16px;
+      padding: 6px 20px;
+    }
+  }

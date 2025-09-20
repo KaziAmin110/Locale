@@ -1,36 +1,30 @@
-'use client';
+import React from 'react';
+
+type TabType = 'apartments' | 'people' | 'spots';
 
 interface TabNavigationProps {
-  activeTab: 'apartments' | 'people' | 'spots';
-  onTabChange: (tab: 'apartments' | 'people' | 'spots') => void;
-  stats: {
-    apartments: number;
-    people: number;
-    spots: number;
-  };
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
 }
 
-const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange, stats }) => {
-  const tabs = [
-    { id: 'apartments' as const, label: 'Homes', icon: '🏠' },
-    { id: 'people' as const, label: 'People', icon: '👥' },
-    { id: 'spots' as const, label: 'Places', icon: '📍' }
-  ];
-
+export default function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
+  const tabs: TabType[] = ['apartments', 'people', 'spots'];
+  
   return (
-    <div className="tab-navigation">
-      {tabs.map(tab => (
+    <div className="flex bg-gray-100 rounded-lg p-1">
+      {tabs.map((tab) => (
         <button
-          key={tab.id}
-          className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-          onClick={() => onTabChange(tab.id)}
+          key={tab}
+          onClick={() => onTabChange(tab)}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === tab
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
         >
-          <span className="tab-icon">{tab.icon}</span>
-          <span>{tab.label}</span>
+          {tab.charAt(0).toUpperCase() + tab.slice(1)}
         </button>
       ))}
     </div>
   );
-};
-
-export default TabNavigation;
+}

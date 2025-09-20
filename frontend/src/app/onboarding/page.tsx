@@ -3,50 +3,52 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface OnboardingData {
+interface FormData {
   name: string;
-  age: number;
-  email: string;
-  budget_min: number;
-  budget_max: number;
+  age: string;
   location: string;
+  budgetMin: string;
+  budgetMax: string;
+  bedrooms: string;
   interests: string[];
-  bio: string;
-  looking_for: string[];
-  photos: string[];
+  lookingFor: string;
 }
 
-const OnboardingPage = () => {
+const INTERESTS = [
+  'Food & Dining', 'Fitness & Sports', 'Art & Culture', 'Music & Nightlife',
+  'Travel & Adventure', 'Technology', 'Photography', 'Reading',
+  'Gaming', 'Outdoor Activities', 'Movies & TV', 'Cooking',
+  'Coffee & Tea', 'Wine & Cocktails', 'Fashion', 'Pets'
+];
+
+const LOOKING_FOR_OPTIONS = [
+  'Apartment hunting', 'Finding roommates', 'Exploring local spots', 'All of the above'
+];
+
+export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  const [data, setData] = useState<OnboardingData>({
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<FormData>({
     name: '',
-    age: 25,
-    email: '',
-    budget_min: 1000,
-    budget_max: 3000,
+    age: '',
     location: '',
+    budgetMin: '',
+    budgetMax: '',
+    bedrooms: '',
     interests: [],
-    bio: '',
-    looking_for: [],
-    photos: []
+    lookingFor: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const interestOptions = [
-    'Technology', 'Music', 'Travel', 'Sports', 'Art', 'Cooking', 
-    'Reading', 'Gaming', 'Fitness', 'Photography', 'Movies', 'Nature'
-  ];
-
-  const lookingForOptions = [
-    'Apartments', 'Roommates', 'Local Spots'
-  ];
-
-  const handleInputChange = (field: keyof OnboardingData, value: any) => {
-    setData(prev => ({ ...prev, [field]: value }));
+  const updateFormData = (field: keyof FormData, value: string | string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleInterestToggle = (interest: string) => {
-    setData(prev => ({
+    setFormData(prev => ({
       ...prev,
       interests: prev.interests.includes(interest)
         ? prev.interests.filter(i => i !== interest)
@@ -54,374 +56,315 @@ const OnboardingPage = () => {
     }));
   };
 
-  const handleLookingForToggle = (option: string) => {
-    setData(prev => ({
-      ...prev,
-      looking_for: prev.looking_for.includes(option)
-        ? prev.looking_for.filter(o => o !== option)
-        : [...prev.looking_for, option]
-    }));
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const result = e.target?.result as string;
-            setData(prev => ({
-              ...prev,
-              photos: [...prev.photos, result]
-            }));
-          };
-          reader.readAsDataURL(file);
-        }
-      });
+  const handleNext = () => {
+    if (currentStep < 4) {
+      setCurrentStep(prev => prev + 1);
     }
   };
 
-  const removeImage = (index: number) => {
-    setData(prev => ({
-      ...prev,
-      photos: prev.photos.filter((_, i) => i !== index)
-    }));
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
   };
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5002/api/auth/register', {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5002/api/onboarding', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formData),
       });
 
-      const result = await response.json();
-
       if (response.ok) {
-        if (result.token) {
-          localStorage.setItem('token', result.token);
-        }
         router.push('/dashboard');
       } else {
-        // Handle specific error cases
-        if (result.error === 'User with this email already exists') {
-          // User already exists (probably from Google OAuth), just redirect to dashboard
-          console.log('User already exists, redirecting to dashboard');
-          router.push('/dashboard');
-        } else {
-          console.error('Registration failed:', result.error);
-          // Show error to user but still redirect for demo purposes
-          alert(`Registration failed: ${result.error}`);
-          router.push('/dashboard');
-        }
+        console.error('Onboarding failed');
+        router.push('/dashboard'); // Continue anyway for demo
       }
     } catch (error) {
-      console.error('Error:', error);
-      // For demo purposes, still redirect to dashboard even if API fails
-      router.push('/dashboard');
+      console.error('Error during onboarding:', error);
+      router.push('/dashboard'); // Continue anyway for demo
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const nextStep = () => {
-    if (step < 5) setStep(step + 1);
-    else handleSubmit();
+  const isStepValid = () => {
+    switch (currentStep) {
+      case 1:
+        return formData.name.trim() && formData.age.trim();
+      case 2:
+        return formData.location.trim();
+      case 3:
+        return formData.interests.length >= 3;
+      case 4:
+        return formData.budgetMin.trim() && formData.budgetMax.trim() && formData.bedrooms.trim() && formData.lookingFor.trim();
+      default:
+        return false;
+    }
   };
 
-  const prevStep = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
-  return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white text-sm font-bold">C</span>
-              </div>
-              <h1 className="text-xl font-semibold text-gray-900">CityMate</h1>
-            </div>
-            <div className="text-sm text-gray-600">
-              Step {step} of 4
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Progress Bar */}
-      <div className="bg-gray-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-4">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-gray-900 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(step / 4) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {step === 1 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Welcome to CityMate</h2>
-              <p className="text-lg text-gray-600">Let's get to know you better</p>
+  
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-8">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-bold text-white mb-4">Tell us about yourself</h2>
+              <p className="text-white/70 text-xl">Let's start with the basics</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
+                <label className="block text-white/90 text-lg font-semibold mb-3">
+                  What's your name?
                 </label>
                 <input
                   type="text"
-                  value={data.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  value={formData.name}
+                  onChange={(e) => updateFormData('name', e.target.value)}
                   placeholder="Enter your full name"
+                  className="w-full px-6 py-4 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-lg"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={data.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  placeholder="Enter your email"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Age
+                <label className="block text-white/90 text-lg font-semibold mb-3">
+                  How old are you?
                 </label>
                 <input
                   type="number"
-                  value={data.age}
-                  onChange={(e) => handleInputChange('age', parseInt(e.target.value))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  value={formData.age}
+                  onChange={(e) => updateFormData('age', e.target.value)}
+                  placeholder="Enter your age"
                   min="18"
                   max="100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  value={data.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  placeholder="City, State"
+                  className="w-full px-6 py-4 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-lg"
                 />
               </div>
             </div>
           </div>
-        )}
+        );
 
-        {step === 2 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Budget & Preferences</h2>
-              <p className="text-lg text-gray-600">Tell us about your housing budget</p>
+      case 2:
+        return (
+          <div className="space-y-8">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-bold text-white mb-4">Where are you looking?</h2>
+              <p className="text-white/70 text-xl">Help us find the perfect location for you</p>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Minimum Budget (per month)
-                </label>
-                <input
-                  type="number"
-                  value={data.budget_min}
-                  onChange={(e) => handleInputChange('budget_min', parseInt(e.target.value))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  min="500"
-                  step="100"
-                />
-              </div>
+            <div>
+              <label className="block text-white/90 text-lg font-semibold mb-3">
+                What city or area interests you?
+              </label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => updateFormData('location', e.target.value)}
+                placeholder="e.g., San Francisco, CA or Downtown Seattle"
+                className="w-full px-6 py-4 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-lg"
+              />
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Maximum Budget (per month)
-                </label>
-                <input
-                  type="number"
-                  value={data.budget_max}
-                  onChange={(e) => handleInputChange('budget_max', parseInt(e.target.value))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  min="500"
-                  step="100"
-                />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white text-2xl">🏙️</span>
+                  </div>
+                  <h3 className="text-white font-semibold mb-2">Urban Living</h3>
+                  <p className="text-white/70 text-sm">City center, walkable, vibrant</p>
+                </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bio
-                </label>
-                <textarea
-                  value={data.bio}
-                  onChange={(e) => handleInputChange('bio', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  rows={4}
-                  placeholder="Tell us about yourself..."
-                />
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white text-2xl">🌳</span>
+                  </div>
+                  <h3 className="text-white font-semibold mb-2">Suburban</h3>
+                  <p className="text-white/70 text-sm">Quiet, spacious, family-friendly</p>
+                </div>
               </div>
             </div>
           </div>
-        )}
+        );
 
-        {step === 3 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Your Interests</h2>
-              <p className="text-lg text-gray-600">Select your interests to get better matches</p>
+      case 3:
+        return (
+          <div className="space-y-8">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-bold text-white mb-4">What are your interests?</h2>
+              <p className="text-white/70 text-xl">Select at least 3 interests that describe you</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {interestOptions.map((interest) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {INTERESTS.map((interest) => (
                 <button
                   key={interest}
                   onClick={() => handleInterestToggle(interest)}
-                  className={`p-3 rounded-lg border text-sm font-medium transition-colors ${
-                    data.interests.includes(interest)
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                  className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
+                    formData.interests.includes(interest)
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-transparent text-white'
+                      : 'bg-white/10 backdrop-blur-sm border-white/20 text-white/70 hover:bg-white/20'
                   }`}
                 >
-                  {interest}
+                  <span className="text-sm font-medium">{interest}</span>
                 </button>
               ))}
             </div>
-          </div>
-        )}
 
-        {step === 4 && (
-          <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Add Your Photos</h2>
-              <p className="text-lg text-gray-600">Upload photos to show who you are</p>
+              <p className="text-white/60 text-sm">
+                Selected: {formData.interests.length} interests
+              </p>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-8">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-bold text-white mb-4">Budget & Preferences</h2>
+              <p className="text-white/70 text-xl">Help us find the perfect match for your needs</p>
             </div>
 
-            <div className="space-y-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="photo-upload"
-                />
-                <label htmlFor="photo-upload" className="cursor-pointer">
-                  <div className="text-gray-400 mb-2">
-                    <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-600">Click to upload photos</p>
-                  <p className="text-sm text-gray-500 mt-1">PNG, JPG up to 10MB each</p>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-white/90 text-lg font-semibold mb-3">
+                  Monthly Budget Range
                 </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      type="number"
+                      value={formData.budgetMin}
+                      onChange={(e) => updateFormData('budgetMin', e.target.value)}
+                      placeholder="Min ($)"
+                      className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      value={formData.budgetMax}
+                      onChange={(e) => updateFormData('budgetMax', e.target.value)}
+                      placeholder="Max ($)"
+                      className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {data.photos.length > 0 && (
-                <div className="grid grid-cols-2 gap-4">
-                  {data.photos.map((photo, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={photo}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                      <button
-                        onClick={() => removeImage(index)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
-                      >
-                        ×
-                      </button>
-                    </div>
+              <div>
+                <label className="block text-white/90 text-lg font-semibold mb-3">
+                  Preferred Bedrooms
+                </label>
+                <div className="grid grid-cols-3 gap-4">
+                  {['Studio', '1 Bedroom', '2+ Bedrooms'].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => updateFormData('bedrooms', option)}
+                      className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                        formData.bedrooms === option
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-transparent text-white'
+                          : 'bg-white/10 backdrop-blur-sm border-white/20 text-white/70 hover:bg-white/20'
+                      }`}
+                    >
+                      <span className="font-medium">{option}</span>
+                    </button>
                   ))}
                 </div>
-              )}
+              </div>
+
+              <div>
+                <label className="block text-white/90 text-lg font-semibold mb-3">
+                  What are you looking for?
+                </label>
+                <div className="space-y-3">
+                  {LOOKING_FOR_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => updateFormData('lookingFor', option)}
+                      className={`w-full p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                        formData.lookingFor === option
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-transparent text-white'
+                          : 'bg-white/10 backdrop-blur-sm border-white/20 text-white/70 hover:bg-white/20'
+                      }`}
+                    >
+                      <span className="font-medium">{option}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        )}
+        );
 
-        {step === 5 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">What are you looking for?</h2>
-              <p className="text-lg text-gray-600">Choose what you want to discover</p>
-            </div>
+      default:
+        return null;
+    }
+  };
 
-            <div className="space-y-4">
-              {lookingForOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => handleLookingForToggle(option)}
-                  className={`w-full p-4 rounded-lg border text-left transition-colors ${
-                    data.looking_for.includes(option)
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
-                      data.looking_for.includes(option)
-                        ? 'bg-white border-white'
-                        : 'border-gray-300'
-                    }`}>
-                      {data.looking_for.includes(option) && (
-                        <div className="w-2 h-2 bg-gray-900 rounded-full mx-auto mt-0.5"></div>
-                      )}
-                    </div>
-                    <span className="font-medium">{option}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4">
+      <div className="max-w-2xl w-full">
+        {/* Progress Bar */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-white/70 text-sm">Step {currentStep} of 4</span>
+            <span className="text-white/70 text-sm">{Math.round((currentStep / 4) * 100)}%</span>
           </div>
-        )}
+          <div className="w-full bg-white/20 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${(currentStep / 4) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Step Content */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 mb-8">
+          {renderStep()}
+        </div>
 
         {/* Navigation */}
-        <div className="flex justify-between mt-8">
+        <div className="flex justify-between">
           <button
-            onClick={prevStep}
-            disabled={step === 1}
-            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              step === 1
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-gray-700 hover:text-gray-900'
-            }`}
+            onClick={handleBack}
+            disabled={currentStep === 1}
+            className="px-8 py-4 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-2xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/30"
           >
-            Previous
+            Back
           </button>
-          
-          <button
-            onClick={nextStep}
-            className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            {step === 5 ? 'Complete Setup' : 'Next'}
-          </button>
+
+          {currentStep < 4 ? (
+            <button
+              onClick={handleNext}
+              disabled={!isStepValid()}
+              className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-2xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl hover:shadow-purple-500/25 transform hover:scale-105"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={!isStepValid() || isSubmitting}
+              className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-2xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl hover:shadow-purple-500/25 transform hover:scale-105"
+            >
+              {isSubmitting ? 'Creating Profile...' : 'Complete Setup'}
+            </button>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   );
-};
-
-export default OnboardingPage;
+}

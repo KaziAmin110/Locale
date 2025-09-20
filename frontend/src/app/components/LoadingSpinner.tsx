@@ -1,25 +1,15 @@
-import { ClipLoader } from "react-spinners";
-
-// You can define a style object for custom positioning
-const override = {
-  display: "block",
-  margin: "0 auto",
-  borderColor: "gray",
-};
-
-const LoadingSpinner = () => {
-  return (
-    <div className="spinner-container">
-      <ClipLoader
-        color="#000000"
-        loading={true}
-        cssOverride={override}
-        size={30}
-        aria-label="Loading Spinner"
-        data-testid="loader"
-      />
-    </div>
-  );
-};
-
-export default LoadingSpinner;
+const LoadingSpinner = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
+    const sizeClasses = {
+      sm: 'w-4 h-4',
+      md: 'w-8 h-8',
+      lg: 'w-12 h-12'
+    }
+  
+    return (
+      <div className="flex items-center justify-center">
+        <div className={`${sizeClasses[size]} border-2 border-gray-200 border-t-red-500 rounded-full animate-spin`} />
+      </div>
+    )
+  }
+  
+  export default LoadingSpinner

@@ -1,48 +1,25 @@
-'use client';
+import React from 'react';
 
 interface SwipeControlsProps {
   onPass: () => void;
   onLike: () => void;
-  onSuperLike: () => void;
-  disabled: boolean;
 }
 
-const SwipeControls: React.FC<SwipeControlsProps> = ({ 
-  onPass, 
-  onLike, 
-  onSuperLike, 
-  disabled 
-}) => {
+export default function SwipeControls({ onPass, onLike }: SwipeControlsProps) {
   return (
-    <div className="swipe-controls">
-      <button 
-        className="control-button pass" 
+    <div className="flex justify-center space-x-8 mt-8">
+      <button
         onClick={onPass}
-        disabled={disabled}
-        title="Pass"
+        className="w-16 h-16 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-colors"
       >
-        ✕
+        <span className="text-red-600 text-2xl">✕</span>
       </button>
-      
-      <button 
-        className="control-button super-like" 
-        onClick={onSuperLike}
-        disabled={disabled}
-        title="Super Like"
-      >
-        ⭐
-      </button>
-      
-      <button 
-        className="control-button like" 
+      <button
         onClick={onLike}
-        disabled={disabled}
-        title="Like"
+        className="w-16 h-16 bg-green-100 hover:bg-green-200 rounded-full flex items-center justify-center transition-colors"
       >
-        ♥
+        <span className="text-green-600 text-2xl">♥</span>
       </button>
     </div>
   );
-};
-
-export default SwipeControls;
+}

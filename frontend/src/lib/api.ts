@@ -1,5 +1,68 @@
 // API service to connect frontend to Flask backend
-const API_BASE_URL = 'http://localhost:5001';
+const API_BASE_URL = 'http://localhost:5002';
+
+// Type definitions
+export interface Apartment {
+  id: string;
+  title: string;
+  address: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  photos: string[];
+  description: string;
+  match_score: number;
+  amenities?: string[];
+}
+
+export interface Person {
+  id: string;
+  name: string;
+  age: number;
+  bio: string;
+  photos: string[];
+  interests: string[];
+  match_score: number;
+  occupation?: string;
+}
+
+export interface Spot {
+  id: string;
+  name: string;
+  address: string;
+  photos: string[];
+  description: string;
+  match_score: number;
+  category?: string;
+  rating?: number;
+}
+
+export interface Match {
+  id: string;
+  name: string;
+  type: 'apartment' | 'person' | 'spot';
+  photo: string;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount?: number;
+}
+
+export interface Message {
+  id: string;
+  sender: 'user' | 'match';
+  content: string;
+  timestamp: string;
+}
+
+export interface Conversation {
+  id: string;
+  name: string;
+  type: 'apartment' | 'person' | 'spot';
+  photo: string;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount?: number;
+}
 
 export class ApiService {
   private static token: string | null = null;
@@ -141,6 +204,21 @@ export class ApiService {
         spot_id: spotId,
         direction: direction,
       }),
+    });
+
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error);
+    return data;
+  }
+
+  static async getMatches() {
+    const token = this.getToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_BASE_URL}/api/matches`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
 
     const data = await response.json();
