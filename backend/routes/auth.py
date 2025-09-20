@@ -16,7 +16,7 @@ def register():
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['name', 'email', 'age', 'location', 'budget_min', 'budget_max', 'interests', 'looking_for']
+        required_fields = ['name', 'email', 'age', 'location', 'budget_min', 'budget_max', 'interests']
         for field in required_fields:
             if field not in data:
                 return jsonify({'success': False, 'error': f'Missing field: {field}'}), 400

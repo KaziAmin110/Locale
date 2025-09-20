@@ -71,16 +71,25 @@ const OnboardingPage = () => {
         body: JSON.stringify(data),
       });
 
+      const result = await response.json();
+
       if (response.ok) {
-        const result = await response.json();
         if (result.token) {
           localStorage.setItem('token', result.token);
         }
         router.push('/dashboard');
       } else {
-        console.error('Registration failed');
-        // For demo purposes, still redirect to dashboard
-        router.push('/dashboard');
+        // Handle specific error cases
+        if (result.error === 'User with this email already exists') {
+          // User already exists (probably from Google OAuth), just redirect to dashboard
+          console.log('User already exists, redirecting to dashboard');
+          router.push('/dashboard');
+        } else {
+          console.error('Registration failed:', result.error);
+          // Show error to user but still redirect for demo purposes
+          alert(`Registration failed: ${result.error}`);
+          router.push('/dashboard');
+        }
       }
     } catch (error) {
       console.error('Error:', error);
