@@ -7,7 +7,7 @@ const ProgressBar = ({
   currentStep: number;
   setCurrentStep: (step: number) => void;
 }) => {
-  const progress = (currentStep / 4) * 100;
+  const progress = (currentStep / 6) * 100;
   
   return (
     <div className="flex w-full gap-4 justify-center items-center mt-6 px-4">
@@ -28,7 +28,7 @@ const ProgressBar = ({
       </div>
       
       <div className="text-sm font-medium text-gray-500 min-w-[3rem] text-center">
-        {currentStep}/4
+        {currentStep}/6
       </div>
     </div>
   );

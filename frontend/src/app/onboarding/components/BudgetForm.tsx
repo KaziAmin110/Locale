@@ -2,27 +2,22 @@ import React, { useState } from "react";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { ApiService } from "../../../lib/api";
 
 interface BudgetFormProps {
   budgetMin: number;
   budgetMax: number;
-  bedrooms: number;
   updateFormData: (field: string, value: any) => void;
+  setCurrentStep: (step: number) => void;
   formData: any;
 }
 
-const BEDROOM_OPTIONS = [
-  { label: "Studio", value: 0 },
-  { label: "1 BR", value: 1 },
-  { label: "2 BR", value: 2 },
-  { label: "3+ BR", value: 3 },
-];
 
 const BudgetForm = ({
   budgetMin,
   budgetMax,
-  bedrooms,
   updateFormData,
+  setCurrentStep,
   formData,
 }: BudgetFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,16 +33,14 @@ const BudgetForm = ({
     setIsSubmitting(true);
     setError(null);
     try {
-      const response = await fetch("/api/onboarding/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const result = await ApiService.submitOnboarding(formData);
+      console.log('Onboarding completed successfully');
       
       // Redirect to swipe page after completion
       window.location.href = "/swipe";
     } catch (err: any) {
-      setError(err.message);
+      console.error('Onboarding submission error:', err);
+      setError(err.message || 'Failed to complete onboarding');
     } finally {
       setIsSubmitting(false);
     }
@@ -83,39 +76,28 @@ const BudgetForm = ({
           />
         </div>
         
-        <div className="space-y-4">
-          <label className="text-lg font-semibold text-gray-800">
-            Bedrooms
-          </label>
-          <div className="flex items-center gap-2">
-            {BEDROOM_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => updateFormData("bedrooms", option.value)}
-                className={`w-full rounded-xl p-3 font-semibold transition-colors ${
-                  bedrooms === option.value
-                    ? "bg-red-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
       
       {error && (
         <p className="text-red-500 text-center text-sm mt-4">{error}</p>
       )}
       
-      <button
-        onClick={handleOnboardingUpload}
-        disabled={isSubmitting}
-        className="w-full bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? <LoadingSpinner /> : "Complete Setup"}
-      </button>
+      <div className="flex gap-3">
+        <button
+          onClick={() => setCurrentStep(5)}
+          disabled={isSubmitting}
+          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-xl font-medium transition-colors disabled:opacity-50"
+        >
+          Back
+        </button>
+        <button
+          onClick={handleOnboardingUpload}
+          disabled={isSubmitting}
+          className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? <LoadingSpinner /> : "Complete Setup"}
+        </button>
+      </div>
     </div>
   );
 };

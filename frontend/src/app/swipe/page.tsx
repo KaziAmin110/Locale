@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { ApiService } from '@/lib/api'
-import LoadingSpinner from '../components/LoadingSpinner'
-import Header from '../components/Header'
+import LoadingSpinner from './components/LoadingSpinner'
+import Header from './components/Header'
 import TabNavigation from './components/TabNavigation'
 import EmptyState from './components/EmptyState'
 import SwipeCard from './components/SwipeCard'
@@ -90,22 +90,22 @@ export default function SwipePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
       
-      <div className="container mx-auto px-4 pt-6">
+      <div className="container mx-auto px-4 pt-6 max-w-md">
         <TabNavigation 
           activeTab={activeTab} 
           onTabChange={setActiveTab}
         />
 
-        <div className="flex justify-center items-center min-h-[600px] mt-6">
+        <div className="flex justify-center items-center mt-8" style={{ height: '70vh' }}>
           {loading ? (
             <LoadingSpinner />
           ) : items.length === 0 ? (
             <EmptyState activeTab={activeTab} onRefresh={() => loadItems(activeTab)} />
           ) : (
-            <div className="relative w-full max-w-sm">
+            <div className="relative w-full h-full max-w-sm mx-auto">
               {items.slice(0, 3).map((item, index) => (
                 <SwipeCard
                   key={item.id}
@@ -115,21 +115,22 @@ export default function SwipePage() {
                   onSwipe={index === 0 ? handleSwipe : () => {}}
                   style={{
                     zIndex: 3 - index,
-                    transform: `scale(${1 - index * 0.05}) translateY(${index * 10}px)`,
+                    transform: `scale(${1 - index * 0.05}) translateY(${index * 8}px)`,
+                    opacity: 1 - index * 0.1,
                   }}
                 />
               ))}
-              
-              {items.length > 0 && (
-                <SwipeControls
-                  onPass={() => handleSwipe('pass')}
-                  onLike={() => handleSwipe('like')}
-                />
-              )}
-                  </div>
-                )}
-              </div>
             </div>
+          )}
+        </div>
+
+        {items.length > 0 && (
+          <SwipeControls
+            onPass={() => handleSwipe('pass')}
+            onLike={() => handleSwipe('like')}
+          />
+        )}
+      </div>
 
       <MatchModal
         isOpen={showMatchModal}

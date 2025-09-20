@@ -1,10 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProgressBar from "./components/ProgressBar";
 import QuestionDisplay from "./components/QuestionDisplay";
 import UserInfoForm from "./components/UserInfoForm";
+import PhotoUploadForm from "./components/PhotoUploadForm";
 import LocationForm from "./components/LocationForm";
 import InterestsForm from "./components/InterestsForm";
+import LookingForForm from "./components/LookingForForm";
 import BudgetForm from "./components/BudgetForm";
 
 export type FormData = {
@@ -16,7 +18,8 @@ export type FormData = {
   interests: string[];
   budgetMin: number;
   budgetMax: number;
-  bedrooms: number;
+  photos: string[];
+  lookingFor: string;
 };
 
 const OnboardingPage = () => {
@@ -31,26 +34,41 @@ const OnboardingPage = () => {
     interests: [],
     budgetMin: 800,
     budgetMax: 2500,
-    bedrooms: 1,
+    photos: [],
+    lookingFor: "",
   });
 
   const updateFormData = (
-    field: keyof FormData | "budget",
-    value: string | number | number[]
+    field: string,
+    value: any
   ) => {
+    console.log('updateFormData called:', field, value, typeof value);
     if (field === "budget" && Array.isArray(value) && value.length === 2) {
       setFormData((prev) => ({
-        ...prev,
-        budgetMin: value[0],
-        budgetMax: value[1],
+      ...prev,
+        budgetMin: Number(value[0]),
+        budgetMax: Number(value[1]),
+      }));
+    } else if (field === "photos" && Array.isArray(value)) {
+      setFormData((prev) => ({
+      ...prev,
+        photos: value as string[],
       }));
     } else if (typeof field === "string" && typeof value !== "object") {
+      console.log('Updating field:', field, 'with value:', value);
       setFormData((prev) => ({
-        ...prev,
+              ...prev,
         [field]: value,
       }));
+    } else {
+      console.log('No condition matched for:', field, value, typeof value);
     }
   };
+
+  // Debug: Log formData changes
+  useEffect(() => {
+    console.log("FormData updated:", formData);
+  }, [formData]);
 
   const handleInterestToggle = (interest: string) => {
     setFormData((prev) => {
@@ -80,24 +98,37 @@ const OnboardingPage = () => {
             />
           )}
           {currentStep === 2 && (
+            <PhotoUploadForm
+              photos={formData.photos}
+              updateFormData={updateFormData}
+              setCurrentStep={setCurrentStep}
+            />
+          )}
+          {currentStep === 3 && (
             <LocationForm
               location={formData.location}
               updateFormData={updateFormData}
               setCurrentStep={setCurrentStep}
             />
           )}
-          {currentStep === 3 && (
+          {currentStep === 4 && (
             <InterestsForm
               selectedInterests={formData.interests}
               handleInterestToggle={handleInterestToggle}
               setCurrentStep={setCurrentStep}
             />
           )}
-          {currentStep === 4 && (
+          {currentStep === 5 && (
+            <LookingForForm
+              lookingFor={formData.lookingFor}
+              updateFormData={updateFormData}
+              setCurrentStep={setCurrentStep}
+            />
+          )}
+          {currentStep === 6 && (
             <BudgetForm
               budgetMin={formData.budgetMin}
               budgetMax={formData.budgetMax}
-              bedrooms={formData.bedrooms}
               updateFormData={updateFormData}
               setCurrentStep={setCurrentStep}
               formData={formData}

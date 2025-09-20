@@ -1,16 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Heart, MapPin, Users } from 'lucide-react'
-import ApiService from '@/lib/api'
+import { Heart, MapPin, Users, Home, RefreshCw } from 'lucide-react'
+import { ApiService } from '@/lib/api'
 import Header from '../components/Header'
 import MatchList from './components/MatchList'
 import LoadingSpinner from '../components/LoadingSpinner'
+import StatsCard from './components/StatsCard'
 import type { Match } from '@/lib/api'
 
 export default function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [activeFilter, setActiveFilter] = useState<'all' | 'apartment' | 'person' | 'spot'>('all')
 
   useEffect(() => {
@@ -30,54 +32,135 @@ export default function MatchesPage() {
     }
   }
 
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await loadMatches()
+    setRefreshing(false)
+  }
+
   const filterOptions = [
-    { id: 'all' as const, label: 'All', icon: Heart, count: matches.length },
-    { id: 'apartment' as const, label: 'Homes', icon: MapPin, count: matches.filter(m => m.type === 'apartment').length },
-    { id: 'person' as const, label: 'People', icon: Users, count: matches.filter(m => m.type === 'person').length },
-    { id: 'spot' as const, label: 'Places', icon: MapPin, count: matches.filter(m => m.type === 'spot').length },
+    { 
+      id: 'all' as const, 
+      label: 'All Matches', 
+      icon: Heart, 
+      count: matches.length,
+      color: 'text-primary'
+    },
+    { 
+      id: 'apartment' as const, 
+      label: 'Apartments', 
+      icon: Home, 
+      count: matches.filter(m => m.type === 'apartment').length,
+      color: 'text-blue-600'
+    },
+    { 
+      id: 'person' as const, 
+      label: 'People', 
+      icon: Users, 
+      count: matches.filter(m => m.type === 'person').length,
+      color: 'text-green-600'
+    },
+    { 
+      id: 'spot' as const, 
+      label: 'Spots', 
+      icon: MapPin, 
+      count: matches.filter(m => m.type === 'spot').length,
+      color: 'text-purple-600'
+    },
   ]
 
   const filteredMatches = activeFilter === 'all' 
     ? matches 
     : matches.filter(match => match.type === activeFilter)
 
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning'
+    if (hour < 18) return 'Good afternoon'
+    return 'Good evening'
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
       
-      <div className="container mx-auto px-4 pt-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Matches</h2>
-          
-          {/* Filter Tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="container mx-auto px-4 pt-6 max-w-6xl">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {getGreeting()}! 👋
+              </h1>
+              <p className="text-gray-600">
+                You have {matches.length} match{matches.length !== 1 ? 'es' : ''} waiting for you
+              </p>
+            </div>
+            
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50"
+            >
+              <RefreshCw 
+                className={`w-5 h-5 text-gray-600 ${refreshing ? 'animate-spin' : ''}`} 
+              />
+            </button>
+          </div>
+
+          {/* Stats Overview */}
+          {matches.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {filterOptions.map(({ id, label, icon: Icon, count, color }) => (
+                <StatsCard
+                  key={id}
+                  icon={Icon}
+                  label={label}
+                  count={count}
+                  color={color}
+                  isActive={activeFilter === id}
+                  onClick={() => setActiveFilter(id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="mb-8">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {filterOptions.map(({ id, label, icon: Icon, count }) => (
               <button
                 key={id}
                 onClick={() => setActiveFilter(id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-colors ${
+                className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-semibold whitespace-nowrap transition-all duration-200 transform hover:scale-105 ${
                   activeFilter === id
-                    ? 'bg-primary text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 shadow-sm border border-gray-200'
                 }`}
               >
-                <Icon size={18} />
+                <Icon size={20} />
                 <span>{label}</span>
-                <span className={`px-2 py-0.5 rounded-full text-xs ${
-                  activeFilter === id
-                    ? 'bg-white/20 text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {count}
-                </span>
+                {count > 0 && (
+                  <span 
+                    className={`px-3 py-1 rounded-full text-sm font-bold ${
+                      activeFilter === id
+                        ? 'bg-white/20 text-white'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                )}
               </button>
             ))}
           </div>
         </div>
 
+        {/* Content */}
         {loading ? (
           <div className="flex justify-center py-16">
-            <LoadingSpinner size="lg" />
+            <LoadingSpinner />
           </div>
         ) : (
           <MatchList matches={filteredMatches} />

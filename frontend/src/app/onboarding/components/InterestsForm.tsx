@@ -48,7 +48,7 @@ const InterestsForm = ({
               className={`flex items-center gap-2 rounded-xl border-2 px-4 py-3 font-medium transition-all
                 ${
                   isSelected
-                    ? "border-primary bg-primary text-white shadow-md"
+                    ? "border-red-500 bg-red-500 text-white shadow-md"
                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
                 }
               `}
@@ -60,13 +60,21 @@ const InterestsForm = ({
         })}
       </div>
 
-      <button
-        onClick={() => setCurrentStep(4)}
-        disabled={isButtonDisabled}
-        className="w-full bg-primary hover:bg-primary-hover text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Continue
-      </button>
+      <div className="flex gap-3">
+        <button
+          onClick={() => setCurrentStep(3)}
+          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-xl font-medium transition-colors"
+        >
+          Back
+        </button>
+        <button
+          onClick={() => setCurrentStep(5)}
+          disabled={isButtonDisabled}
+          className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Continue
+        </button>
+      </div>
     </div>
   );
 };

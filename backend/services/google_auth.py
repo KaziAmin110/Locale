@@ -65,6 +65,11 @@ class GoogleAuthService:
     def exchange_code_for_token(code, redirect_uri):
         """Exchange authorization code for access token"""
         try:
+            print(f"Exchanging code: {code[:20]}... for token")
+            print(f"Redirect URI: {redirect_uri}")
+            print(f"Client ID: {Config.GOOGLE_CLIENT_ID}")
+            print(f"Client Secret: {Config.GOOGLE_CLIENT_SECRET[:10]}...")
+            
             token_url = 'https://oauth2.googleapis.com/token'
             token_data = {
                 'client_id': Config.GOOGLE_CLIENT_ID,
@@ -75,6 +80,8 @@ class GoogleAuthService:
             }
             
             response = requests.post(token_url, data=token_data)
+            print(f"Token exchange response status: {response.status_code}")
+            print(f"Token exchange response: {response.text}")
             
             if response.status_code == 200:
                 token_response = response.json()

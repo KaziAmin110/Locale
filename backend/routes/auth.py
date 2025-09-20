@@ -112,7 +112,7 @@ def test_db():
 def get_google_auth_url():
     """Get Google OAuth URL"""
     try:
-        redirect_uri = request.args.get('redirect_uri', 'http://localhost:3000')
+        redirect_uri = request.args.get('redirect_uri', 'http://localhost:3000/auth/callback')
         auth_url = GoogleAuthService.get_google_auth_url(redirect_uri)
         return jsonify({
             'success': True,
@@ -130,7 +130,7 @@ def google_callback():
     try:
         data = request.get_json()
         code = data.get('code')
-        redirect_uri = data.get('redirect_uri', 'http://localhost:3000/auth/google/callback')
+        redirect_uri = data.get('redirect_uri', 'http://localhost:3000/auth/callback')
         
         if not code:
             return jsonify({'success': False, 'error': 'Authorization code required'}), 400

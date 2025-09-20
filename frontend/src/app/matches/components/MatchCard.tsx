@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { MessageCircle, MapPin, Star } from 'lucide-react'
+import { MessageCircle, MapPin, Star, Clock, Heart, Home, Users } from 'lucide-react'
 import Button from '../../components/Button'
 import Badge from '../../components/Badge'
 import type { Match, Person, Apartment, Spot } from '@/lib/api'
@@ -12,141 +12,262 @@ interface MatchCardProps {
 
 const MatchCard = ({ match }: MatchCardProps) => {
   const getImage = () => {
-    return match.item.images?.[0] || '/placeholder-image.jpg'
+    return match.photo || '/placeholder-image.jpg'
+  }
+
+  const getTimeAgo = (timestamp?: string) => {
+    if (!timestamp) return 'Recently'
+    const now = new Date()
+    const matchTime = new Date(timestamp)
+    const diffMs = now.getTime() - matchTime.getTime()
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffHours / 24)
+    
+    if (diffDays > 0) return `${diffDays}d ago`
+    if (diffHours > 0) return `${diffHours}h ago`
+    return 'Just now'
   }
 
   const handleChat = () => {
     if (match.type === 'person') {
-      // Navigate to chat
       window.location.href = '/chat'
+    }
+  }
+
+  const handleViewDetails = () => {
+    // Navigate based on type
+    if (match.type === 'apartment') {
+      window.location.href = `/apartments/${match.id}`
+    } else if (match.type === 'spot') {
+      window.location.href = `/spots/${match.id}`
+    }
+  }
+
+  const getTypeIcon = () => {
+    switch (match.type) {
+      case 'person':
+        return <Users className="w-4 h-4" />
+      case 'apartment':
+        return <Home className="w-4 h-4" />
+      case 'spot':
+        return <MapPin className="w-4 h-4" />
+      default:
+        return <Heart className="w-4 h-4" />
+    }
+  }
+
+  const getTypeColor = () => {
+    switch (match.type) {
+      case 'person':
+        return 'bg-green-100 text-green-700 border-green-200'
+      case 'apartment':
+        return 'bg-blue-100 text-blue-700 border-blue-200'
+      case 'spot':
+        return 'bg-purple-100 text-purple-700 border-purple-200'
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200'
     }
   }
 
   const renderContent = () => {
     switch (match.type) {
       case 'apartment':
-        const apartment = match.item as Apartment
         return (
           <>
-            <div className="relative h-48">
+            <div className="relative h-48 group overflow-hidden">
               <Image
                 src={getImage()}
-                alt={apartment.address}
+                alt={match.name}
                 fill
-                className="object-cover"
+                className="object-cover transition-transform duration-300 group-hover:scale-110"
               />
-              <div className="absolute top-3 right-3">
-                <Badge variant="white" className="font-semibold">
-                  ${apartment.price}/mo
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              
+              <div className="absolute top-3 left-3">
+                <Badge className={`border ${getTypeColor()}`}>
+                  <div className="flex items-center gap-2">
+                    {getTypeIcon()}
+                    <span className="font-semibold">Apartment</span>
+                  </div>
                 </Badge>
+              </div>
+              
+              <div className="absolute top-3 right-3">
+                <div className="bg-black/70 backdrop-blur-sm rounded-full px-3 py-1">
+                  <span className="text-white text-sm font-semibold flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {getTimeAgo(match.timestamp)}
+                  </span>
+                </div>
               </div>
             </div>
             
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin size={14} className="text-gray-500" />
-                <span className="text-sm text-gray-600 truncate">{apartment.address}</span>
-              </div>
-              
-              <h3 className="font-semibold text-gray-900 mb-2">
-                {apartment.bedrooms}BR • {apartment.bathrooms}BA
+            <div className="p-5">
+              <h3 className="font-bold text-lg text-gray-900 mb-2">
+                {match.name}
               </h3>
               
-              <div className="flex gap-2 mb-4">
-                {apartment.amenities?.slice(0, 2).map((amenity, index) => (
-                  <Badge key={index} variant="gray" size="sm">
-                    {amenity}
-                  </Badge>
-                ))}
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin size={16} className="text-gray-500" />
+                <span className="text-sm text-gray-600">Available to rent</span>
               </div>
               
-              <Button variant="outline" className="w-full">
-                View Details
-              </Button>
+              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                You both liked this apartment! Contact the landlord to schedule a viewing.
+              </p>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="primary" 
+                  className="flex-1"
+                  onClick={handleViewDetails}
+                >
+                  View Details
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  onClick={handleChat}
+                >
+                  <MessageCircle size={16} />
+                  Contact
+                </Button>
+              </div>
             </div>
           </>
         )
 
       case 'person':
-        const person = match.item as Person
         return (
           <>
-            <div className="relative h-48">
+            <div className="relative h-48 group overflow-hidden">
               <Image
                 src={getImage()}
-                alt={person.name}
+                alt={match.name}
                 fill
-                className="object-cover"
+                className="object-cover transition-transform duration-300 group-hover:scale-110"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              
+              <div className="absolute top-3 left-3">
+                <Badge className={`border ${getTypeColor()}`}>
+                  <div className="flex items-center gap-2">
+                    {getTypeIcon()}
+                    <span className="font-semibold">Person</span>
+                  </div>
+                </Badge>
+              </div>
+              
+              <div className="absolute top-3 right-3">
+                <div className="bg-black/70 backdrop-blur-sm rounded-full px-3 py-1">
+                  <span className="text-white text-sm font-semibold flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {getTimeAgo(match.timestamp)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="absolute bottom-3 left-3">
+                <div className="bg-green-500 rounded-full px-3 py-1">
+                  <span className="text-white text-sm font-semibold flex items-center gap-1">
+                    <Heart className="w-3 h-3" />
+                    Mutual Match
+                  </span>
+                </div>
+              </div>
             </div>
             
-            <div className="p-4">
-              <h3 className="font-semibold text-gray-900 mb-1">
-                {person.name}, {person.age}
+            <div className="p-5">
+              <h3 className="font-bold text-lg text-gray-900 mb-2">
+                {match.name}
               </h3>
               
-              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                {person.bio}
+              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                You matched with {match.name}! Start a conversation and get to know each other.
               </p>
-              
-              <div className="flex flex-wrap gap-1 mb-4">
-                {person.interests?.slice(0, 3).map((interest, index) => (
-                  <Badge key={index} variant="primary" size="sm">
-                    {interest}
-                  </Badge>
-                ))}
-              </div>
               
               <Button 
                 variant="primary" 
-                className="w-full flex items-center gap-2"
+                className="w-full flex items-center justify-center gap-2"
                 onClick={handleChat}
               >
                 <MessageCircle size={16} />
-                Message
+                Start Chatting
               </Button>
             </div>
           </>
         )
 
       case 'spot':
-        const spot = match.item as Spot
         return (
           <>
-            <div className="relative h-48">
+            <div className="relative h-48 group overflow-hidden">
               <Image
                 src={getImage()}
-                alt={spot.name}
+                alt={match.name}
                 fill
-                className="object-cover"
+                className="object-cover transition-transform duration-300 group-hover:scale-110"
               />
-              <div className="absolute top-3 right-3">
-                <Badge variant="white" className="flex items-center gap-1">
-                  <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                  {spot.rating}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              
+              <div className="absolute top-3 left-3">
+                <Badge className={`border ${getTypeColor()}`}>
+                  <div className="flex items-center gap-2">
+                    {getTypeIcon()}
+                    <span className="font-semibold">Spot</span>
+                  </div>
                 </Badge>
+              </div>
+              
+              <div className="absolute top-3 right-3">
+                <div className="bg-black/70 backdrop-blur-sm rounded-full px-3 py-1">
+                  <span className="text-white text-sm font-semibold flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {getTimeAgo(match.timestamp)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="absolute bottom-3 left-3">
+                <div className="bg-purple-500 rounded-full px-3 py-1">
+                  <span className="text-white text-sm font-semibold flex items-center gap-1">
+                    <Star className="w-3 h-3" />
+                    Favorited
+                  </span>
+                </div>
               </div>
             </div>
             
-            <div className="p-4">
-              <h3 className="font-semibold text-gray-900 mb-2">
-                {spot.name}
+            <div className="p-5">
+              <h3 className="font-bold text-lg text-gray-900 mb-2">
+                {match.name}
               </h3>
               
               <div className="flex items-center gap-2 mb-3">
-                <MapPin size={14} className="text-gray-500" />
-                <span className="text-sm text-gray-600 truncate">{spot.address}</span>
+                <MapPin size={16} className="text-gray-500" />
+                <span className="text-sm text-gray-600">Added to favorites</span>
               </div>
               
-              <div className="flex gap-2 mb-4">
-                <Badge variant="gray" size="sm" className="capitalize">
-                  {spot.category.replace('_', ' ')}
-                </Badge>
-              </div>
+              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                You liked this spot! Check it out and explore what it has to offer.
+              </p>
               
-              <Button variant="outline" className="w-full">
-                Get Directions
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="primary" 
+                  className="flex-1"
+                  onClick={handleViewDetails}
+                >
+                  Explore
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                >
+                  <MapPin size={16} />
+                  Directions
+                </Button>
+              </div>
             </div>
           </>
         )
@@ -154,7 +275,7 @@ const MatchCard = ({ match }: MatchCardProps) => {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
       {renderContent()}
     </div>
   )

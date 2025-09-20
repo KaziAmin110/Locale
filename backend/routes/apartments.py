@@ -24,21 +24,17 @@ def get_apartment_feed():
             return jsonify({"error": "User not found"}), 404
         
         user = user_result['data'][0]
-        
-        # Extract city and state - handle both city names and coordinates
         user_city = user.get('city', 'Austin, TX')
         
-        # Check if it's coordinates (lat, lng format)
-        if ',' in user_city and user_city.replace('.', '').replace(',', '').replace('-', '').replace(' ', '').isdigit():
-            # It's coordinates, use default city
-            city = 'Austin'
-            state = 'TX'
-            print(f"📍 User location is coordinates, using default city: {city}, {state}")
-        else:
-            # It's a city name
+        # Parse city and state
+        if ',' in user_city and not user_city.replace('.', '').replace(',', '').replace('-', '').replace(' ', '').isdigit():
             city_parts = user_city.split(',')
             city = city_parts[0].strip()
             state = city_parts[1].strip() if len(city_parts) > 1 else 'TX'
+        else:
+            # If user location is coordinates, use default city
+            city = 'Austin'
+            state = 'TX'
         
         print(f"🔍 Searching apartments in {city}, {state}")
         
@@ -72,7 +68,7 @@ def get_apartment_feed():
         recommendations = ml_engine.apartment_recommendations(
             user_vector, 
             available_apartments, 
-            [user.get('lat', 30.2672), user.get('lng', -97.7431)]
+            [float(user.get('lat', 30.2672)), float(user.get('lng', -97.7431))]
         )
         
         # Return top apartments with scores
@@ -92,10 +88,9 @@ def get_apartment_feed():
         })
         
     except Exception as e:
-        print(f" Apartment feed error: {str(e)}")
+        print(f"❌ Apartment feed error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-# Keep all your other apartment routes exactly the same
 @apartments_bp.route('/swipe', methods=['POST'])
 @jwt_required()
 def record_apartment_swipe():
@@ -137,26 +132,12 @@ def record_apartment_swipe():
                     'created_at': 'now()'
                 }
                 SupabaseService.insert_data('apartment_matches', match_data)
-                
-                return jsonify({
-                    'success': True,
-                    'match': True,
-                    'message': 'It\'s a match!'
-                }), 200
         
-        return jsonify({
-            'success': True,
-            'match': False,
-            'message': 'Swipe recorded'
-        }), 200
+        return jsonify({'success': True, 'match': is_match}), 200
         
     except Exception as e:
+        print(f"Apartment swipe error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-@apartments_bp.route('/matches', methods=['GET'])
-@jwt_required()
-def get_apartment_matches():    # Keep existing code exactly as is
-    pass
 
 def generate_realistic_apartments_for_city(city, state, user):
     """Generate realistic apartment data based on city and user preferences"""
@@ -223,6 +204,8 @@ def generate_realistic_apartments_for_city(city, state, user):
             'bedrooms': bedrooms,
             'bathrooms': bathrooms,
             'square_feet': random.randint(400, 1200),
+            'lat': float(user.get('lat', 30.2672)) + random.uniform(-0.1, 0.1),
+            'lng': float(user.get('lng', -97.7431)) + random.uniform(-0.1, 0.1),
             'photos': random.sample(apartment_photos, random.randint(2, 4)),
             'description': f"Beautiful {apt_type.lower()} located in the heart of {neighborhood}. Perfect for young professionals!",
             'amenities': random.choice(amenities_list),
@@ -231,5 +214,3 @@ def generate_realistic_apartments_for_city(city, state, user):
         apartments.append(apartment)
     
     return apartments
-
-# ... all other routes stay the same
