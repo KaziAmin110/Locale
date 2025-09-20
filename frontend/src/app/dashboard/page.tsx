@@ -1,227 +1,167 @@
 "use client";
 
-import { useState } from "react";
+import React from 'react';
 
-// super simple mock data — replace with your API later
-const mock = {
-  apartments: [
-    { id: "a1", title: "Modern Studio in SoCo", price: 1850, img: "https://picsum.photos/seed/apt1/800/500" },
-    { id: "a2", title: "2BR Near Zilker",        price: 2350, img: "https://picsum.photos/seed/apt2/800/500" },
-  ],
-  people: [
-    { id: "p1", name: "Sarah", blurb: "Coffee + hikes", img: "https://picsum.photos/seed/p1/800/500" },
-    { id: "p2", name: "Alex",  blurb: "Climbing & tacos", img: "https://picsum.photos/seed/p2/800/500" },
-  ],
-  spots: [
-    { id: "s1", name: "Jo’s Coffee", detail: "Coffee · 4.6★", img: "https://picsum.photos/seed/s1/800/500" },
-    { id: "s2", name: "Barton Springs", detail: "Park · 4.8★", img: "https://picsum.photos/seed/s2/800/500" },
-  ],
+const BuildingIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 21v-7" /><path d="M4 10V3" /><path d="M12 21v-7" /><path d="M12 10V3" /><path d="M20 21v-7" /><path d="M20 10V3" /><rect width="18" height="6" x="3" y="10" rx="1" /></svg>;
+const SpeechBubbleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>;
+const MapPinIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>;
+const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
+
+
+const EngagementRing = ({ likes, passes }: { likes: number, passes: number }) => {
+    const total = likes + passes;
+    const percentage = total > 0 ? (likes / total) * 100 : 0;
+    const circumference = 2 * Math.PI * 45;
+    const offset = circumference - (percentage / 100) * circumference;
+
+    return (
+        <div className="!relative !w-48 !h-48 !flex !items-center !justify-center">
+            <svg className="!absolute !w-full !h-full" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" stroke="#111111" strokeWidth="8" fill="none" opacity="0.1" />
+                <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    stroke="rgb(239, 68, 68)"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeLinecap="round"
+                    transform="rotate(-90 50 50)"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    className="!transition-all !duration-1000 !ease-in-out"
+                />
+            </svg>
+            <div className="!text-center">
+                <p className="!text-3xl !font-bold !text-gray-900">{total.toLocaleString()}</p>
+                <p className="!text-xs !uppercase !tracking-widest !text-gray-500">Total Swipes</p>
+            </div>
+        </div>
+    );
 };
 
-type Tab = "apartments" | "people" | "spots";
+export default function CityMateAnalyticsPage() {
+    const staticStats = {
+        totalLikes: 1283,
+        passes: 412,
+        discoveryRate: 76,
+        topCategory: "Spots",
+        categoryCounts: {
+            Apartments: 48,
+            People: 60,
+            Spots: 55,
+        }
+    };
 
-export default function DashboardPage() {
-  const [tab, setTab] = useState<Tab>("apartments");
-  const [index, setIndex] = useState(0);
-  const [saved, setSaved] = useState<any[]>([]);
-
-  const list = mock[tab] as any[];
-  const card = list[index];
-
-  const pass = () => setIndex(i => Math.min(i + 1, list.length));
-  const like = () => {
-    if (card) setSaved(s => [card, ...s]);
-    pass();
-  };
-
-  return (
-    <main className="min-h-screen bg-neutral-50">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b">
-        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-          <div className="text-xl font-bold">CityMate</div>
-          <nav className="flex gap-2 bg-neutral-100 p-1 rounded-full">
-            {(["apartments","people","spots"] as Tab[]).map(t => (
-              <button
-                key={t}
-                onClick={() => { setTab(t); setIndex(0); }}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition
-                  ${tab===t ? "bg-white shadow" : "hover:bg-neutral-200"}`}
-              >
-                {t[0].toUpperCase()+t.slice(1)}
-              </button>
-            ))}
-          </nav>
-          <div className="text-sm text-neutral-500">Austin, TX</div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <div className="mx-auto max-w-6xl px-4 py-8 grid gap-8 lg:grid-cols-[1fr_320px]">
-        {/* Left: swipe area */}
-        <section className="flex flex-col items-center gap-4">
-          {!card ? (
-            <div className="h-[28rem] w-full max-w-xl grid place-items-center rounded-2xl border border-dashed text-neutral-500">
-              No more cards — come back later ✨
-            </div>
-          ) : (
-            <>
-              {/* Card */}
-              <div className="w-full max-w-xl bg-white rounded-2xl shadow">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={card.img} alt="" className="w-full h-64 object-cover rounded-t-2xl" />
-                <div className="p-4 space-y-2">
-                  {tab === "apartments" && (
-                    <>
-                      <h3 className="text-lg font-semibold">{card.title}</h3>
-                      <p className="text-neutral-600">${card.price.toLocaleString()}</p>
-                    </>
-                  )}
-                  {tab === "people" && (
-                    <>
-                      <h3 className="text-lg font-semibold">{card.name}</h3>
-                      <p className="text-neutral-600">{card.blurb}</p>
-                    </>
-                  )}
-                  {tab === "spots" && (
-                    <>
-                      <h3 className="text-lg font-semibold">{card.name}</h3>
-                      <p className="text-neutral-600">{card.detail}</p>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-4">
-                <button onClick={pass} className="px-5 py-3 rounded-full bg-neutral-100 hover:bg-neutral-200">
-                  Pass
-                </button>
-                <button onClick={like} className="px-5 py-3 rounded-full bg-black text-white hover:opacity-90">
-                  Like
-                </button>
-              </div>
-
-              <p className="text-xs text-neutral-500">{Math.min(index+1, list.length)} / {list.length}</p>
-            </>
-          )}
-        </section>
-
-        {/* Right: saved */}
-        <aside className="space-y-3">
-          <div className="bg-white rounded-2xl shadow p-4">
-            <h2 className="font-semibold mb-3">Saved</h2>
-            <div className="space-y-3">
-              {saved.length === 0 && (
-                <p className="text-sm text-neutral-500">Likes will show up here.</p>
-              )}
-              {saved.slice(0,8).map(item => (
-                <div key={item.id} className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.img} alt="" className="w-14 h-14 rounded-lg object-cover bg-neutral-200" />
-                  <div className="text-sm">
-                    <div className="font-medium">{item.title || item.name}</div>
-                    <div className="text-neutral-500">
-                      {"price" in item ? `$${item.price.toLocaleString()}` : (item.blurb || item.detail || "")}
+    return (
+        <main className="!min-h-screen !bg-white !text-gray-900 !font-sans !antialiased !p-4 sm:!p-6 lg:!p-8">
+            <style jsx global>{`
+              @import url('https://rsms.me/inter/inter.css');
+              html { font-family: 'Inter', sans-serif; }
+            `}</style>
+            <div className="!max-w-7xl !mx-auto">
+                <header className="!mb-12 !flex !items-center !justify-between">
+                    <div>
+                        <h1 className="!text-4xl !font-bold">CityMate Analytics</h1>
+                        <p className="!text-lg !text-gray-500 !mt-1">Your journey through Austin, visualized.</p>
                     </div>
-                  </div>
+                    <a
+                        href="/swipe"
+                        className="!inline-flex !items-center !gap-2 !px-5 !py-3 !rounded-lg !text-sm !font-semibold !text-white !shadow-sm !transition-transform !duration-200 !ease-in-out hover:!scale-105"
+                        style={{ backgroundImage: 'linear-gradient(to right, rgb(239, 68, 68), rgb(236, 72, 153))' }}
+                    >
+                        <ArrowLeftIcon />
+                        Back to Swiping
+                    </a>
+                </header>
+
+                <section 
+                    className="!p-8 !mb-8 !rounded-2xl !bg-gray-50/80 !backdrop-blur-xl !border !border-gray-200"
+                >
+                    <div className="!grid !grid-cols-1 md:!grid-cols-3 !gap-8 !text-center">
+                        <div className="!flex !flex-col !items-center !justify-center">
+                            <span className="!text-7xl lg:!text-8xl !font-bold !bg-clip-text !text-transparent !bg-gradient-to-br from-gray-900 to-gray-600">
+                                {staticStats.discoveryRate}%
+                            </span>
+                            <span className="!text-sm !font-medium !uppercase !tracking-widest !text-gray-500 !mt-2">Discovery Rate</span>
+                        </div>
+                        <div className="!flex !flex-col !items-center !justify-center !order-first md:!order-none">
+                             <span 
+                                className="!text-8xl lg:!text-9xl !font-bold !bg-clip-text !text-transparent"
+                                style={{backgroundImage: 'linear-gradient(to right, rgb(239, 68, 68), rgb(236, 72, 153))'}}
+                            >
+                                {staticStats.totalLikes.toLocaleString()}
+                            </span>
+                            <span 
+                                className="!text-sm !font-medium !uppercase !tracking-widest !mt-2"
+                                style={{color: 'rgb(239, 68, 68)'}}
+                            >Total Likes</span>
+                        </div>
+                        <div className="!flex !flex-col !items-center !justify-center">
+                            <span className="!text-7xl lg:!text-8xl !font-bold !bg-clip-text !text-transparent !bg-gradient-to-br from-gray-900 to-gray-600">
+                                {staticStats.topCategory}
+                            </span>
+                            <span className="!text-sm !font-medium !uppercase !tracking-widest !text-gray-500 !mt-2">Top Category</span>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="!grid !grid-cols-1 lg:!grid-cols-3 !gap-8">
+                    
+                    <div className="lg:!col-span-1 !p-6 !rounded-2xl !bg-gray-50/80 !backdrop-blur-xl !border !border-gray-200 !flex !flex-col !items-center !justify-center">
+                        <h2 className="!text-xl !font-medium !mb-4">Engagement Breakdown</h2>
+                        <EngagementRing likes={staticStats.totalLikes} passes={staticStats.passes} />
+                        <div className="!flex !justify-between !w-full !max-w-xs !mt-6 !text-sm">
+                            <p><span className="!font-bold" style={{color: 'rgb(239, 68, 68)'}}>{staticStats.totalLikes.toLocaleString()}</span> Likes</p>
+                            <p><span className="!font-bold !text-gray-500">{staticStats.passes.toLocaleString()}</span> Passes</p>
+                        </div>
+                    </div>
+
+                    <div className="lg:!col-span-2 !p-6 !rounded-2xl !bg-gray-50/80 !backdrop-blur-xl !border !border-gray-200">
+                         <h2 className="!text-xl !font-medium !mb-6">Your Taste Profile</h2>
+                         <div className="!space-y-6">
+                            <div className="!flex !items-start !gap-4">
+                                <div className="!p-2 !rounded-lg" style={{backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'rgb(239, 68, 68)'}}><BuildingIcon/></div>
+                                <p>Your ideal apartment seems to be around <span className="!font-bold" style={{color: 'rgb(239, 68, 68)'}}>$2,150/mo</span>.</p>
+                            </div>
+                             <div className="!flex !items-start !gap-4">
+                                <div className="!p-2 !rounded-lg" style={{backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'rgb(239, 68, 68)'}}><SpeechBubbleIcon/></div>
+                                <p>You connect with people who are into <span className="!font-bold !capitalize" style={{color: 'rgb(239, 68, 68)'}}>live music</span>.</p>
+                            </div>
+                             <div className="!flex !items-start !gap-4">
+                                <div className="!p-2 !rounded-lg" style={{backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'rgb(239, 68, 68)'}}><MapPinIcon/></div>
+                                <p>Your go-to vibe is <span className="!font-bold" style={{color: 'rgb(239, 68, 68)'}}>Coffee</span>.</p>
+                            </div>
+                         </div>
+                    </div>
+                    
+                    <div className="lg:!col-span-3 !p-6 !rounded-2xl !bg-gray-50/80 !backdrop-blur-xl !border !border-gray-200">
+                        <h2 className="!text-xl !font-medium !mb-4">Category Affinity</h2>
+                        <div className="!space-y-4">
+                            {(['Apartments', 'People', 'Spots'] as const).map(category => {
+                                const count = staticStats.categoryCounts[category] || 0;
+                                const maxCount = Math.max(...Object.values(staticStats.categoryCounts));
+                                const width = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                                return (
+                                    <div key={category} className="!flex !items-center !gap-4">
+                                        <span className="!w-24 !text-sm !text-gray-600">{category}</span>
+                                        <div className="!flex-1 !bg-gray-900/5 !rounded-full !h-6">
+                                            <div 
+                                                className="!h-6 !rounded-full !flex !items-center !justify-end !pr-3 !transition-all !duration-700 !ease-out" 
+                                                style={{ width: `${width}%`, backgroundImage: 'linear-gradient(to right, rgb(239, 68, 68), rgb(236, 72, 153))' }}
+                                            >
+                                                <span className="!font-bold !text-sm !text-white">{count}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
                 </div>
-              ))}
             </div>
-          </div>
-        </aside>
-      </div>
-    </main>
-  );
+        </main>
+    );
 }
 
-// "use client";
-
-// import { useState, useEffect } from "react";
-// import { useRouter } from "next/navigation";
-// import HomesContent from "../components/Dashboard/HomesContent";
-// import Navbar from "../components/Dashboard/Navbar";
-
-// export default function Dashboard() {
-//   const [user, setUser] = useState<any>(null);
-//   const [loading, setLoading] = useState(true);
-//   const router = useRouter();
-
-//   const [stats, setStats] = useState({
-//     apartments: 0,
-//     people: 0,
-//     spots: 0,
-//     matches: 0,
-//   });
-
-//   // useEffect(() => {
-//   //   const token = localStorage.getItem('token');
-//   //   const userData = localStorage.getItem('user');
-
-//   //   if (!token || !userData) {
-//   //     router.push('/login');
-//   //     return;
-//   //   }
-
-//   //   setUser(JSON.parse(userData));
-//   //   loadStats();
-//   //   setLoading(false);
-//   // }, [router]);
-
-//   const [activeTab, setActiveTab] = useState("Homes");
-
-//   const loadStats = async () => {
-//     try {
-//       const token = localStorage.getItem("token");
-
-//       // Load apartments
-//       const apartmentsRes = await fetch(
-//         "http://localhost:5002/api/apartments/feed",
-//         {
-//           headers: { Authorization: `Bearer ${token}` },
-//         }
-//       );
-//       const apartmentsData = await apartmentsRes.json();
-
-//       // Load people
-//       const peopleRes = await fetch("http://localhost:5002/api/people/feed", {
-//         headers: { Authorization: `Bearer ${token}` },
-//       });
-//       const peopleData = await peopleRes.json();
-
-//       // Load spots
-//       const spotsRes = await fetch("http://localhost:5002/api/spots/feed", {
-//         headers: { Authorization: `Bearer ${token}` },
-//       });
-//       const spotsData = await spotsRes.json();
-
-//       setStats({
-//         apartments: apartmentsData.apartments?.length || 0,
-//         people: peopleData.people?.length || 0,
-//         spots: spotsData.spots?.length || 0,
-//         matches: Math.floor(Math.random() * 5) + 1, // Mock matches for now
-//       });
-//     } catch (error) {
-//       console.error("Error loading stats:", error);
-//       // Set fallback stats
-//       setStats({
-//         apartments: 12,
-//         people: 8,
-//         spots: 15,
-//         matches: 3,
-//       });
-//     }
-//   };
-
-//   return (
-//     <div className="flex flex-col px-4 sm:px-6 lg:px-8 py-8 w-full">
-//       <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
-
-//       <div className="mt-6">
-//         {activeTab === "Homes" && <HomesContent stats={stats} />}
-//         {activeTab === "Experiences" && <ExperiencesContent />}
-//         {activeTab === "Services" && <ServicesContent />}
-//       </div>
-//     </div>
-//   );
-// }
