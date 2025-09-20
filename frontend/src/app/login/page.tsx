@@ -167,16 +167,16 @@ export default function LoginPage() {
               </button>
             </p>
           </div>
-        </div>
 
-        {/* Back to Home */}
-        <div className="text-center mt-8">
-          <button
-            onClick={() => router.push('/')}
-            className="text-white/70 hover:text-white transition-colors"
-          >
-            ← Back to Home
-          </button>
+          {/* Back to Home */}
+          <div className="text-center mt-8">
+            <button
+              onClick={() => router.push('/')}
+              className="text-white/70 hover:text-white transition-colors"
+            >
+              ← Back to Home
+            </button>
+          </div>
         </div>
       </div>
     </div>
