@@ -2,6 +2,9 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services.supabase_client import SupabaseService
 from services.ml_engine import MLEngine
+from config import Config
+from external_apis.google_places_api import GooglePlacesAPI, YelpAPI
+from data.mock_data import MOCK_SPOTS
 import uuid
 
 spots_bp = Blueprint('spots', __name__)
@@ -10,7 +13,7 @@ ml_engine = MLEngine()
 @spots_bp.route('/feed', methods=['GET'])
 @jwt_required()
 def get_spots_feed():
-    """Get ML-ranked spots for swiping"""
+    """Get real local spots based on user location and interests"""
     try:
         user_id = get_jwt_identity()
         
@@ -20,172 +23,89 @@ def get_spots_feed():
             return jsonify({"error": "User not found"}), 404
         
         user = user_data['data'][0]
-        user_location = [user.get('lat'), user.get('lng')]
+        user_lat = user.get('lat', 30.2672)
+        user_lng = user.get('lng', -97.7431)
+        user_interests = user.get('interests', [])
         
-        # Get user's previous swipes to exclude them
+        # Try multiple places APIs
+        real_spots = None
+        
+        # 1. Try Google Places first
+        if Config.GOOGLE_PLACES_API_KEY:
+            real_spots = GooglePlacesAPI.get_places_by_interests(
+                lat=user_lat,
+                lng=user_lng,
+                user_interests=user_interests,
+                radius=8000  # 8km radius
+            )
+            if real_spots['success'] and real_spots['spots']:
+                print(f"✅ Using Google Places data: {len(real_spots['spots'])} spots")
+        
+        # 2. Fallback to Yelp
+        if not real_spots or not real_spots['success'] or len(real_spots.get('spots', [])) < 10:
+            if Config.YELP_API_KEY:
+                yelp_spots = YelpAPI.search_businesses(
+                    lat=user_lat,
+                    lng=user_lng,
+                    user_interests=user_interests,
+                    radius=8000
+                )
+                if yelp_spots['success'] and yelp_spots['spots']:
+                    existing_spots = real_spots.get('spots', []) if real_spots else []
+                    combined_spots = existing_spots + yelp_spots['spots']
+                    real_spots = {"success": True, "spots": combined_spots, "source": "google+yelp"}
+                    print(f"✅ Combined Google + Yelp data: {len(combined_spots)} spots")
+        
+        # 3. Final fallback to mock data
+        if not real_spots or not real_spots['success'] or not real_spots['spots']:
+            available_spots = [spot for spot in MOCK_SPOTS 
+                              if user['city'].lower() in spot['address'].lower()]
+            print(f"⚠️ Using MOCK spots data: {len(available_spots)} spots")
+            data_source = "mock"
+        else:
+            available_spots = real_spots['spots']
+            data_source = real_spots.get('source', 'real')
+        
+        # Get user's previous swipes
         swipes_data = SupabaseService.get_data('spot_swipes', {'user_id': user_id})
-        swiped_ids = []
-        if swipes_data['success']:
-            swiped_ids = [swipe['spot_id'] for swipe in swipes_data['data']]
+        swiped_ids = [swipe['spot_id'] for swipe in swipes_data['data']] if swipes_data['success'] else []
         
-        # Get spots from Supabase, filtered by city and excluding swiped ones
-        spots_data = SupabaseService.get_data('spots', {})
-        if not spots_data['success']:
-            return jsonify({"error": "Failed to fetch spots"}), 500
+        # Filter out swiped spots
+        unswiped_spots = [spot for spot in available_spots if spot['id'] not in swiped_ids]
         
-        all_spots = spots_data['data']
+        if not unswiped_spots:
+            return jsonify({
+                "success": True, 
+                "spots": [], 
+                "message": "No more spots available",
+                "data_source": data_source
+            })
         
-        # Filter spots by city and unswiped
-        available_spots = [spot for spot in all_spots 
-                          if user.get('city') and user['city'].lower() in spot['address'].lower() 
-                          and spot['id'] not in swiped_ids]
-        
-        if not available_spots:
-            return jsonify({"success": True, "spots": []})
-        
-        # Get ML recommendations
+        # Apply ML recommendations
         user_vector = ml_engine.create_user_vector(user)
-        recommendations = ml_engine.spot_recommendations(user_vector, available_spots, user_location)
+        recommendations = ml_engine.spot_recommendations(
+            user_vector, 
+            unswiped_spots, 
+            [user_lat, user_lng]
+        )
         
-        # Return top spots with scores
+        # Return top recommendations
         result_spots = []
-        for rec in recommendations[:10]:  # Top 10 for feed
-            spot = next((s for s in available_spots if s['id'] == rec['spot_id']), None)
+        for rec in recommendations[:15]:  # Top 15 for variety
+            spot = next((s for s in unswiped_spots if s['id'] == rec['spot_id']), None)
             if spot:
                 spot['match_score'] = rec['score']
-                spot['distance'] = rec['distance']
+                spot['distance_km'] = rec.get('distance', 0)
                 result_spots.append(spot)
         
         return jsonify({
             "success": True,
             "spots": result_spots,
-            "total_available": len(available_spots)
+            "total_available": len(unswiped_spots),
+            "data_source": data_source,
+            "user_interests": user_interests
         })
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@spots_bp.route('/swipe', methods=['POST'])
-@jwt_required()
-def record_spot_swipe():
-    """Record spot swipe"""
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        
-        spot_id = data.get('spot_id')
-        direction = data.get('direction')  # 'left' or 'right'
-        
-        if not spot_id or direction not in ['left', 'right']:
-            return jsonify({"error": "Invalid swipe data"}), 400
-        
-        # Record swipe
-        swipe_data = {
-            'id': str(uuid.uuid4()),
-            'user_id': user_id,
-            'spot_id': spot_id,
-            'direction': direction,
-            'created_at': 'now()'
-        }
-        
-        result = SupabaseService.insert_data('spot_swipes', swipe_data)
-        
-        if result['success']:
-            # If right swipe, create match
-            if direction == 'right':
-                match_data = {
-                    'id': str(uuid.uuid4()),
-                    'user_id': user_id,
-                    'spot_id': spot_id,
-                    'match_score': 0.8,
-                    'created_at': 'now()'
-                }
-                SupabaseService.insert_data('spot_matches', match_data)
-                
-                return jsonify({
-                    "success": True,
-                    "message": "Spot saved to your favorites!",
-                    "is_match": True
-                })
-            else:
-                return jsonify({
-                    "success": True,
-                    "message": "Spot passed",
-                    "is_match": False
-                })
-        else:
-            return jsonify({"error": "Failed to record swipe"}), 500
-            
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@spots_bp.route('/matches', methods=['GET'])
-@jwt_required()
-def get_spot_matches():
-    """Get user's spot matches (favorites)"""
-    try:
-        user_id = get_jwt_identity()
-        
-        # Get user's matches
-        matches_data = SupabaseService.get_data('spot_matches', {'user_id': user_id})
-        
-        if not matches_data['success']:
-            return jsonify({"error": "Failed to get matches"}), 500
-        
-        # Get spot details for each match
-        matched_spots = []
-        for match in matches_data['data']:
-            spot = next((s for s in MOCK_SPOTS if s['id'] == match['spot_id']), None)
-            if spot:
-                spot['match_score'] = match['match_score']
-                spot['saved_at'] = match['created_at']
-                matched_spots.append(spot)
-        
-        return jsonify({
-            "success": True,
-            "matches": matched_spots
-        })
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@spots_bp.route('/categories', methods=['GET'])
-def get_spot_categories():
-    """Get available spot categories"""
-    return jsonify({
-        "success": True,
-        "categories": [
-            {"id": "coffee_shop", "name": "Coffee Shops", "icon": "☕"},
-            {"id": "restaurant", "name": "Restaurants", "icon": "🍽️"},
-            {"id": "bar", "name": "Bars & Nightlife", "icon": "🍻"},
-            {"id": "gym", "name": "Gyms & Fitness", "icon": "💪"},
-            {"id": "park", "name": "Parks & Recreation", "icon": "🌳"},
-            {"id": "museum", "name": "Museums & Culture", "icon": "🎨"},
-            {"id": "shopping", "name": "Shopping", "icon": "🛍️"}
-        ]
-    })
-
-@spots_bp.route('/categories', methods=['POST'])
-@jwt_required()
-def filter_by_categories():
-    """Filter spots by categories"""
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        categories = data.get('categories', [])
-        
-        if not categories:
-            return jsonify({"error": "No categories specified"}), 400
-        
-        # Filter spots by categories
-        filtered_spots = [spot for spot in MOCK_SPOTS 
-                         if spot['category'] in categories]
-        
-        return jsonify({
-            "success": True,
-            "spots": filtered_spots[:50],  # Return top 50
-            "total_found": len(filtered_spots)
-        })
-        
-    except Exception as e:
+        print(f"Spots feed error: {str(e)}")
         return jsonify({"error": str(e)}), 500

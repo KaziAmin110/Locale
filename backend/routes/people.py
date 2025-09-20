@@ -189,8 +189,12 @@ def apply_people_filters():
         
         user = user_data['data'][0]
         
-        # Apply filters to mock data
-        filtered_people = MOCK_PEOPLE.copy()
+        # Apply filters to Supabase data
+        people_data = SupabaseService.get_data('people', {})
+        if not people_data['success']:
+            return jsonify({"error": "Failed to fetch people"}), 500
+        
+        filtered_people = people_data['data']
         
         # Age range filter
         if 'age_min' in data and 'age_max' in data:

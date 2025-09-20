@@ -1,0 +1,426 @@
+.swipe-page {
+    min-height: 100vh;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .swipe-header {
+    padding: 20px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .tab-navigation {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .tab-button {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    color: #6b7280;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  
+  .tab-button.active {
+    background: #f9fafb;
+    border-color: #374151;
+    color: #111827;
+    font-weight: 600;
+  }
+  
+  .tab-button:hover:not(.active) {
+    background: #f9fafb;
+    border-color: #d1d5db;
+  }
+  
+  .tab-icon {
+    font-size: 16px;
+    margin-bottom: 4px;
+    display: block;
+  }
+  
+  .swipe-stats {
+    display: flex;
+    justify-content: space-around;
+    color: #6b7280;
+    font-size: 14px;
+  }
+  
+  .stat-item {
+    text-align: center;
+  }
+  
+  .stat-number {
+    font-size: 20px;
+    font-weight: 600;
+    display: block;
+    color: #111827;
+  }
+  
+  .swipe-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+  }
+  
+  .swipe-stack {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    height: 600px;
+  }
+  
+  .swipe-card {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    cursor: grab;
+    user-select: none;
+    overflow: hidden;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+  
+  .swipe-card:active {
+    cursor: grabbing;
+  }
+  
+  .swipe-card.swiping-right::before {
+    content: 'LIKE';
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    background: #10b981;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 10;
+    opacity: 0.9;
+  }
+  
+  .swipe-card.swiping-left::before {
+    content: 'PASS';
+    position: absolute;
+    top: 50px;
+    right: 50px;
+    background: #ef4444;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 10;
+    opacity: 0.9;
+  }
+  
+  .card-image {
+    width: 100%;
+    height: 60%;
+    object-fit: cover;
+    background: #f3f4f6;
+  }
+  
+  .card-content {
+    padding: 24px;
+    height: 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .card-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #111827;
+  }
+  
+  .card-subtitle {
+    font-size: 16px;
+    color: #6b7280;
+    margin-bottom: 12px;
+  }
+  
+  .card-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .detail-tag {
+    background: #f3f4f6;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  
+  .card-interests {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .interest-tag {
+    background: #374151;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .swipe-controls {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    z-index: 10;
+  }
+  
+  .control-button {
+    width: 56px;
+    height: 56px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .control-button:hover {
+    transform: scale(1.05);
+  }
+  
+  .control-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  .control-button.pass {
+    background: #ef4444;
+    color: white;
+  }
+  
+  .control-button.like {
+    background: #10b981;
+    color: white;
+  }
+  
+  .control-button.super-like {
+    background: #3b82f6;
+    color: white;
+  }
+  
+  .empty-state {
+    text-align: center;
+    color: #6b7280;
+    padding: 40px;
+  }
+  
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.7;
+  }
+  
+  .empty-title {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #111827;
+    font-weight: 600;
+  }
+  
+  .empty-subtitle {
+    font-size: 16px;
+    opacity: 0.8;
+    margin-bottom: 20px;
+  }
+  
+  .refresh-button {
+    background: #374151;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .refresh-button:hover {
+    background: #1f2937;
+  }
+  
+  .loading-spinner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: #6b7280;
+    font-size: 16px;
+  }
+  
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e5e7eb;
+    border-top: 3px solid #374151;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Match Modal */
+  .match-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+  }
+  
+  .match-content {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    animation: slideUp 0.4s ease;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .match-title {
+    font-size: 28px;
+    color: #10b981;
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+  
+  .match-subtitle {
+    font-size: 16px;
+    color: #6b7280;
+    margin-bottom: 24px;
+  }
+  
+  .match-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 16px auto;
+    display: block;
+    border: 3px solid #10b981;
+  }
+  
+  .match-buttons {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .match-button {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .match-button.primary {
+    background: #374151;
+    color: white;
+  }
+  
+  .match-button.secondary {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+  
+  .match-button:hover {
+    transform: translateY(-1px);
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .swipe-stack {
+      max-width: 350px;
+      height: 550px;
+    }
+    
+    .swipe-container {
+      padding: 15px;
+    }
+    
+    .control-button {
+      width: 48px;
+      height: 48px;
+      font-size: 18px;
+    }
+    
+    .card-title {
+      font-size: 20px;
+    }
+    
+    .swipe-header {
+      padding: 15px;
+    }
+  }
