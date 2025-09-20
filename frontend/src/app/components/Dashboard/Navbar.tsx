@@ -12,7 +12,7 @@ const Navbar = ({ activeTab, onTabChange }: NavbarProps) => {
     <div className="flex flex-col md:flex-row justify-center md:justify-between items-center w-full px-6 py-4">
       <Image src={"/logo.svg"} alt="Logo" width={120} height={120} />
 
-      <div className="flex items-center justify-evenly flex-wrap flex-1 max-w-5xl">
+      <div className="flex items-center justify-between md:justify-evenly flex-wrap flex-1 max-w-5xl">
         <NavButton
           imageSrc="/homes.png"
           text="Homes"
