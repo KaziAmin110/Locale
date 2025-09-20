@@ -1,13 +1,5 @@
 import { useState } from "react";
 import { MapPin } from "lucide-react";
-import {
-  useJsApiLoader,
-  Autocomplete,
-  GoogleMap,
-  MarkerF,
-} from "@react-google-maps/api";
-
-const libraries: "places"[] = ["places"];
 
 type LocationFormProps = {
   updateFormData: (
@@ -23,66 +15,29 @@ const LocationForm = ({
 }: LocationFormProps) => {
   const [locationInput, setLocationInput] = useState("");
   const [isLocating, setIsLocating] = useState(false);
-  const [autocomplete, setAutocomplete] =
-    useState<google.maps.places.Autocomplete | null>(null);
-  const [mapCenter, setMapCenter] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-
-  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-
-  const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey,
-    libraries,
-  });
-
-  const containerStyle = {
-    width: "100%",
-    height: "250px",
-    borderRadius: "0.75rem",
-  };
 
   const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocationInput(e.target.value);
-    if (mapCenter) {
-      setMapCenter(null);
-    }
+    const value = e.target.value;
+    setLocationInput(value);
+    updateFormData("location", value);
   };
 
   const handleGetCurrentLocation = () => {
     setIsLocating(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        async (position) => {
+        (position) => {
           const { latitude, longitude } = position.coords;
+          const locationText = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          
+          setLocationInput(locationText);
+          updateFormData("location", locationText);
           updateFormData("lat", latitude);
           updateFormData("lng", longitude);
-          setMapCenter({ lat: latitude, lng: longitude });
-
-          try {
-            const response = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${googleMapsApiKey}`
-            );
-            const data = await response.json();
-            let address = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-            if (data.status === "OK" && data.results[0]) {
-              address = data.results[0].formatted_address;
-            }
-            setLocationInput(address);
-            updateFormData("location", address);
-          } catch (error) {
-            console.error("Error fetching address:", error);
-            alert("Failed to fetch address from coordinates.");
-          } finally {
-            setIsLocating(false);
-          }
+          setIsLocating(false);
         },
         () => {
-          alert(
-            "Failed to get your location. Please enable location services."
-          );
+          alert("Failed to get your location. Please enable location services.");
           setIsLocating(false);
         }
       );
@@ -91,36 +46,6 @@ const LocationForm = ({
       setIsLocating(false);
     }
   };
-
-  const onLoad = (autocompleteInstance: google.maps.places.Autocomplete) => {
-    autocompleteInstance.setFields(["geometry", "formatted_address"]);
-    setAutocomplete(autocompleteInstance);
-  };
-
-  const onPlaceChanged = () => {
-    if (autocomplete !== null) {
-      const place = autocomplete.getPlace();
-      const address = place.formatted_address || "";
-      const latValue = place.geometry?.location?.lat();
-      const lngValue = place.geometry?.location?.lng();
-
-      if (address && latValue !== undefined && lngValue !== undefined) {
-        setLocationInput(address);
-        updateFormData("location", address);
-        updateFormData("lat", latValue);
-        updateFormData("lng", lngValue);
-        setMapCenter({ lat: latValue, lng: lngValue });
-      }
-    } else {
-      console.log("Autocomplete is not loaded yet!");
-    }
-  };
-
-  if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center h-full">Loading...</div>
-    );
-  }
 
   return (
     <div className="flex flex-col justify-between flex-1 w-full max-w-lg px-4 pt-4 pb-4">
@@ -149,28 +74,15 @@ const LocationForm = ({
               )}
             </button>
           </div>
-          <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
-            <input
-              type="text"
-              id="location"
-              placeholder="Enter a city, state, or zip code"
-              value={locationInput}
-              onChange={handleLocationChange}
-              className="w-full px-4 py-3 transition-colors border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            />
-          </Autocomplete>
-
-          {mapCenter && (
-            <div className="mt-4">
-              <GoogleMap
-                mapContainerStyle={containerStyle}
-                center={mapCenter}
-                zoom={14}
-              >
-                <MarkerF position={mapCenter} />
-              </GoogleMap>
-            </div>
-          )}
+          
+          <input
+            type="text"
+            id="location"
+            placeholder="Enter a city, state, or zip code"
+            value={locationInput}
+            onChange={handleLocationChange}
+            className="w-full px-4 py-3 transition-colors border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          />
         </div>
       </div>
 
