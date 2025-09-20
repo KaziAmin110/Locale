@@ -37,6 +37,35 @@ export interface Spot {
   distance_km?: number;
 }
 
+export interface SwipeAction {
+  item_id: string;
+  action: 'like' | 'pass';
+}
+
+export interface Match {
+  id: string;
+  type: 'apartment' | 'person' | 'spot';
+  item: Apartment | Person | Spot;
+  matched_at: string;
+}
+
+export interface Message {
+  id: string;
+  sender_id: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface Conversation {
+  conversation_id: string;
+  other_user: {
+    id: string;
+    name: string;
+    image?: string;
+  };
+  messages: Message[];
+}
+
 // Add data source tracking
 interface FeedResponse<T> {
     success: boolean;
@@ -54,13 +83,15 @@ interface FeedResponse<T> {
 class ApiService {
   private static baseURL = 'http://localhost:5002/api';
 
-  private static async makeRequest<T>(endpoint: string): Promise<T> {
+  private static async makeRequest<T>(endpoint: string, method: string = 'GET', body?: any): Promise<T> {
     const token = localStorage.getItem('token');
     const response = await fetch(`${this.baseURL}${endpoint}`, {
+      method,
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      body: body ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
@@ -109,6 +140,42 @@ class ApiService {
         spots: 'error'
       };
     }
+  }
+
+  // Swipe methods
+  static async swipeApartment(action: SwipeAction): Promise<{ success: boolean; match?: boolean }> {
+    return this.makeRequest('/apartments/swipe', 'POST', action);
+  }
+
+  static async swipePerson(action: SwipeAction): Promise<{ success: boolean; match?: boolean }> {
+    return this.makeRequest('/people/swipe', 'POST', action);
+  }
+
+  static async swipeSpot(action: SwipeAction): Promise<{ success: boolean; match?: boolean }> {
+    return this.makeRequest('/spots/swipe', 'POST', action);
+  }
+
+  // Matches methods
+  static async getMatches(): Promise<{ success: boolean; matches: Match[] }> {
+    return this.makeRequest('/matches');
+  }
+
+  // Chat methods
+  static async getConversation(conversationId: string): Promise<{ success: boolean; conversation: Conversation }> {
+    return this.makeRequest(`/chat/conversation/${conversationId}`);
+  }
+
+  static async sendMessage(message: { conversation_id: string; content: string }): Promise<{ success: boolean }> {
+    return this.makeRequest('/chat/send', 'POST', message);
+  }
+
+  // Auth methods
+  static async register(userData: any): Promise<{ success: boolean; token?: string }> {
+    return this.makeRequest('/auth/register', 'POST', userData);
+  }
+
+  static async login(credentials: { email: string; password: string }): Promise<{ success: boolean; token?: string }> {
+    return this.makeRequest('/auth/login', 'POST', credentials);
   }
 }
 

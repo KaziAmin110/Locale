@@ -19,7 +19,7 @@ class Config:
     
     # Places APIs
     GOOGLE_PLACES_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
-    YELPYELP_API_KEY = os.getenv('YELP_API_KEY')
+    YELP_API_KEY = os.getenv('YELP_API_KEY')
     
     # Image APIs
     GENERATED_PHOTOS_API_KEY = os.getenv('GENERATED_PHOTOS_API_KEY')  # For AI faces

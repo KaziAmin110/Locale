@@ -1,19 +1,72 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    if (token && userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+  };
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white text-sm font-bold">C</span>
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3">
+                <span className="text-white text-lg font-bold">C</span>
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">CityMate</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">CityMate</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium">Sign in</button>
-              <button className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium">Get started</button>
+              {user ? (
+                <>
+                  <span className="text-gray-700 font-medium">Welcome, {user.email}</span>
+                  <button 
+                    onClick={() => router.push('/dashboard')}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                  >
+                    Dashboard
+                  </button>
+                  <button 
+                    onClick={handleLogout}
+                    className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => router.push('/login')}
+                    className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
+                  >
+                    Sign in
+                  </button>
+                  <button 
+                    onClick={() => router.push('/onboarding')}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                  >
+                    Get started
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -22,7 +75,16 @@ export default function Home() {
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <div className="mb-8">
+            <Image 
+              src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=400&fit=crop" 
+              alt="Modern city skyline" 
+              width={800} 
+              height={400}
+              className="rounded-2xl shadow-2xl mx-auto mb-8"
+            />
+          </div>
+          <h1 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">
             Find your perfect place
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
@@ -31,37 +93,43 @@ export default function Home() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <button className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-4 rounded-lg text-lg font-medium transition-colors">
+            <button 
+              onClick={() => router.push('/onboarding')}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
               Get Started
             </button>
-            <button className="border border-gray-300 hover:border-gray-400 text-gray-700 px-8 py-4 rounded-lg text-lg font-medium transition-colors">
-              Learn More
+            <button 
+              onClick={() => router.push('/dashboard')}
+              className="border-2 border-gray-300 hover:border-blue-500 text-gray-700 hover:text-blue-600 px-8 py-4 rounded-xl text-lg font-medium transition-all duration-200"
+            >
+              Dashboard
             </button>
           </div>
 
           {/* Status Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-16">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <div className="w-6 h-6 bg-blue-600 rounded"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
+            <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Image src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=64&h=64&fit=crop" alt="AI" width={32} height={32} className="rounded-lg" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Smart Matching</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Smart Matching</h3>
               <p className="text-gray-600">AI-powered recommendations for apartments, roommates, and local spots</p>
             </div>
             
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <div className="w-6 h-6 bg-green-600 rounded"></div>
+            <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Image src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=64&h=64&fit=crop" alt="Verified" width={32} height={32} className="rounded-lg" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Verified Listings</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Verified Listings</h3>
               <p className="text-gray-600">All apartments and spots are verified for accuracy and quality</p>
             </div>
             
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <div className="w-6 h-6 bg-purple-600 rounded"></div>
+            <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Image src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=64&h=64&fit=crop" alt="Community" width={32} height={32} className="rounded-lg" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Community Driven</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Community Driven</h3>
               <p className="text-gray-600">Connect with like-minded people in your area</p>
             </div>
           </div>
