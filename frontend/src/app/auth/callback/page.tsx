@@ -53,7 +53,16 @@ export default function GoogleCallback() {
           }
         } else {
           console.error('Google callback error:', data.error);
-          router.push('/login?error=' + encodeURIComponent(data.error));
+          
+          // Handle specific error cases
+          let errorMessage = data.error;
+          if (data.error.includes('invalid_grant') || data.error.includes('Malformed auth code')) {
+            errorMessage = 'Authorization code expired. Please try signing in again.';
+          } else if (data.error.includes('Failed to create user')) {
+            errorMessage = 'Failed to create user account. Please try again.';
+          }
+          
+          router.push('/login?error=' + encodeURIComponent(errorMessage));
         }
       } catch (err) {
         console.error('Callback error:', err);
