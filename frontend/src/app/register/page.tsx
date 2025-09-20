@@ -1,41 +1,44 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5002/api/auth/google-auth-url?redirect_uri=http://localhost:3000/auth/google/callback');
+      const response = await fetch(
+        "http://localhost:5002/api/auth/google-auth-url?redirect_uri=http://localhost:3000/auth/google/callback"
+      );
       const data = await response.json();
-      
+
       if (data.success) {
         window.location.href = data.auth_url;
       } else {
-        console.error('Failed to get Google auth URL:', data.error);
-        alert('Failed to initiate Google authentication');
+        console.error("Failed to get Google auth URL:", data.error);
+        alert("Failed to initiate Google authentication");
       }
     } catch (error) {
-      console.error('Google OAuth error:', error);
-      alert('Network error. Please try again.');
+      console.error("Google OAuth error:", error);
+      alert("Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -43,39 +46,42 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    setIsLoading(true);
+    setError(null);
+
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
-    setIsLoading(true);
-    
     try {
-      const response = await fetch('http://localhost:5002/api/auth/register', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5002/api/auth/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          password: formData.password
+          password: formData.password,
         }),
       });
 
       const data = await response.json();
 
+      console.log("Registration response:", data);
+
       if (data.success) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        router.push('/onboarding');
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        router.push("/onboarding");
       } else {
-        alert(data.error || 'Registration failed');
+        alert(data.error || "Registration failed");
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      alert('Network error. Please try again.');
+      console.error("Registration error:", error);
+      alert("Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -90,14 +96,19 @@ export default function RegisterPage() {
             <span className="text-white text-2xl font-bold">L</span>
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">Join Locale</h1>
-          <p className="text-white/70 text-lg">Create your account and start exploring</p>
+          <p className="text-white/70 text-lg">
+            Create your account and start exploring
+          </p>
         </div>
 
         {/* Register Form */}
         <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="name" className="block text-white/90 text-sm font-semibold mb-2">
+              <label
+                htmlFor="name"
+                className="block text-white/90 text-sm font-semibold mb-2"
+              >
                 Full Name
               </label>
               <input
@@ -113,7 +124,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-white/90 text-sm font-semibold mb-2">
+              <label
+                htmlFor="email"
+                className="block text-white/90 text-sm font-semibold mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -129,7 +143,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-white/90 text-sm font-semibold mb-2">
+              <label
+                htmlFor="password"
+                className="block text-white/90 text-sm font-semibold mb-2"
+              >
                 Password
               </label>
               <input
@@ -146,7 +163,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-white/90 text-sm font-semibold mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-white/90 text-sm font-semibold mb-2"
+              >
                 Confirm Password
               </label>
               <input
@@ -161,12 +181,16 @@ export default function RegisterPage() {
               />
             </div>
 
+            {error && (
+              <div className="text-red-400 text-sm text-center">{error}</div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-300 shadow-2xl hover:shadow-purple-500/25 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+              {isLoading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 
@@ -177,7 +201,9 @@ export default function RegisterPage() {
                 <div className="w-full border-t border-white/20"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-transparent text-white/70">Or continue with</span>
+                <span className="px-4 bg-transparent text-white/70">
+                  Or continue with
+                </span>
               </div>
             </div>
           </div>
@@ -196,18 +222,18 @@ export default function RegisterPage() {
               className="mr-3"
             />
             <span className="font-semibold">
-              {isLoading ? 'Redirecting...' : 'Continue with Google'}
+              {isLoading ? "Redirecting..." : "Continue with Google"}
             </span>
           </button>
 
           {/* Terms */}
           <div className="text-center mt-6">
             <p className="text-white/60 text-sm">
-              By creating an account, you agree to our{' '}
+              By creating an account, you agree to our{" "}
               <button className="text-purple-300 hover:text-purple-200 underline">
                 Terms of Service
-              </button>{' '}
-              and{' '}
+              </button>{" "}
+              and{" "}
               <button className="text-purple-300 hover:text-purple-200 underline">
                 Privacy Policy
               </button>
@@ -217,9 +243,9 @@ export default function RegisterPage() {
           {/* Sign In Link */}
           <div className="text-center mt-6">
             <p className="text-white/70">
-              Already have an account?{' '}
+              Already have an account?{" "}
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => router.push("/login")}
                 className="text-purple-300 hover:text-purple-200 font-semibold transition-colors"
               >
                 Sign in here
@@ -231,7 +257,7 @@ export default function RegisterPage() {
         {/* Back to Home */}
         <div className="text-center mt-8">
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push("/")}
             className="text-white/70 hover:text-white transition-colors"
           >
             ← Back to Home
