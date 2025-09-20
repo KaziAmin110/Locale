@@ -3,6 +3,30 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Navbar from "../components/Dashboard/Navbar";
+
+// Dummy components for content - replace with your actual card components
+const HomesContent = ({ stats }: { stats: any }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      Apartments: {stats.apartments}
+    </div>
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      Matches: {stats.matches}
+    </div>
+  </div>
+);
+
+const ExperiencesContent = () => (
+  <div className="mt-8 text-center">
+    <p>Experiences Cards Go Here</p>
+  </div>
+);
+const ServicesContent = () => (
+  <div className="mt-8 text-center">
+    <p>Services Cards Go Here</p>
+  </div>
+);
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
@@ -28,6 +52,8 @@ export default function Dashboard() {
   //   loadStats();
   //   setLoading(false);
   // }, [router]);
+
+  const [activeTab, setActiveTab] = useState("Homes");
 
   const loadStats = async () => {
     try {
@@ -72,23 +98,15 @@ export default function Dashboard() {
     }
   };
 
-  // if (loading) {
-  //   return (
-  //     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-  //       <div className="text-center">
-  //         <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-  //           <span className="text-white text-2xl font-bold">C</span>
-  //         </div>
-  //         <p className="text-gray-600">Loading your dashboard...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"></main>
+    <div className="flex flex-col px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
+
+      <div className="mt-6">
+        {activeTab === "Homes" && <HomesContent stats={stats} />}
+        {activeTab === "Experiences" && <ExperiencesContent />}
+        {activeTab === "Services" && <ServicesContent />}
+      </div>
     </div>
   );
 }
