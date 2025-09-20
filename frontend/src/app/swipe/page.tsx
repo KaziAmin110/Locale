@@ -130,7 +130,47 @@ export default function SwipePage() {
 
   useEffect(() => {
     loadItems();
+    detectLocation();
   }, [activeTab]);
+
+  const detectLocation = async () => {
+    try {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            console.log('Location detected:', latitude, longitude);
+            
+            // Update user location in backend
+            const token = localStorage.getItem('token');
+            if (token) {
+              try {
+                await fetch('http://localhost:5002/api/profile/location', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    lat: latitude,
+                    lng: longitude
+                  }),
+                });
+                console.log('Location updated successfully');
+              } catch (error) {
+                console.log('Failed to update location:', error);
+              }
+            }
+          },
+          (error) => {
+            console.log('Location access denied or failed:', error);
+          }
+        );
+      }
+    } catch (error) {
+      console.log('Geolocation not supported:', error);
+    }
+  };
 
   const loadItems = async () => {
     setLoading(true);
@@ -145,11 +185,19 @@ export default function SwipePage() {
         },
       });
       
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.log('Response is not JSON, using fallback data');
+        throw new Error('Non-JSON response');
+      }
+      
       const data = await response.json();
       
       if (data.success && data[activeTab] && data[activeTab].length > 0) {
         setItems(data[activeTab]);
       } else {
+        console.log('API returned no data, using fallback');
         // Use fallback data
         switch (activeTab) {
           case 'apartments':
