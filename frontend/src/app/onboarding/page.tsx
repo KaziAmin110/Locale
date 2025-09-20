@@ -13,6 +13,7 @@ interface OnboardingData {
   interests: string[];
   bio: string;
   looking_for: string[];
+  photos: string[];
 }
 
 const OnboardingPage = () => {
@@ -27,7 +28,8 @@ const OnboardingPage = () => {
     location: '',
     interests: [],
     bio: '',
-    looking_for: []
+    looking_for: [],
+    photos: []
   });
 
   const interestOptions = [
@@ -61,6 +63,32 @@ const OnboardingPage = () => {
     }));
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = e.target?.result as string;
+            setData(prev => ({
+              ...prev,
+              photos: [...prev.photos, result]
+            }));
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setData(prev => ({
+      ...prev,
+      photos: prev.photos.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleSubmit = async () => {
     try {
       const response = await fetch('http://localhost:5002/api/auth/register', {
@@ -71,16 +99,25 @@ const OnboardingPage = () => {
         body: JSON.stringify(data),
       });
 
+      const result = await response.json();
+
       if (response.ok) {
-        const result = await response.json();
         if (result.token) {
           localStorage.setItem('token', result.token);
         }
         router.push('/dashboard');
       } else {
-        console.error('Registration failed');
-        // For demo purposes, still redirect to dashboard
-        router.push('/dashboard');
+        // Handle specific error cases
+        if (result.error === 'User with this email already exists') {
+          // User already exists (probably from Google OAuth), just redirect to dashboard
+          console.log('User already exists, redirecting to dashboard');
+          router.push('/dashboard');
+        } else {
+          console.error('Registration failed:', result.error);
+          // Show error to user but still redirect for demo purposes
+          alert(`Registration failed: ${result.error}`);
+          router.push('/dashboard');
+        }
       }
     } catch (error) {
       console.error('Error:', error);
@@ -90,7 +127,7 @@ const OnboardingPage = () => {
   };
 
   const nextStep = () => {
-    if (step < 4) setStep(step + 1);
+    if (step < 5) setStep(step + 1);
     else handleSubmit();
   };
 
@@ -277,6 +314,57 @@ const OnboardingPage = () => {
         {step === 4 && (
           <div className="space-y-6">
             <div className="text-center">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Add Your Photos</h2>
+              <p className="text-lg text-gray-600">Upload photos to show who you are</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <label htmlFor="photo-upload" className="cursor-pointer">
+                  <div className="text-gray-400 mb-2">
+                    <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600">Click to upload photos</p>
+                  <p className="text-sm text-gray-500 mt-1">PNG, JPG up to 10MB each</p>
+                </label>
+              </div>
+
+              {data.photos.length > 0 && (
+                <div className="grid grid-cols-2 gap-4">
+                  {data.photos.map((photo, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={photo}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <button
+                        onClick={() => removeImage(index)}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className="space-y-6">
+            <div className="text-center">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">What are you looking for?</h2>
               <p className="text-lg text-gray-600">Choose what you want to discover</p>
             </div>
@@ -328,7 +416,7 @@ const OnboardingPage = () => {
             onClick={nextStep}
             className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
-            {step === 4 ? 'Complete Setup' : 'Next'}
+            {step === 5 ? 'Complete Setup' : 'Next'}
           </button>
         </div>
       </main>
