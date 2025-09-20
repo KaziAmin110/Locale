@@ -1,11 +1,25 @@
+'use client';
+
 import Input from "../Form/Input";
+import { useRouter } from "next/navigation";
 
 const SignInForm = () => {
+  const router = useRouter();
+
+  const handleSignIn = () => {
+    // For demo purposes, just redirect to dashboard
+    // In a real app, this would handle actual authentication
+    router.push('/dashboard');
+  };
+
   return (
     <div className="flex flex-col w-full mt-6 items-center justify-center gap-4">
       <Input placeholder="Email" />
       <Input placeholder="Password" />
-      <button className="w-full bg-[#333333] border-b-black text-white p-3 rounded-full mt-4 font-bold hover:cursor-pointer hover:bg-[#444444] hover:border-b-[#333333] transition">
+      <button 
+        onClick={handleSignIn}
+        className="w-full bg-gray-900 hover:bg-gray-800 text-white p-4 rounded-lg mt-4 font-medium hover:cursor-pointer transition-colors"
+      >
         Sign In
       </button>
     </div>

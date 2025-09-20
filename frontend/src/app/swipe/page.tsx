@@ -1,83 +1,46 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import ApiService, { User, Apartment, Person, Spot } from '@/lib/services/api';
+import { useState, useEffect } from 'react';
 import SwipeCard from './components/SwipeCard';
-import TabNavigation from './components/TabNavigation';
-import SwipeControls from './components/SwipeControls';
 import MatchModal from './components/MatchModal';
-import './styles/swipe.css';
+import ApiService from '@/lib/services/api';
+import { Apartment, Person, Spot } from '@/lib/services/api';
 
 type TabType = 'apartments' | 'people' | 'spots';
-type ItemType = Apartment | Person | Spot;
 
 export default function SwipePage() {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('apartments');
-  const [currentItems, setCurrentItems] = useState<ItemType[]>([]);
+  const [currentItems, setCurrentItems] = useState<(Apartment | Person | Spot)[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [matchModal, setMatchModal] = useState<{
-    isOpen: boolean;
-    match: (ItemType & { is_mutual?: boolean }) | null;
-    type: 'apartment' | 'person' | 'spot' | null;
-  }>({
-    isOpen: false,
-    match: null,
-    type: null
-  });
+  const [match, setMatch] = useState<(Apartment | Person | Spot) & { is_mutual?: boolean } | null>(null);
+  const [matchType, setMatchType] = useState<'apartment' | 'person' | 'spot' | null>(null);
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{name: string, city: string} | null>(null);
   const [stats, setStats] = useState({
     apartments: 0,
     people: 0,
     spots: 0
   });
+  const [dataSources, setDataSources] = useState<{
+    apartments: string;
+    people: string;
+    spots: string;
+  }>({
+    apartments: 'loading',
+    people: 'loading',
+    spots: 'loading'
+  });
 
-  // Check authentication and get user
+  // Load user data
   useEffect(() => {
-    const initializeUser = async () => {
-      try {
-        // Check if user is authenticated
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-          router.push('/login');
-          return;
-        }
+    const user = localStorage.getItem('user');
+    if (user) {
+      setCurrentUser(JSON.parse(user));
+    }
+  }, []);
 
-        // Validate token and get user
-        const tokenValid = await ApiService.validateToken();
-        if (!tokenValid.valid) {
-          localStorage.removeItem('auth_token');
-          router.push('/login');
-          return;
-        }
-
-        const userResponse = await ApiService.getCurrentUser();
-        if (!userResponse.success) {
-          router.push('/login');
-          return;
-        }
-
-        const user = userResponse.user;
-        setCurrentUser(user);
-        
-        // Check if user needs onboarding
-        if (!user.city || !user.interests || user.interests.length === 0) {
-          router.push('/onboarding'); // Redirect to your onboarding page
-          return;
-        }
-        
-      } catch (error) {
-        console.error('Failed to initialize user:', error);
-        localStorage.removeItem('auth_token');
-        router.push('/login');
-      }
-    };
-
-    initializeUser();
-  }, [router]);
-
-  // Load items when tab changes or user loads
+  // Load items when tab changes
   useEffect(() => {
     if (currentUser) {
       loadItems(activeTab);
@@ -104,226 +67,135 @@ export default function SwipePage() {
       if (response.success) {
         const items = response[type] || [];
         setCurrentItems(items);
+        setCurrentIndex(0);
+        
+        // Update data source info
+        setDataSources(prev => ({
+          ...prev,
+          [type]: response.data_source || 'unknown'
+        }));
         
         // Update stats
         setStats(prev => ({
           ...prev,
           [type]: items.length
         }));
-      } else {
-        console.error(`Failed to load ${type}:`, response);
-        setCurrentItems([]);
       }
     } catch (error) {
       console.error(`Error loading ${type}:`, error);
       setCurrentItems([]);
-      
-      // If auth error, redirect to login
-      if (error instanceof Error && error.message.includes('auth')) {
-        localStorage.removeItem('auth_token');
-        router.push('/login');
-      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSwipe = async (direction: 'left' | 'right', item?: ItemType) => {
-    if (currentItems.length === 0) return;
-    
-    const currentItem = item || currentItems[0];
-    const newItems = currentItems.slice(1);
-    
-    try {
-      let response;
-      
-      switch (activeTab) {
-        case 'apartments':
-          response = await ApiService.swipeApartment(currentItem.id, direction);
-          break;
-        case 'people':
-          response = await ApiService.swipePerson(currentItem.id, direction);
-          break;
-        case 'spots':
-          response = await ApiService.swipeSpot(currentItem.id, direction);
-          break;
-      }
-
-      if (response.success && direction === 'right' && response.is_match) {
-        // Show match modal
-        setMatchModal({
-          isOpen: true,
-          match: {
-            ...currentItem,
-            is_mutual: response.is_mutual || false
-          },
-          type: activeTab.slice(0, -1) as 'apartment' | 'person' | 'spot'
-        });
-      }
-
-      // Update items list
-      setCurrentItems(newItems);
-      
-      // Load more items if running low
-      if (newItems.length <= 2) {
-        loadItems(activeTab);
-      }
-
-    } catch (error) {
-      console.error('Swipe error:', error);
-      // Still update UI even if API call fails
-      setCurrentItems(newItems);
+  const handleSwipe = (direction: 'left' | 'right') => {
+    if (currentIndex < currentItems.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      // Load more items
+      loadItems(activeTab);
     }
   };
 
-  const handleSwipeLeft = useCallback(() => {
-    handleSwipe('left');
-  }, [currentItems, activeTab]);
-
-  const handleSwipeRight = useCallback(() => {
-    handleSwipe('right');
-  }, [currentItems, activeTab]);
-
-  const handleTabChange = (newTab: TabType) => {
-    setActiveTab(newTab);
-    setCurrentItems([]); // Clear current items
+  const handleMatch = (item: Apartment | Person | Spot, isMutual: boolean = false) => {
+    setMatch({ ...item, is_mutual: isMutual });
+    setMatchType(activeTab === 'apartments' ? 'apartment' : activeTab === 'people' ? 'person' : 'spot');
+    setShowMatchModal(true);
   };
 
-  const closeMatchModal = () => {
-    setMatchModal({ isOpen: false, match: null, type: null });
+  const getDataSourceIcon = (source: string) => {
+    switch (source) {
+      case 'real':
+      case 'rentspree':
+      case 'zillow':
+      case 'google':
+      case 'yelp':
+        return '🟢';
+      case 'mock':
+        return '🟡';
+      case 'loading':
+        return '⏳';
+      default:
+        return '🔴';
+    }
   };
 
-  const handleStartChat = () => {
-    closeMatchModal();
-    // Navigate to chat page - adjust route as needed
-    router.push('/chat');
-  };
-
-  const handleKeepSwiping = () => {
-    closeMatchModal();
-  };
-
-  const renderEmptyState = () => {
-    const emptyMessages = {
-      apartments: {
-        icon: '🏠',
-        title: 'No more apartments',
-        subtitle: 'Check back later for new listings!'
-      },
-      people: {
-        icon: '👥', 
-        title: 'No more people nearby',
-        subtitle: 'Try expanding your search area'
-      },
-      spots: {
-        icon: '📍',
-        title: 'No more places',
-        subtitle: 'You\'ve seen all the spots in your area!'
-      }
-    };
-
-    const message = emptyMessages[activeTab];
-
-    return (
-      <div className="empty-state">
-        <div className="empty-icon">{message.icon}</div>
-        <div className="empty-title">{message.title}</div>
-        <div className="empty-subtitle">{message.subtitle}</div>
-        <button 
-          className="refresh-button"
-          onClick={() => loadItems(activeTab)}
-        >
-          Refresh
-        </button>
-      </div>
-    );
-  };
-
-  const renderLoadingState = () => (
-    <div className="loading-spinner">
-      <div className="spinner"></div>
-      <div>Loading {activeTab}...</div>
-    </div>
-  );
-
-  // Show loading while checking auth
-  if (!currentUser) {
+  if (loading && currentItems.length === 0) {
     return (
       <div className="swipe-page">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <div>Loading your profile...</div>
-        </div>
+        <div className="loading">Loading...</div>
+      </div>
+    );
+  }
+
+  if (currentItems.length === 0) {
+    return (
+      <div className="swipe-page">
+        <div className="no-items">No more items available</div>
       </div>
     );
   }
 
   return (
     <div className="swipe-page">
-      {/* Header with tabs and stats */}
       <div className="swipe-header">
-        <TabNavigation 
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          stats={stats}
-        />
+        <div className="tabs">
+          <button 
+            className={activeTab === 'apartments' ? 'active' : ''}
+            onClick={() => setActiveTab('apartments')}
+          >
+            Apartments {getDataSourceIcon(dataSources.apartments)}
+          </button>
+          <button 
+            className={activeTab === 'people' ? 'active' : ''}
+            onClick={() => setActiveTab('people')}
+          >
+            People {getDataSourceIcon(dataSources.people)}
+          </button>
+          <button 
+            className={activeTab === 'spots' ? 'active' : ''}
+            onClick={() => setActiveTab('spots')}
+          >
+            Spots {getDataSourceIcon(dataSources.spots)}
+          </button>
+        </div>
         
-        <div className="swipe-stats">
-          <div className="stat-item">
-            <span className="stat-number">{stats[activeTab]}</span>
-            <span>Available</span>
+        <div className="stats">
+          <div className="stat">
+            <span className="number">{stats[activeTab]}</span>
+            <span className="label">Available</span>
           </div>
-          <div className="stat-item">
-            <span className="stat-number">{currentUser.name}</span>
-            <span>Welcome back!</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">{currentUser.city}</span>
-            <span>Your city</span>
+          <div className="stat">
+            <span className="number">{currentIndex + 1}</span>
+            <span className="label">Current</span>
           </div>
         </div>
       </div>
 
-      {/* Main swipe container */}
       <div className="swipe-container">
-        {loading ? (
-          renderLoadingState()
-        ) : currentItems.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          <div className="swipe-stack">
-            {currentItems.slice(0, 3).map((item, index) => (
-              <SwipeCard
-                key={`${item.id}-${index}`}
-                item={item}
-                type={activeTab.slice(0, -1) as 'apartment' | 'person' | 'spot'}
-                onSwipeLeft={index === 0 ? handleSwipeLeft : () => {}}
-                onSwipeRight={index === 0 ? handleSwipeRight : () => {}}
-                isTopCard={index === 0}
-              />
-            ))}
-          </div>
-        )}
+        <SwipeCard
+          item={currentItems[currentIndex]}
+          type={activeTab === 'apartments' ? 'apartment' : activeTab === 'people' ? 'person' : 'spot'}
+          onSwipeLeft={() => handleSwipe('left')}
+          onSwipeRight={() => handleSwipe('right')}
+          isTopCard={true}
+        />
       </div>
 
-      {/* Control buttons */}
-      {currentItems.length > 0 && (
-        <SwipeControls
-          onPass={handleSwipeLeft}
-          onLike={handleSwipeRight}
-          onSuperLike={handleSwipeRight} // Same as like for now
-          disabled={loading}
-        />
-      )}
-
-      {/* Match modal */}
       <MatchModal
-        isOpen={matchModal.isOpen}
-        match={matchModal.match}
-        type={matchModal.type}
-        onClose={closeMatchModal}
-        onStartChat={handleStartChat}
-        onKeepSwiping={handleKeepSwiping}
+        isOpen={showMatchModal}
+        match={match}
+        type={matchType}
+        onClose={() => setShowMatchModal(false)}
+        onStartChat={() => {
+          setShowMatchModal(false);
+          // Navigate to chat
+        }}
+        onKeepSwiping={() => {
+          setShowMatchModal(false);
+          handleSwipe('right');
+        }}
       />
     </div>
   );

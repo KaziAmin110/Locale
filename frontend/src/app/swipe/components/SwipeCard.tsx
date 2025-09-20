@@ -49,8 +49,8 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
           <>
             <div className="card-image">
               <Image
-                src={apartment.photos?.[0] || '/api/placeholder/400/300'}
-                alt={apartment.title}
+                src={apartment.images?.[0] || '/api/placeholder/400/300'}
+                alt={apartment.address}
                 fill
                 style={{ objectFit: 'cover' }}
                 onError={(e) => {
@@ -61,7 +61,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
             </div>
             <div className="card-content">
               <div>
-                <h3 className="card-title">{apartment.title}</h3>
+                <h3 className="card-title">{apartment.address}</h3>
                 <p className="card-subtitle">
                   ${apartment.price}/month • {apartment.bedrooms}BR/{apartment.bathrooms}BA
                 </p>
@@ -84,7 +84,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
           <>
             <div className="card-image">
               <Image
-                src={person.photos?.[0] || '/api/placeholder/400/400'}
+                src={person.images?.[0] || '/api/placeholder/400/400'}
                 alt={person.name}
                 fill
                 style={{ objectFit: 'cover' }}
@@ -114,7 +114,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
           <>
             <div className="card-image">
               <Image
-                src={spot.photos?.[0] || '/api/placeholder/600/400'}
+                src={spot.images?.[0] || '/api/placeholder/600/400'}
                 alt={spot.name}
                 fill
                 style={{ objectFit: 'cover' }}
@@ -131,12 +131,9 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
                   {spot.category?.replace('_', ' ')} • ⭐ {spot.rating}
                 </p>
                 <div className="card-details">
-                  <span className="detail-tag">💰 {'$'.repeat(spot.price_level || 1)}</span>
+                  <span className="detail-tag">⭐ {spot.rating}/5</span>
                   <span className="detail-tag">📍 {spot.address}</span>
                 </div>
-                <p style={{ fontSize: '14px', color: '#666', marginTop: '8px' }}>
-                  {spot.description}
-                </p>
               </div>
             </div>
           </>

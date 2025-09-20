@@ -8,7 +8,8 @@ interface MatchModalProps {
   match: (Apartment | Person | Spot) & { is_mutual?: boolean } | null;
   type: 'apartment' | 'person' | 'spot' | null;
   onClose: () => void;
-  onStartChat: () => void;onKeepSwiping: () => void;
+  onStartChat: () => void;
+  onKeepSwiping: () => void;
 }
 
 const MatchModal: React.FC<MatchModalProps> = ({ 
@@ -68,7 +69,7 @@ const MatchModal: React.FC<MatchModalProps> = ({
   const getName = () => {
     switch (type) {
       case 'apartment':
-        return (match as Apartment).title;
+        return (match as Apartment).address;
       case 'person':
         return (match as Person).name;
       case 'spot':
@@ -89,10 +90,10 @@ const MatchModal: React.FC<MatchModalProps> = ({
           {getMatchMessage()}
         </div>
         
-        {match.photos && match.photos[0] && (
+        {match.images && match.images[0] && (
           <div style={{ position: 'relative', width: '100px', height: '100px', margin: '16px auto' }}>
             <Image
-              src={match.photos[0]} 
+              src={match.images[0]} 
               alt={getName()}
               fill
               style={{ 
