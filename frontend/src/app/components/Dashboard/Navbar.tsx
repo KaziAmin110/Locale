@@ -7,7 +7,7 @@ const Navbar = () => {
     <div className="flex justify-between items-center w-full px-6 py-4">
       <Image src={"/logo.svg"} alt="Logo" width={120} height={120} />
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-6">
         <NavButton imageSrc="/homes.png" text="Homes" isSelected={true} />
         <NavButton imageSrc="/balloon.png" text="Experiences" />
         <NavButton imageSrc="/services.png" text="Services" />
