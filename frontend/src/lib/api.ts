@@ -1,5 +1,4 @@
-// lib/api.ts - Updated API service to match your backend
-
+// lib/api.ts - Clean API service for your Flask backend
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'
 
 // Types
@@ -63,7 +62,7 @@ class ApiServiceClass {
   }
 
   private async request(endpoint: string, options: RequestInit = {}) {
-    const url = `${API_BASE}${endpoint}`
+    const url = `${API_BASE}/api${endpoint}`
     const config = {
       headers: this.getAuthHeaders(),
       ...options
@@ -216,10 +215,10 @@ export const ApiService = new ApiServiceClass()
 // Debug function to test API connectivity
 export const testApiConnection = async () => {
   try {
-    const response = await fetch(`${API_BASE}/auth/test-db`)
+    const response = await fetch(`${API_BASE}/api/health`)
     const data = await response.json()
     console.log('API Connection Test:', data)
-    return data.success
+    return data.status === 'healthy'
   } catch (error) {
     console.error('API Connection Failed:', error)
     return false

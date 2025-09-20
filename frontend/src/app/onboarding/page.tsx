@@ -82,13 +82,16 @@ const OnboardingPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <div className="flex flex-col items-center w-full min-h-screen p-4">
-        <ProgressBar currentStep={currentStep} setCurrentStep={setCurrentStep} />
-        
-        <div className="mt-8 w-full max-w-lg">
+        <ProgressBar
+          currentStep={currentStep}
+          setCurrentStep={setCurrentStep}
+        />
+
+        <div className="w-full max-w-lg mt-8">
           <QuestionDisplay currentStep={currentStep} />
         </div>
 
-        <div className="w-full flex-1 flex flex-col justify-center items-center">
+        <div className="flex flex-col items-center justify-center flex-1 w-full">
           {currentStep === 1 && (
             <UserInfoForm
               name={formData.name}
@@ -106,7 +109,6 @@ const OnboardingPage = () => {
           )}
           {currentStep === 3 && (
             <LocationForm
-              location={formData.location}
               updateFormData={updateFormData}
               setCurrentStep={setCurrentStep}
             />
