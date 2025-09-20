@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, redirect
 from flask_jwt_extended import create_access_token
 from services.supabase_client import SupabaseService
 from services.google_auth import GoogleAuthService
+from config import Config
 import uuid
 import hashlib
 import requests
@@ -144,8 +145,8 @@ def google_callback():
         # Exchange code for tokens
         token_url = 'https://oauth2.googleapis.com/token'
         token_data = {
-            'client_id': '681585656744-i630vm4s4kpf36n4ml88j54vgpqapnu0.apps.googleusercontent.com',
-            'client_secret': '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',
+            'client_id': Config.GOOGLE_CLIENT_ID,
+            'client_secret': Config.GOOGLE_CLIENT_SECRET,
             'code': code,
             'grant_type': 'authorization_code',
             'redirect_uri': redirect_uri
