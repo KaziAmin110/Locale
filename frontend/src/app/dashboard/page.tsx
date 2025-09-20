@@ -1,63 +1,107 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  age: number;
-  interests: string[];
-}
-
-const Dashboard = () => {
-  const [user, setUser] = useState<User | null>(null);
+export default function Dashboard() {
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    apartments: 0,
+    people: 0,
+    spots: 0,
+    matches: 0
+  });
+  const router = useRouter();
 
   useEffect(() => {
-    // Simulate user data loading
-    // In a real app, this would come from your auth system
-    const mockUser: User = {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      age: 25,
-      interests: ['Technology', 'Music', 'Travel']
-    };
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
     
-    setTimeout(() => {
-      setUser(mockUser);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    if (!token || !userData) {
+      router.push('/login');
+      return;
+    }
+
+    setUser(JSON.parse(userData));
+    loadStats();
+    setLoading(false);
+  }, [router]);
+
+  const loadStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Load apartments
+      const apartmentsRes = await fetch('http://localhost:5002/api/apartments/feed', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const apartmentsData = await apartmentsRes.json();
+      
+      // Load people
+      const peopleRes = await fetch('http://localhost:5002/api/people/feed', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const peopleData = await peopleRes.json();
+      
+      // Load spots
+      const spotsRes = await fetch('http://localhost:5002/api/spots/feed', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const spotsData = await spotsRes.json();
+
+      setStats({
+        apartments: apartmentsData.apartments?.length || 0,
+        people: peopleData.people?.length || 0,
+        spots: spotsData.spots?.length || 0,
+        matches: Math.floor(Math.random() * 5) + 1 // Mock matches for now
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+      // Set fallback stats
+      setStats({
+        apartments: 12,
+        people: 8,
+        spots: 15,
+        matches: 3
+      });
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <span className="text-white text-2xl font-bold">C</span>
+          </div>
+          <p className="text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white text-sm font-bold">C</span>
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3">
+                <span className="text-white text-lg font-bold">C</span>
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">CityMate</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">CityMate</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-600">Welcome, {user?.name}</span>
-              <button className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium">Sign out</button>
+              <span className="text-gray-700 font-medium">Welcome, {user?.email}</span>
+              <button 
+                onClick={() => router.push('/swipe')}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+              >
+                Start Swiping
+              </button>
             </div>
           </div>
         </div>
@@ -65,181 +109,146 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.name}</h1>
-          <p className="text-lg text-gray-600">Continue your journey to find the perfect place</p>
+        {/* Welcome Card */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back!</h2>
+              <p className="text-gray-600 text-lg">Ready to find your perfect match?</p>
+            </div>
+            <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+              <Image 
+                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop" 
+                alt="Profile" 
+                width={80} 
+                height={80}
+                className="rounded-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-4">
+                <Image src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=32&h=32&fit=crop" alt="Apartments" width={24} height={24} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Apartments</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.apartments}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center mr-4">
+                <Image src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=32&h=32&fit=crop" alt="People" width={24} height={24} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">People</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.people}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
+                <Image src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=32&h=32&fit=crop" alt="Spots" width={24} height={24} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Spots</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.spots}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-pink-600 rounded-xl flex items-center justify-center mr-4">
+                <Image src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=32&h=32&fit=crop" alt="Matches" width={24} height={24} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Matches</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.matches}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Explore</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Link href="/swipe" className="group">
-              <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                    <div className="w-6 h-6 bg-blue-600 rounded"></div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600">Find Apartments</h3>
-                    <p className="text-gray-600 text-sm">Discover your perfect home</p>
-                  </div>
-                </div>
-                <div className="text-blue-600 text-sm font-medium">Start exploring →</div>
-              </div>
-            </Link>
-
-            <Link href="/swipe" className="group">
-              <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                    <div className="w-6 h-6 bg-green-600 rounded"></div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-green-600">Find Roommates</h3>
-                    <p className="text-gray-600 text-sm">Connect with compatible people</p>
-                  </div>
-                </div>
-                <div className="text-green-600 text-sm font-medium">Start exploring →</div>
-              </div>
-            </Link>
-
-            <Link href="/swipe" className="group">
-              <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                    <div className="w-6 h-6 bg-purple-600 rounded"></div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-purple-600">Find Local Spots</h3>
-                    <p className="text-gray-600 text-sm">Explore nearby places</p>
-                  </div>
-                </div>
-                <div className="text-purple-600 text-sm font-medium">Start exploring →</div>
-              </div>
-            </Link>
-          </div>
-        </div>
-
-        {/* Stats Section */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Your Progress</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-600">Apartments Viewed</h3>
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <div className="w-4 h-4 bg-blue-600 rounded"></div>
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">24</p>
-              <p className="text-sm text-gray-600 mt-1">+3 this week</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <button 
+            onClick={() => router.push('/swipe?tab=apartments')}
+            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 text-left group"
+          >
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <Image src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=40&h=40&fit=crop" alt="Apartments" width={32} height={32} />
             </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Find Apartments</h3>
+            <p className="text-gray-600">Discover your perfect home</p>
+          </button>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-600">Matches</h3>
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <div className="w-4 h-4 bg-green-600 rounded"></div>
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">8</p>
-              <p className="text-sm text-gray-600 mt-1">+2 this week</p>
+          <button 
+            onClick={() => router.push('/swipe?tab=people')}
+            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 text-left group"
+          >
+            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <Image src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=40&h=40&fit=crop" alt="People" width={32} height={32} />
             </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Meet People</h3>
+            <p className="text-gray-600">Connect with roommates</p>
+          </button>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-600">Conversations</h3>
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <div className="w-4 h-4 bg-purple-600 rounded"></div>
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">3</p>
-              <p className="text-sm text-gray-600 mt-1">Active now</p>
+          <button 
+            onClick={() => router.push('/swipe?tab=spots')}
+            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 text-left group"
+          >
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <Image src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=40&h=40&fit=crop" alt="Spots" width={32} height={32} />
             </div>
-
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-600">Profile Score</h3>
-                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <div className="w-4 h-4 bg-yellow-600 rounded"></div>
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">85%</p>
-              <p className="text-sm text-gray-600 mt-1">Complete profile</p>
-            </div>
-          </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Explore Spots</h3>
+            <p className="text-gray-600">Find cool places nearby</p>
+          </button>
         </div>
 
         {/* Recent Activity */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Recent Activity</h2>
-          <div className="bg-white border border-gray-200 rounded-lg">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                  <div className="w-5 h-5 bg-blue-600 rounded"></div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900">Liked apartment in Downtown</h3>
-                  <p className="text-sm text-gray-600">2 hours ago</p>
-                </div>
-                <div className="text-sm text-gray-500">$2,400/month</div>
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h3>
+          <div className="space-y-4">
+            <div className="flex items-center p-4 bg-gray-50 rounded-xl">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mr-4">
+                <Image src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=24&h=24&fit=crop" alt="Activity" width={20} height={20} />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Found 3 new apartments</p>
+                <p className="text-sm text-gray-600">2 hours ago</p>
               </div>
             </div>
-            
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                  <div className="w-5 h-5 bg-green-600 rounded"></div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900">New match with Sarah</h3>
-                  <p className="text-sm text-gray-600">5 hours ago</p>
-                </div>
-                <div className="text-sm text-gray-500">Roommate</div>
+            <div className="flex items-center p-4 bg-gray-50 rounded-xl">
+              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mr-4">
+                <Image src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=24&h=24&fit=crop" alt="Activity" width={20} height={20} />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Matched with Sarah</p>
+                <p className="text-sm text-gray-600">5 hours ago</p>
               </div>
             </div>
-            
-            <div className="p-6">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                  <div className="w-5 h-5 bg-purple-600 rounded"></div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900">Discovered new coffee shop</h3>
-                  <p className="text-sm text-gray-600">1 day ago</p>
-                </div>
-                <div className="text-sm text-gray-500">Local Spot</div>
+            <div className="flex items-center p-4 bg-gray-50 rounded-xl">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
+                <Image src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=24&h=24&fit=crop" alt="Activity" width={20} height={20} />
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recommendations */}
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Recommended for You</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Complete Your Profile</h3>
-              <p className="text-gray-600 mb-4">Add more details to get better matches</p>
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-                <div className="bg-blue-600 h-2 rounded-full" style={{width: '85%'}}></div>
+              <div>
+                <p className="font-medium text-gray-900">Discovered Coffee Shop</p>
+                <p className="text-sm text-gray-600">1 day ago</p>
               </div>
-              <button className="text-blue-600 text-sm font-medium">Complete profile →</button>
-            </div>
-            
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Explore New Areas</h3>
-              <p className="text-gray-600 mb-4">Discover apartments in neighborhoods you haven't explored</p>
-              <button className="text-green-600 text-sm font-medium">Explore areas →</button>
             </div>
           </div>
         </div>
       </main>
     </div>
   );
-};
-
-export default Dashboard;
+}

@@ -17,11 +17,11 @@ def get_apartment_feed():
         user_id = get_jwt_identity()
         
         # Get user data
-        user_data = SupabaseService.get_data('users', {'id': user_id})
-        if not user_data['success'] or not user_data['data']:
+        user_result = SupabaseService.get_data('users', {'id': user_id})
+        if not user_result['success'] or not user_result['data']:
             return jsonify({"error": "User not found"}), 404
         
-        user = user_data['data'][0]
+        user = user_result['data'][0]
         
         # Extract city and state
         city_parts = user['city'].split(',') if user['city'] else ['Austin', 'TX']
@@ -109,8 +109,59 @@ def get_apartment_feed():
 @apartments_bp.route('/swipe', methods=['POST'])
 @jwt_required()
 def record_apartment_swipe():
-    # Keep existing code exactly as is
-    pass
+    """Record apartment swipe action"""
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        apartment_id = data.get('item_id')
+        action = data.get('action')  # 'like' or 'pass'
+        
+        if not apartment_id or not action:
+            return jsonify({'success': False, 'error': 'Missing apartment_id or action'}), 400
+        
+        # Record the swipe
+        swipe_data = {
+            'id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'apartment_id': apartment_id,
+            'action': action,
+            'created_at': 'now()'
+        }
+        
+        result = SupabaseService.insert_data('apartment_swipes', swipe_data)
+        if not result['success']:
+            return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500
+        
+        # Check for match if liked
+        if action == 'like':
+            # For demo purposes, simulate a match
+            is_match = True  # In real app, check if apartment owner also liked user
+            
+            if is_match:
+                # Create match record
+                match_data = {
+                    'id': str(uuid.uuid4()),
+                    'user_id': user_id,
+                    'apartment_id': apartment_id,
+                    'created_at': 'now()'
+                }
+                SupabaseService.insert_data('apartment_matches', match_data)
+                
+                return jsonify({
+                    'success': True,
+                    'match': True,
+                    'message': 'It\'s a match!'
+                }), 200
+        
+        return jsonify({
+            'success': True,
+            'match': False,
+            'message': 'Swipe recorded'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @apartments_bp.route('/matches', methods=['GET'])
 @jwt_required()
