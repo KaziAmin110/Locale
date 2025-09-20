@@ -16,7 +16,7 @@ def register():
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['name', 'email', 'age', 'location', 'budget_min', 'budget_max', 'interests']
+        required_fields = ['name', 'email', 'password']
         for field in required_fields:
             if field not in data:
                 return jsonify({'success': False, 'error': f'Missing field: {field}'}), 400
@@ -35,18 +35,11 @@ def register():
             'id': user_id,
             'name': data['name'],
             'email': data['email'],
-            'age': data['age'],
-            'city': data['location'],
-            'budget_min': data['budget_min'],
-            'budget_max': data['budget_max'],
-            'interests': data['interests'],
-            'bio': data.get('bio', ''),
-            'onboarding_complete': True,
-            'created_at': 'now()'
         }
         
         # Save user to database
         result = SupabaseService.insert_data('users', user_data)
+
         if not result['success']:
             return jsonify({'success': False, 'error': 'Failed to create user'}), 500
         
