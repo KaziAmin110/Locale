@@ -1,8 +1,7 @@
-<<<<<<< HEAD
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface FormData {
   name: string;
@@ -16,81 +15,96 @@ interface FormData {
 }
 
 const INTERESTS = [
-  'Food & Dining', 'Fitness & Sports', 'Art & Culture', 'Music & Nightlife',
-  'Travel & Adventure', 'Technology', 'Photography', 'Reading',
-  'Gaming', 'Outdoor Activities', 'Movies & TV', 'Cooking',
-  'Coffee & Tea', 'Wine & Cocktails', 'Fashion', 'Pets'
+  "Food & Dining",
+  "Fitness & Sports",
+  "Art & Culture",
+  "Music & Nightlife",
+  "Travel & Adventure",
+  "Technology",
+  "Photography",
+  "Reading",
+  "Gaming",
+  "Outdoor Activities",
+  "Movies & TV",
+  "Cooking",
+  "Coffee & Tea",
+  "Wine & Cocktails",
+  "Fashion",
+  "Pets",
 ];
 
 const LOOKING_FOR_OPTIONS = [
-  'Apartment hunting', 'Finding roommates', 'Exploring local spots', 'All of the above'
+  "Apartment hunting",
+  "Finding roommates",
+  "Exploring local spots",
+  "All of the above",
 ];
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    age: '',
-    location: '',
-    budgetMin: '',
-    budgetMax: '',
-    bedrooms: '',
+    name: "",
+    age: "",
+    location: "",
+    budgetMin: "",
+    budgetMax: "",
+    bedrooms: "",
     interests: [],
-    lookingFor: ''
+    lookingFor: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateFormData = (field: keyof FormData, value: string | string[]) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleInterestToggle = (interest: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       interests: prev.interests.includes(interest)
-        ? prev.interests.filter(i => i !== interest)
-        : [...prev.interests, interest]
+        ? prev.interests.filter((i) => i !== interest)
+        : [...prev.interests, interest],
     }));
   };
 
   const handleNext = () => {
     if (currentStep < 4) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep((prev) => prev - 1);
     }
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5002/api/onboarding', {
-        method: 'POST',
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5002/api/onboarding", {
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        router.push('/dashboard');
+        router.push("/dashboard");
       } else {
-        console.error('Onboarding failed');
-        router.push('/dashboard'); // Continue anyway for demo
+        console.error("Onboarding failed");
+        router.push("/dashboard"); // Continue anyway for demo
       }
     } catch (error) {
-      console.error('Error during onboarding:', error);
-      router.push('/dashboard'); // Continue anyway for demo
+      console.error("Error during onboarding:", error);
+      router.push("/dashboard"); // Continue anyway for demo
     } finally {
       setIsSubmitting(false);
     }
@@ -105,21 +119,29 @@ export default function OnboardingPage() {
       case 3:
         return formData.interests.length >= 3;
       case 4:
-        return formData.budgetMin.trim() && formData.budgetMax.trim() && formData.bedrooms.trim() && formData.lookingFor.trim();
+        return (
+          formData.budgetMin.trim() &&
+          formData.budgetMax.trim() &&
+          formData.bedrooms.trim() &&
+          formData.lookingFor.trim()
+        );
       default:
         return false;
     }
   };
 
-  
   const renderStep = () => {
     switch (currentStep) {
       case 1:
         return (
           <div className="space-y-8">
             <div className="text-center mb-8">
-              <h2 className="text-4xl font-bold text-white mb-4">Tell us about yourself</h2>
-              <p className="text-white/70 text-xl">Let's start with the basics</p>
+              <h2 className="text-4xl font-bold text-white mb-4">
+                Tell us about yourself
+              </h2>
+              <p className="text-white/70 text-xl">
+                Let's start with the basics
+              </p>
             </div>
 
             <div className="space-y-6">
@@ -130,7 +152,7 @@ export default function OnboardingPage() {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => updateFormData('name', e.target.value)}
+                  onChange={(e) => updateFormData("name", e.target.value)}
                   placeholder="Enter your full name"
                   className="w-full px-6 py-4 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-lg"
                 />
@@ -143,7 +165,7 @@ export default function OnboardingPage() {
                 <input
                   type="number"
                   value={formData.age}
-                  onChange={(e) => updateFormData('age', e.target.value)}
+                  onChange={(e) => updateFormData("age", e.target.value)}
                   placeholder="Enter your age"
                   min="18"
                   max="100"
@@ -158,8 +180,12 @@ export default function OnboardingPage() {
         return (
           <div className="space-y-8">
             <div className="text-center mb-8">
-              <h2 className="text-4xl font-bold text-white mb-4">Where are you looking?</h2>
-              <p className="text-white/70 text-xl">Help us find the perfect location for you</p>
+              <h2 className="text-4xl font-bold text-white mb-4">
+                Where are you looking?
+              </h2>
+              <p className="text-white/70 text-xl">
+                Help us find the perfect location for you
+              </p>
             </div>
 
             <div>
@@ -169,7 +195,7 @@ export default function OnboardingPage() {
               <input
                 type="text"
                 value={formData.location}
-                onChange={(e) => updateFormData('location', e.target.value)}
+                onChange={(e) => updateFormData("location", e.target.value)}
                 placeholder="e.g., San Francisco, CA or Downtown Seattle"
                 className="w-full px-6 py-4 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-lg"
               />
@@ -181,8 +207,12 @@ export default function OnboardingPage() {
                   <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <span className="text-white text-2xl">🏙️</span>
                   </div>
-                  <h3 className="text-white font-semibold mb-2">Urban Living</h3>
-                  <p className="text-white/70 text-sm">City center, walkable, vibrant</p>
+                  <h3 className="text-white font-semibold mb-2">
+                    Urban Living
+                  </h3>
+                  <p className="text-white/70 text-sm">
+                    City center, walkable, vibrant
+                  </p>
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
@@ -191,7 +221,9 @@ export default function OnboardingPage() {
                     <span className="text-white text-2xl">🌳</span>
                   </div>
                   <h3 className="text-white font-semibold mb-2">Suburban</h3>
-                  <p className="text-white/70 text-sm">Quiet, spacious, family-friendly</p>
+                  <p className="text-white/70 text-sm">
+                    Quiet, spacious, family-friendly
+                  </p>
                 </div>
               </div>
             </div>
@@ -202,8 +234,12 @@ export default function OnboardingPage() {
         return (
           <div className="space-y-8">
             <div className="text-center mb-8">
-              <h2 className="text-4xl font-bold text-white mb-4">What are your interests?</h2>
-              <p className="text-white/70 text-xl">Select at least 3 interests that describe you</p>
+              <h2 className="text-4xl font-bold text-white mb-4">
+                What are your interests?
+              </h2>
+              <p className="text-white/70 text-xl">
+                Select at least 3 interests that describe you
+              </p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -213,8 +249,8 @@ export default function OnboardingPage() {
                   onClick={() => handleInterestToggle(interest)}
                   className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
                     formData.interests.includes(interest)
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-transparent text-white'
-                      : 'bg-white/10 backdrop-blur-sm border-white/20 text-white/70 hover:bg-white/20'
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 border-transparent text-white"
+                      : "bg-white/10 backdrop-blur-sm border-white/20 text-white/70 hover:bg-white/20"
                   }`}
                 >
                   <span className="text-sm font-medium">{interest}</span>
@@ -234,8 +270,12 @@ export default function OnboardingPage() {
         return (
           <div className="space-y-8">
             <div className="text-center mb-8">
-              <h2 className="text-4xl font-bold text-white mb-4">Budget & Preferences</h2>
-              <p className="text-white/70 text-xl">Help us find the perfect match for your needs</p>
+              <h2 className="text-4xl font-bold text-white mb-4">
+                Budget & Preferences
+              </h2>
+              <p className="text-white/70 text-xl">
+                Help us find the perfect match for your needs
+              </p>
             </div>
 
             <div className="space-y-6">
@@ -248,7 +288,9 @@ export default function OnboardingPage() {
                     <input
                       type="number"
                       value={formData.budgetMin}
-                      onChange={(e) => updateFormData('budgetMin', e.target.value)}
+                      onChange={(e) =>
+                        updateFormData("budgetMin", e.target.value)
+                      }
                       placeholder="Min ($)"
                       className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
                     />
@@ -257,7 +299,9 @@ export default function OnboardingPage() {
                     <input
                       type="number"
                       value={formData.budgetMax}
-                      onChange={(e) => updateFormData('budgetMax', e.target.value)}
+                      onChange={(e) =>
+                        updateFormData("budgetMax", e.target.value)
+                      }
                       placeholder="Max ($)"
                       className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
                     />
@@ -270,14 +314,14 @@ export default function OnboardingPage() {
                   Preferred Bedrooms
                 </label>
                 <div className="grid grid-cols-3 gap-4">
-                  {['Studio', '1 Bedroom', '2+ Bedrooms'].map((option) => (
+                  {["Studio", "1 Bedroom", "2+ Bedrooms"].map((option) => (
                     <button
                       key={option}
-                      onClick={() => updateFormData('bedrooms', option)}
+                      onClick={() => updateFormData("bedrooms", option)}
                       className={`p-4 rounded-xl border-2 transition-all duration-300 ${
                         formData.bedrooms === option
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-transparent text-white'
-                          : 'bg-white/10 backdrop-blur-sm border-white/20 text-white/70 hover:bg-white/20'
+                          ? "bg-gradient-to-r from-purple-500 to-pink-500 border-transparent text-white"
+                          : "bg-white/10 backdrop-blur-sm border-white/20 text-white/70 hover:bg-white/20"
                       }`}
                     >
                       <span className="font-medium">{option}</span>
@@ -294,11 +338,11 @@ export default function OnboardingPage() {
                   {LOOKING_FOR_OPTIONS.map((option) => (
                     <button
                       key={option}
-                      onClick={() => updateFormData('lookingFor', option)}
+                      onClick={() => updateFormData("lookingFor", option)}
                       className={`w-full p-4 rounded-xl border-2 transition-all duration-300 text-left ${
                         formData.lookingFor === option
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-transparent text-white'
-                          : 'bg-white/10 backdrop-blur-sm border-white/20 text-white/70 hover:bg-white/20'
+                          ? "bg-gradient-to-r from-purple-500 to-pink-500 border-transparent text-white"
+                          : "bg-white/10 backdrop-blur-sm border-white/20 text-white/70 hover:bg-white/20"
                       }`}
                     >
                       <span className="font-medium">{option}</span>
@@ -321,8 +365,12 @@ export default function OnboardingPage() {
         {/* Progress Bar */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-white/70 text-sm">Step {currentStep} of 4</span>
-            <span className="text-white/70 text-sm">{Math.round((currentStep / 4) * 100)}%</span>
+            <span className="text-white/70 text-sm">
+              Step {currentStep} of 4
+            </span>
+            <span className="text-white/70 text-sm">
+              {Math.round((currentStep / 4) * 100)}%
+            </span>
           </div>
           <div className="w-full bg-white/20 rounded-full h-2">
             <div
@@ -361,7 +409,7 @@ export default function OnboardingPage() {
               disabled={!isStepValid() || isSubmitting}
               className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-2xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl hover:shadow-purple-500/25 transform hover:scale-105"
             >
-              {isSubmitting ? 'Creating Profile...' : 'Complete Setup'}
+              {isSubmitting ? "Creating Profile..." : "Complete Setup"}
             </button>
           )}
         </div>
