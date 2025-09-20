@@ -12,7 +12,7 @@ export default function GoogleAuth() {
     setLoading(true);
     try {
       // Get Google OAuth URL from backend
-      const response = await fetch('http://localhost:5002/api/auth/google-auth-url?redirect_uri=http://localhost:3000');
+      const response = await fetch('http://localhost:5002/api/auth/google-auth-url?redirect_uri=http://localhost:3000/auth/callback');
       const data = await response.json();
       
       if (data.success) {

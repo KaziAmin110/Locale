@@ -62,6 +62,34 @@ class GoogleAuthService:
             return {"success": False, "error": str(e)}
     
     @staticmethod
+    def exchange_code_for_token(code, redirect_uri):
+        """Exchange authorization code for access token"""
+        try:
+            token_url = 'https://oauth2.googleapis.com/token'
+            token_data = {
+                'client_id': Config.GOOGLE_CLIENT_ID,
+                'client_secret': Config.GOOGLE_CLIENT_SECRET,
+                'code': code,
+                'grant_type': 'authorization_code',
+                'redirect_uri': redirect_uri
+            }
+            
+            response = requests.post(token_url, data=token_data)
+            
+            if response.status_code == 200:
+                token_response = response.json()
+                return {
+                    "success": True,
+                    "access_token": token_response.get('access_token'),
+                    "id_token": token_response.get('id_token')
+                }
+            else:
+                return {"success": False, "error": f"Failed to get access token: {response.text}"}
+                
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    @staticmethod
     def get_google_auth_url(redirect_uri):
         """Generate Google OAuth URL"""
         base_url = "https://accounts.google.com/o/oauth2/v2/auth"

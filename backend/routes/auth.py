@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, redirect
 from flask_jwt_extended import create_access_token
 from services.supabase_client import SupabaseService
 from services.google_auth import GoogleAuthService
+from config import Config
 import uuid
 import hashlib
 import requests
@@ -142,23 +143,15 @@ def google_callback():
             return jsonify({'success': False, 'error': 'Authorization code required'}), 400
         
         # Exchange code for tokens
-        token_url = 'https://oauth2.googleapis.com/token'
-        token_data = {
-            'client_id': '681585656744-i630vm4s4kpf36n4ml88j54vgpqapnu0.apps.googleusercontent.com',
-            'client_secret': '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',
-            'code': code,
-            'grant_type': 'authorization_code',
-            'redirect_uri': redirect_uri
-        }
+        token_result = GoogleAuthService.exchange_code_for_token(code, redirect_uri)
         
-        token_response = requests.post(token_url, data=token_data)
-        token_info = token_response.json()
+        if not token_result['success']:
+            return jsonify({'success': False, 'error': token_result['error']}), 400
         
-        if 'access_token' not in token_info:
-            return jsonify({'success': False, 'error': 'Failed to get access token'}), 400
+        access_token = token_result['access_token']
         
         # Get user info
-        user_info_result = GoogleAuthService.get_user_info_from_access_token(token_info['access_token'])
+        user_info_result = GoogleAuthService.get_user_info_from_access_token(access_token)
         
         if not user_info_result['success']:
             return jsonify({'success': False, 'error': user_info_result['error']}), 400
