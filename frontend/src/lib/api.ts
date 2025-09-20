@@ -1,5 +1,5 @@
 // API service to connect frontend to Flask backend
-const API_BASE_URL = 'http://localhost:5002';
+const API_BASE_URL = "http://localhost:5002";
 
 // Type definitions
 export interface Apartment {
@@ -40,7 +40,7 @@ export interface Spot {
 export interface Match {
   id: string;
   name: string;
-  type: 'apartment' | 'person' | 'spot';
+  type: "apartment" | "person" | "spot";
   photo: string;
   lastMessage?: string;
   lastMessageTime?: string;
@@ -49,7 +49,7 @@ export interface Match {
 
 export interface Message {
   id: string;
-  sender: 'user' | 'match';
+  sender: "user" | "match";
   content: string;
   timestamp: string;
 }
@@ -57,7 +57,7 @@ export interface Message {
 export interface Conversation {
   id: string;
   name: string;
-  type: 'apartment' | 'person' | 'spot';
+  type: "apartment" | "person" | "spot";
   photo: string;
   lastMessage?: string;
   lastMessageTime?: string;
@@ -69,12 +69,12 @@ export class ApiService {
 
   static setToken(token: string) {
     this.token = token;
-    localStorage.setItem('auth_token', token);
+    localStorage.setItem("auth_token", token);
   }
 
   static getToken(): string | null {
     if (!this.token) {
-      this.token = localStorage.getItem('auth_token');
+      this.token = localStorage.getItem("auth_token");
     }
     return this.token;
   }
@@ -82,55 +82,62 @@ export class ApiService {
   static async login(userInfo: { email: string; password: string }) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(userInfo),
       });
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `API request failed: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.access_token) {
         this.setToken(data.access_token);
         return data;
       }
-      
-      throw new Error(data.error || 'Login failed');
+
+      throw new Error(data.error || "Login failed");
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     }
   }
 
-  static async register(userInfo: { name: string; email: string; password: string; age: number; location: string; budget_min: number; budget_max: number; interests: string[] }) {
+  static async register(userInfo: {
+    name: string;
+    email: string;
+    password: string;
+  }) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(userInfo),
       });
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Registration failed");
       }
 
       const data = await response.json();
-      
-      if (data.success && data.access_token) {
-        this.setToken(data.access_token);
+
+      if (data.success && data.token) {
+        this.setToken(data.token);
         return data;
+      } else {
+        throw new Error(data.error || "Registration failed");
       }
-      
-      throw new Error(data.error || 'Registration failed');
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error("Registration error:", error);
       throw error;
     }
   }
@@ -139,20 +146,22 @@ export class ApiService {
     const token = this.getToken();
     if (!token) {
       // Redirect to login if not authenticated
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
       }
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/apartments/feed`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -164,20 +173,22 @@ export class ApiService {
     const token = this.getToken();
     if (!token) {
       // Redirect to login if not authenticated
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
       }
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/people/feed`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -189,20 +200,22 @@ export class ApiService {
     const token = this.getToken();
     if (!token) {
       // Redirect to login if not authenticated
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
       }
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/spots/feed`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -210,21 +223,24 @@ export class ApiService {
     return data.spots;
   }
 
-  static async swipeApartment(apartmentId: string, direction: 'left' | 'right') {
+  static async swipeApartment(
+    apartmentId: string,
+    direction: "left" | "right"
+  ) {
     const token = this.getToken();
     if (!token) {
       // Redirect to login if not authenticated
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
       }
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/apartments/swipe`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         apartment_id: apartmentId,
@@ -233,7 +249,9 @@ export class ApiService {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -241,21 +259,21 @@ export class ApiService {
     return data;
   }
 
-  static async swipePerson(personId: string, direction: 'left' | 'right') {
+  static async swipePerson(personId: string, direction: "left" | "right") {
     const token = this.getToken();
     if (!token) {
       // Redirect to login if not authenticated
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
       }
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/people/swipe`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         person_id: personId,
@@ -264,7 +282,9 @@ export class ApiService {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -272,21 +292,21 @@ export class ApiService {
     return data;
   }
 
-  static async swipeSpot(spotId: string, direction: 'left' | 'right') {
+  static async swipeSpot(spotId: string, direction: "left" | "right") {
     const token = this.getToken();
     if (!token) {
       // Redirect to login if not authenticated
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
       }
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/spots/swipe`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         spot_id: spotId,
@@ -295,7 +315,9 @@ export class ApiService {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -307,20 +329,22 @@ export class ApiService {
     const token = this.getToken();
     if (!token) {
       // Redirect to login if not authenticated
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
       }
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/matches`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -328,4 +352,3 @@ export class ApiService {
     return data;
   }
 }
-

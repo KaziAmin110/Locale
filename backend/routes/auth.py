@@ -70,6 +70,8 @@ def login():
         
         # Find user in database
         user_result = SupabaseService.get_data('users', {'email': email})
+
+        print(user_result)
         if not user_result['success']:
             return jsonify({'success': False, 'error': 'Database error'}), 500
         
