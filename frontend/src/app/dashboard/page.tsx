@@ -2,42 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import HomesContent from "../components/Dashboard/HomesContent";
 import Navbar from "../components/Dashboard/Navbar";
-
-// Dummy components for content - replace with your actual card components
-const HomesContent = ({ stats }: { stats: any }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      Apartments: {stats.apartments}
-    </div>
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      Matches: {stats.matches}
-    </div>
-  </div>
-);
-
-const ExperiencesContent = () => (
-  <div className="mt-8 text-center">
-    <p>Experiences Cards Go Here</p>
-  </div>
-);
-const ServicesContent = () => (
-  <div className="mt-8 text-center">
-    <p>Services Cards Go Here</p>
-  </div>
-);
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
   const [stats, setStats] = useState({
     apartments: 0,
     people: 0,
     spots: 0,
     matches: 0,
   });
-  const router = useRouter();
 
   // useEffect(() => {
   //   const token = localStorage.getItem('token');
