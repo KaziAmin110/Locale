@@ -4,7 +4,7 @@ import { ClipLoader } from "react-spinners";
 const override = {
   display: "block",
   margin: "0 auto",
-  borderColor: "red",
+  borderColor: "gray",
 };
 
 const LoadingSpinner = () => {
@@ -14,7 +14,7 @@ const LoadingSpinner = () => {
         color="#000000"
         loading={true}
         cssOverride={override}
-        size={50}
+        size={30}
         aria-label="Loading Spinner"
         data-testid="loader"
       />
