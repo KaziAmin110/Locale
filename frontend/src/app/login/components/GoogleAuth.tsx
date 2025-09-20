@@ -29,7 +29,7 @@ export default function GoogleAuth() {
       className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50"
     >
       <Image
-        src="https://developers.google.com/identity/images/g-logo.png"
+        src="/google.svg"
         alt="Google"
         width={20}
         height={20}
