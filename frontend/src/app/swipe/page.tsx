@@ -9,6 +9,7 @@ import EmptyState from './components/EmptyState'
 import SwipeCard from './components/SwipeCard'
 import SwipeControls from './components/SwipeControls'
 import MatchModal from './components/MatchModal'
+import BottomNavigation from './components/BottomNavigation'
 import type { Apartment, Person, Spot } from '@/lib/api'
 
 type TabType = 'apartments' | 'people' | 'spots'
@@ -90,7 +91,7 @@ export default function SwipePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-20">
       <Header />
       
       <div className="container mx-auto px-4 pt-6 max-w-md">
@@ -138,6 +139,8 @@ export default function SwipePage() {
         type={activeTab}
         onClose={() => setShowMatchModal(false)}
       />
+      
+      <BottomNavigation />
     </div>
   )
 }
