@@ -118,7 +118,7 @@ def test_db():
 def get_google_auth_url():
     """Get Google OAuth URL"""
     try:
-        redirect_uri = request.args.get('redirect_uri', 'http://localhost:3000/auth/google/callback')
+        redirect_uri = request.args.get('redirect_uri', 'http://localhost:3000')
         auth_url = GoogleAuthService.get_google_auth_url(redirect_uri)
         return jsonify({
             'success': True,

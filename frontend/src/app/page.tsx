@@ -9,12 +9,55 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    // Check for Google OAuth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
+
+    if (code) {
+      handleGoogleCallback(code);
+    } else if (error) {
+      console.error('Google OAuth error:', error);
+    }
+
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     if (token && userData) {
       setUser(JSON.parse(userData));
     }
   }, []);
+
+  const handleGoogleCallback = async (code: string) => {
+    try {
+      const response = await fetch('http://localhost:5002/api/auth/google-callback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: code,
+          redirect_uri: 'http://localhost:3000'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        if (data.needs_onboarding) {
+          router.push('/onboarding');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+        console.error('Google callback error:', data.error);
+      }
+    } catch (err) {
+      console.error('Callback error:', err);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
