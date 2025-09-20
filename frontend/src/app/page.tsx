@@ -18,7 +18,9 @@ import {
   X,
   Sparkles,
   Calculator,
-  Users
+  Users,
+  MapPin,
+  Heart
 } from 'lucide-react';
 import ExtravagantNavbar from './components/LandingNavbar';
 
@@ -33,7 +35,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <div className="min-h-screen bg-white text-slate-800">
       <div className="relative w-full h-screen overflow-hidden">
         <div className="absolute inset-0 z-0">
            <img 
@@ -70,70 +72,142 @@ export default function Home() {
         </main>
       </div>
 
-      <section className="bg-white py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div>
-                <p className="text-4xl font-bold text-indigo-600">12k+</p>
-                <p className="text-slate-500 mt-1">Exclusive Listings</p>
-              </div>
-              <div>
-                <p className="text-4xl font-bold text-indigo-600">4.9/5</p>
-                <p className="text-slate-500 mt-1">Client Rating</p>
-              </div>
-              <div>
-                <p className="text-4xl font-bold text-indigo-600">200+</p>
-                <p className="text-slate-500 mt-1">Top Agents</p>
-              </div>
-              <div>
-                <p className="text-4xl font-bold text-indigo-600">$5B+</p>
-                <p className="text-slate-500 mt-1">In Transactions</p>
-              </div>
-            </div>
+      <section className="bg-white py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl lg:text-center">
+            <h2 className="text-base font-semibold leading-7 text-indigo-600">Discover a better way</h2>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              Everything you need to find the perfect home
+            </p>
+            <p className="mt-6 text-lg leading-8 text-gray-600">
+              Our platform is designed to be your co-pilot in the real estate market, providing you with the tools and insights to make confident decisions.
+            </p>
           </div>
-       </section>
+          <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
+            <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-10 lg:max-w-none lg:grid-cols-2 lg:gap-y-16">
+              <div className="relative pl-16">
+                <dt className="text-base font-semibold leading-7 text-gray-900">
+                  <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600">
+                    <UserCheck className="h-6 w-6 text-white" />
+                  </div>
+                  Personalized Matching
+                </dt>
+                <dd className="mt-2 text-base leading-7 text-gray-600">Our AI-powered engine connects you with homes and agents that match your unique lifestyle and preferences.</dd>
+              </div>
+              <div className="relative pl-16">
+                <dt className="text-base font-semibold leading-7 text-gray-900">
+                  <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600">
+                    <BarChart className="h-6 w-6 text-white" />
+                  </div>
+                  In-Depth Market Insights
+                </dt>
+                <dd className="mt-2 text-base leading-7 text-gray-600">Access real-time market data, trend analysis, and neighborhood scores to stay ahead of the curve.</dd>
+              </div>
+              <div className="relative pl-16">
+                <dt className="text-base font-semibold leading-7 text-gray-900">
+                  <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600">
+                    <ShieldCheck className="h-6 w-6 text-white" />
+                  </div>
+                  Verified & Exclusive Listings
+                </dt>
+                <dd className="mt-2 text-base leading-7 text-gray-600">Every listing is meticulously verified, and you get access to off-market properties you won't find anywhere else.</dd>
+              </div>
+              <div className="relative pl-16">
+                <dt className="text-base font-semibold leading-7 text-gray-900">
+                  <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600">
+                    <Award className="h-6 w-6 text-white" />
+                  </div>
+                  Top-Tier Agent Network
+                </dt>
+                <dd className="mt-2 text-base leading-7 text-gray-600">We've partnered with the top 1% of agents in every major city to provide you with unparalleled service and expertise.</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
       
-      <section className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+       <section className="bg-slate-50 py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Why Choose Locale?</h2>
-              <p className="text-lg text-slate-600 max-w-2xl mx-auto">We combine cutting-edge technology with unparalleled service to make your real estate journey seamless.</p>
+              <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Featured Properties</h2>
+              <p className="text-lg text-slate-600 max-w-2xl mx-auto">Explore a curated selection of our finest properties, from modern city lofts to serene suburban estates.</p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="bg-white/60 backdrop-blur-md border border-slate-200 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
-                    <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
-                        <UserCheck className="w-8 h-8 text-white"/>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2940&auto=format&fit=crop" className="w-full h-64 object-cover" />
+                    <div className="p-6 bg-white">
+                        <p className="text-2xl font-bold text-slate-900">$2,500,000</p>
+                        <p className="text-slate-600">4 beds | 5 baths | 4,200 sqft</p>
+                        <p className="text-slate-500 mt-2">123 Maple Street, Beverly Hills, CA</p>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">Personalized Matching</h3>
-                    <p className="text-slate-600">Our AI understands your unique needs to find properties and agents perfectly suited for you.</p>
                 </div>
-                <div className="bg-white/60 backdrop-blur-md border border-slate-200 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
-                    <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-2xl flex items-center justify-center mb-6">
-                        <BarChart className="w-8 h-8 text-white"/>
+                <div className="group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <img src="https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=2940&auto=format&fit=crop" className="w-full h-64 object-cover" />
+                    <div className="p-6 bg-white">
+                        <p className="text-2xl font-bold text-slate-900">$1,200,000</p>
+                        <p className="text-slate-600">3 beds | 3 baths | 2,800 sqft</p>
+                        <p className="text-slate-500 mt-2">456 Ocean Drive, Miami, FL</p>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">Market Insights</h3>
-                    <p className="text-slate-600">Access real-time data and trend analysis to make informed decisions with confidence.</p>
                 </div>
-                <div className="bg-white/60 backdrop-blur-md border border-slate-200 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
-                    <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-orange-600 rounded-2xl flex items-center justify-center mb-6">
-                        <ShieldCheck className="w-8 h-8 text-white"/>
+                 <div className="group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2940&auto=format&fit=crop" className="w-full h-64 object-cover" />
+                    <div className="p-6 bg-white">
+                        <p className="text-2xl font-bold text-slate-900">$850,000</p>
+                        <p className="text-slate-600">2 beds | 2 baths | 1,500 sqft</p>
+                        <p className="text-slate-500 mt-2">789 Pine Avenue, Aspen, CO</p>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">Verified Listings</h3>
-                    <p className="text-slate-600">Every property is verified for accuracy, ensuring a trustworthy and transparent search.</p>
                 </div>
             </div>
         </div>
       </section>
 
-      <section className="py-24 bg-white">
+      <section className="bg-white py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl lg:text-center">
+             <h2 className="text-base font-semibold leading-7 text-indigo-600">A Seamless Experience</h2>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              How It Works
+            </p>
+            <p className="mt-6 text-lg leading-8 text-gray-600">
+              Our streamlined process makes finding your next home simpler and more enjoyable than ever before.
+            </p>
+          </div>
+          <div className="mt-16 flow-root">
+             <div className="[-webkit-mask-image:linear-gradient(to_bottom,white_20%,transparent_100%)]">
+              <div className="mx-auto max-w-5xl px-6 lg:px-8">
+                <div className="mx-auto max-w-2xl lg:max-w-none">
+                  <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-3">
+                    <div className="flex flex-col items-center text-center">
+                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 text-white font-bold text-lg">1</div>
+                       <h3 className="mt-6 text-xl font-semibold leading-7 text-gray-900">Discover</h3>
+                       <p className="mt-2 text-base leading-7 text-gray-600">Browse thousands of verified listings with our powerful and intuitive search tools.</p>
+                    </div>
+                    <div className="flex flex-col items-center text-center">
+                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 text-white font-bold text-lg">2</div>
+                       <h3 className="mt-6 text-xl font-semibold leading-7 text-gray-900">Connect</h3>
+                       <p className="mt-2 text-base leading-7 text-gray-600">Connect with a top-rated local agent who understands your needs and the market.</p>
+                    </div>
+                    <div className="flex flex-col items-center text-center">
+                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 text-white font-bold text-lg">3</div>
+                       <h3 className="mt-6 text-xl font-semibold leading-7 text-gray-900">Close</h3>
+                       <p className="mt-2 text-base leading-7 text-gray-600">Sail through the closing process with our expert guidance and digital tools.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Loved by Homebuyers</h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto">Don't just take our word for it. Here's what our clients have to say.</p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="bg-slate-50 p-8 rounded-xl border border-slate-100">
+            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center mb-4">
                 <img src="https://i.pravatar.cc/48?u=1" alt="User 1" className="w-12 h-12 rounded-full mr-4" />
                 <div>
@@ -145,7 +219,7 @@ export default function Home() {
               </div>
               <p className="text-slate-600 italic">"Locale's platform made finding our dream home incredibly easy. The personalized matches were spot on!"</p>
             </div>
-             <div className="bg-slate-50 p-8 rounded-xl border border-slate-100">
+             <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center mb-4">
                 <img src="https://i.pravatar.cc/48?u=2" alt="User 2" className="w-12 h-12 rounded-full mr-4" />
                 <div>
@@ -157,7 +231,7 @@ export default function Home() {
               </div>
               <p className="text-slate-600 italic">"The market insights were invaluable. We felt so confident in our purchase. Highly recommend to anyone."</p>
             </div>
-             <div className="bg-slate-50 p-8 rounded-xl border border-slate-100">
+             <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center mb-4">
                 <img src="https://i.pravatar.cc/48?u=3" alt="User 3" className="w-12 h-12 rounded-full mr-4" />
                 <div>
@@ -169,11 +243,22 @@ export default function Home() {
               </div>
               <p className="text-slate-600 italic">"Our agent, found through Locale, was exceptional. The entire process was smooth and stress-free."</p>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Explore Places</h3>
-            <p className="text-gray-600">
-              Discover the best restaurants, cafes, and activities in your area
-            </p>
           </div>
+        </div>
+      </section>
+      <section className="relative overflow-hidden bg-slate-900 py-32">
+        <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8 text-center">
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white sm:text-6xl">
+              Begin Your Journey Today
+            </h2>
+            <p className="mt-6 text-lg leading-8 text-slate-300 max-w-2xl mx-auto">
+              The keys to your future home are just a few clicks away. Let's unlock it together.
+            </p>
+            <div className="mt-10">
+              <a href="#" className="shimmer-button">
+                Get Started Now
+              </a>
+            </div>
         </div>
       </section>
 
