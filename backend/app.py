@@ -18,7 +18,7 @@ def create_app():
     app.config.from_object(Config)
     
     # Initialize extensions
-    CORS(app, origins=["http://localhost:3000"])  # React dev server
+    CORS(app, origins=["http://localhost:3000", "http://localhost:3001"])  # React dev server
     jwt = JWTManager(app)
     
     # Register blueprints
