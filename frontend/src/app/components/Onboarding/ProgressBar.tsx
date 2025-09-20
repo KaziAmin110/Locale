@@ -7,10 +7,13 @@ const ProgressBar = ({
   currentStep: number;
   setCurrentStep: (step: number) => void;
 }) => {
-  const progress = (currentStep / 5) * 100;
+  const progress = (currentStep / 4) * 100;
   return (
     <div className="flex w-full gap-2 justify-center items-center mt-3">
-      <button onClick={() => setCurrentStep(Math.max(currentStep - 1, 1))}>
+      <button
+        onClick={() => setCurrentStep(Math.max(currentStep - 1, 1))}
+        style={currentStep === 1 ? { visibility: "hidden" } : {}}
+      >
         <ChevronLeft
           className="cursor-pointer text-gray-800 font-bold"
           size={28}

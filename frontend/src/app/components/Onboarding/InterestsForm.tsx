@@ -34,7 +34,7 @@ const InterestsForm = ({
         <p className="text-sm text-gray-800 font-bold">
           {isButtonDisabled
             ? `Select at least ${3 - selectedInterests.length} more`
-            : "Great! You can select more if you like."}
+            : "Great! Feel free to select more."}
         </p>
       </div>
 

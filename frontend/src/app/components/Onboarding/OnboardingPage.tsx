@@ -5,14 +5,18 @@ import QuestionDisplay from "./QuestionDisplay";
 import UserInfoForm from "./UserInfoForm";
 import LocationForm from "./LocationForm";
 import InterestsForm from "./InterestsForm"; // Import the new component
+import BudgetForm from "./BudgetForm";
 
-type FormData = {
+export type FormData = {
   name: string;
   age: string;
   location: string;
   lat: number | null;
   lng: number | null;
   interests: string[];
+  budgetMin: number;
+  budgetMax: number;
+  bedrooms: number;
 };
 
 const OnboardingPage = () => {
@@ -25,13 +29,27 @@ const OnboardingPage = () => {
     lat: null,
     lng: null,
     interests: [],
+    budgetMin: 800,
+    budgetMax: 2500,
+    bedrooms: 1,
   });
 
-  const updateFormData = (field: keyof FormData, value: string | number) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const updateFormData = (
+    field: keyof FormData | "budget",
+    value: string | number | number[]
+  ) => {
+    if (field === "budget" && Array.isArray(value) && value.length === 2) {
+      setFormData((prev) => ({
+        ...prev,
+        budgetMin: value[0],
+        budgetMax: value[1],
+      }));
+    } else if (typeof field === "string" && typeof value !== "object") {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
   };
 
   const handleInterestToggle = (interest: string) => {
@@ -72,6 +90,17 @@ const OnboardingPage = () => {
             selectedInterests={formData.interests}
             handleInterestToggle={handleInterestToggle}
             setCurrentStep={setCurrentStep}
+          />
+        )}
+
+        {currentStep === 4 && (
+          <BudgetForm
+            budgetMin={formData.budgetMin}
+            budgetMax={formData.budgetMax}
+            bedrooms={formData.bedrooms}
+            updateFormData={updateFormData}
+            setCurrentStep={setCurrentStep}
+            formData={formData}
           />
         )}
       </div>

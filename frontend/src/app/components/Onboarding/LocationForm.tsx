@@ -113,16 +113,15 @@ const LocationForm = ({
     <div className="flex-1 flex flex-col justify-evenly w-full max-w-lg px-4 pt-8 pb-4">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-3">
-          <div className="flex justify-between items-center mb-1">
+          <div className="flex justify-between items-center">
             <label htmlFor="location" className="text-lg text-black">
               Location:
             </label>
-
             <button
               type="button"
               onClick={handleGetCurrentLocation}
               disabled={isLocating}
-              className="bg-[#333333] text-white px-4 py-2 rounded-full font-bold transition mt-6 text-sm
+              className="flex items-center justify-center bg-[#333333] text-white px-4 py-2 rounded-full font-bold transition text-xs
                    hover:bg-[#444444] 
                    disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed hover:cursor-pointer"
             >
@@ -130,7 +129,7 @@ const LocationForm = ({
                 <LoadingSpinner />
               ) : (
                 <>
-                  <MapPin className="inline mr-2" size={20} />
+                  <MapPin className="inline mr-2 " size={20} />
                   Use Current Location
                 </>
               )}
@@ -162,7 +161,7 @@ const LocationForm = ({
 
       <button
         onClick={() => setCurrentStep(3)}
-        disabled={!location || !selectedLocation}
+        disabled={!location}
         className="w-full bg-[#333333] text-white p-3 rounded-full font-bold transition mt-6
                    hover:bg-[#444444] hover:cursor-pointer
                    disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
