@@ -186,16 +186,15 @@ def google_callback():
                 'budget_max': 3000,
                 'interests': ['Technology', 'Music', 'Travel'],
                 'bio': f"Hi! I'm {user_info['name']}",
-                'onboarding_complete': False,  # Needs onboarding
-                'google_id': user_info['google_id'],
-                'profile_picture': user_info['picture'],
-                'created_at': 'now()'
+                'photos': [user_info['picture']] if user_info.get('picture') else []
             }
             
             # Save user to database
             result = SupabaseService.insert_data('users', user_data)
             if not result['success']:
-                return jsonify({'success': False, 'error': 'Failed to create user'}), 500
+                print(f"User creation failed: {result['error']}")
+                print(f"User data: {user_data}")
+                return jsonify({'success': False, 'error': f"Failed to create user: {result['error']}"}), 500
             
             # Create JWT token
             access_token = create_access_token(identity=user_id)
