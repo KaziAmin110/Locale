@@ -2,143 +2,125 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface Message {
   id: string;
-  sender_id: string;
   content: string;
+  sender: 'user' | 'match';
   timestamp: string;
 }
 
-interface ChatData {
-  conversation_id: string;
-  other_user: {
-    id: string;
-    name: string;
-    image?: string;
-  };
-  messages: Message[];
-}
-
-const ChatPage = ({ params }: { params: { id: string } }) => {
+export default function ChatPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [chatData, setChatData] = useState<ChatData | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [match, setMatch] = useState<any>(null);
 
   useEffect(() => {
-    loadChat();
+    loadChatData();
   }, [params.id]);
 
-  const loadChat = async () => {
-    setLoading(true);
+  const loadChatData = async () => {
     try {
-      const response = await fetch(`http://localhost:5002/api/chat/conversation/${params.id}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setChatData(data.conversation);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5002/api/chat/${params.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.messages || []);
+        setMatch(data.match);
+      } else {
+        // Use mock data if API fails
+        setMatch(getMockMatch());
+        setMessages(getMockMessages());
       }
     } catch (error) {
       console.error('Error loading chat:', error);
-      // Fallback to mock data
-      setChatData({
-        conversation_id: params.id,
-        other_user: {
-          id: params.id,
-          name: 'Sarah Johnson',
-          image: '/api/placeholder/100/100'
-        },
-        messages: [
-          {
-            id: '1',
-            sender_id: params.id,
-            content: 'Hey! I saw we matched on CityMate. Are you still looking for a roommate?',
-            timestamp: '2024-01-15T10:30:00Z'
-          },
-          {
-            id: '2',
-            sender_id: 'current_user',
-            content: 'Yes! I\'m really interested in the apartment you mentioned.',
-            timestamp: '2024-01-15T10:35:00Z'
-          },
-          {
-            id: '3',
-            sender_id: params.id,
-            content: 'Great! Would you like to schedule a viewing this weekend?',
-            timestamp: '2024-01-15T10:40:00Z'
-          }
-        ]
-      });
+      // Use mock data
+      setMatch(getMockMatch());
+      setMessages(getMockMessages());
     } finally {
       setLoading(false);
     }
   };
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !chatData) return;
+  const getMockMatch = () => ({
+    id: params.id,
+    name: 'Alex',
+    type: 'person',
+    image: 'https://images.unsplash.com/photo-1494790108755-2616b5c0804?w=400&h=400&fit=crop',
+    description: 'Love exploring the city and trying new restaurants!'
+  });
 
-    const message = {
-      conversation_id: chatData.conversation_id,
-      content: newMessage.trim()
+  const getMockMessages = (): Message[] => [
+    {
+      id: '1',
+      content: 'Hey! Great to match with you!',
+      sender: 'match',
+      timestamp: '2 hours ago'
+    },
+    {
+      id: '2',
+      content: 'Hi! Nice to meet you too!',
+      sender: 'user',
+      timestamp: '2 hours ago'
+    },
+    {
+      id: '3',
+      content: 'Want to grab coffee sometime?',
+      sender: 'match',
+      timestamp: '1 hour ago'
+    }
+  ];
+
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
+
+    const message: Message = {
+      id: Date.now().toString(),
+      content: newMessage,
+      sender: 'user',
+      timestamp: 'Just now'
     };
 
+    setMessages(prev => [...prev, message]);
+    setNewMessage('');
+
     try {
-      const response = await fetch('http://localhost:5002/api/chat/send', {
+      const token = localStorage.getItem('token');
+      await fetch(`http://localhost:5002/api/chat/${params.id}/message`, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(message),
+        body: JSON.stringify({
+          content: newMessage
+        }),
       });
-
-      if (response.ok) {
-        // Add message to local state
-        const newMsg: Message = {
-          id: Date.now().toString(),
-          sender_id: 'current_user',
-          content: newMessage.trim(),
-          timestamp: new Date().toISOString()
-        };
-        
-        setChatData(prev => prev ? {
-          ...prev,
-          messages: [...prev.messages, newMsg]
-        } : null);
-        
-        setNewMessage('');
-      }
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading chat...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!chatData) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Chat not found</h2>
-          <p className="text-gray-600 mb-4">This conversation doesn't exist or you don't have access to it.</p>
-          <a href="/matches" className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg">
-            Back to Matches
-          </a>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
       </div>
     );
   }
@@ -146,32 +128,34 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center py-4">
             <button
               onClick={() => router.back()}
-              className="mr-4 p-2 hover:bg-gray-100 rounded-lg"
+              className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              ←
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
             </button>
-            <div className="flex items-center">
-              {chatData.other_user.image ? (
-                <img 
-                  src={chatData.other_user.image} 
-                  alt={chatData.other_user.name}
-                  className="w-10 h-10 rounded-full mr-3"
+            
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-full overflow-hidden">
+                <Image
+                  src={match?.image || 'https://images.unsplash.com/photo-1494790108755-2616b5c0804?w=400&h=400&fit=crop'}
+                  alt={match?.name || 'Match'}
+                  width={40}
+                  height={40}
+                  className="object-cover"
                 />
-              ) : (
-                <div className="w-10 h-10 bg-gray-300 rounded-full mr-3 flex items-center justify-center">
-                  <span className="text-gray-600 font-medium">
-                    {chatData.other_user.name.charAt(0)}
-                  </span>
-                </div>
-              )}
+              </div>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">{chatData.other_user.name}</h1>
-                <p className="text-sm text-gray-500">Online</p>
+                <h1 className="text-xl font-bold text-gray-900">{match?.name || 'Match'}</h1>
+                <p className="text-sm text-gray-600">
+                  {match?.type === 'apartment' ? '🏠 Apartment' : 
+                   match?.type === 'person' ? '👥 Person' : '📍 Local Spot'}
+                </p>
               </div>
             </div>
           </div>
@@ -179,58 +163,50 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="space-y-4">
-            {chatData.messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.sender_id === 'current_user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    message.sender_id === 'current_user'
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  <p className="text-sm">{message.content}</p>
-                  <p className={`text-xs mt-1 ${
-                    message.sender_id === 'current_user' ? 'text-gray-300' : 'text-gray-500'
-                  }`}>
-                    {formatTime(message.timestamp)}
-                  </p>
-                </div>
-              </div>
-            ))}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                message.sender === 'user'
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-gray-100 text-gray-900'
+              }`}
+            >
+              <p className="text-sm">{message.content}</p>
+              <p className={`text-xs mt-1 ${
+                message.sender === 'user' ? 'text-gray-300' : 'text-gray-500'
+              }`}>
+                {message.timestamp}
+              </p>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
 
       {/* Message Input */}
-      <div className="bg-white border-t border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex space-x-4">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-              placeholder="Type a message..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!newMessage.trim()}
-              className="bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-            >
-              Send
-            </button>
-          </div>
+      <div className="bg-white border-t border-gray-200 p-4">
+        <div className="flex space-x-3">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type a message..."
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors"
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!newMessage.trim()}
+            className="bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+          >
+            Send
+          </button>
         </div>
       </div>
     </div>
   );
-};
-
-export default ChatPage;
+}
