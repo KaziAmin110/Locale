@@ -1,24 +1,32 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 export default function GoogleAuth() {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleGoogleAuth = async () => {
     setLoading(true);
     try {
-      // Simulate Google OAuth - in real app, this would redirect to Google
-      console.log('Google OAuth initiated');
-      // For demo purposes, simulate success
-      setTimeout(() => {
-        setLoading(false);
-        alert('Google OAuth would redirect to Google in production');
-      }, 1000);
+      // Get Google OAuth URL from backend
+      const response = await fetch('http://localhost:5002/api/auth/google-auth-url?redirect_uri=http://localhost:3000/auth/google/callback');
+      const data = await response.json();
+      
+      if (data.success) {
+        // Redirect to Google OAuth
+        window.location.href = data.auth_url;
+      } else {
+        console.error('Failed to get Google auth URL:', data.error);
+        alert('Failed to initiate Google authentication');
+      }
     } catch (error) {
-      setLoading(false);
       console.error('Google OAuth error:', error);
+      alert('Network error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,7 +44,7 @@ export default function GoogleAuth() {
         className="mr-3"
       />
       <span className="text-sm font-medium text-gray-700">
-        {loading ? 'Signing in...' : 'Continue with Google'}
+        {loading ? 'Redirecting...' : 'Continue with Google'}
       </span>
     </button>
   );
