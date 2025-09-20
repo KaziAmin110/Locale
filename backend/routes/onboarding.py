@@ -4,121 +4,54 @@ from services.supabase_client import SupabaseService
 
 onboarding_bp = Blueprint('onboarding', __name__)
 
-@onboarding_bp.route('/basic-info', methods=['POST'])
+@onboarding_bp.route('', methods=['POST'])
 @jwt_required()
-def save_basic_info():
-    """Save user's basic information"""
+def save_onboarding_data():
+    """Save all onboarding data at once"""
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
         
+        # Validate required fields
+        required_fields = ['name', 'age', 'location', 'budgetMin', 'budgetMax', 'bedrooms', 'interests', 'lookingFor']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({"error": f"Missing required field: {field}"}), 400
+        
+        # Validate interests array has at least 3 items
+        if len(data.get('interests', [])) < 3:
+            return jsonify({"error": "Please select at least 3 interests"}), 400
+        
+        # Prepare update data matching your database schema
         update_data = {
             'name': data.get('name'),
-            'age': data.get('age'),
-            'bio': data.get('bio', ''),
-            'updated_at': 'now()'
-        }
-        
-        result = SupabaseService.update_data('users', update_data, {'id': user_id})
-        
-        if result['success']:
-            return jsonify({"success": True, "message": "Basic info saved"})
-        else:
-            return jsonify({"error": "Failed to save basic info"}), 500
-            
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@onboarding_bp.route('/location', methods=['POST'])
-@jwt_required()
-def save_location():
-    """Save user's location information"""
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        
-        update_data = {
-            'city': data.get('city'),
-            'lat': data.get('latitude'),
-            'lng': data.get('longitude'),
-            'updated_at': 'now()'
-        }
-        
-        result = SupabaseService.update_data('users', update_data, {'id': user_id})
-        
-        if result['success']:
-            return jsonify({"success": True, "message": "Location saved"})
-        else:
-            return jsonify({"error": "Failed to save location"}), 500
-            
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@onboarding_bp.route('/interests', methods=['POST'])
-@jwt_required()
-def save_interests():
-    """Save user's interests"""
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        
-        update_data = {
-            'interests': data.get('interests', []),
-            'updated_at': 'now()'
-        }
-        
-        result = SupabaseService.update_data('users', update_data, {'id': user_id})
-        
-        if result['success']:
-            return jsonify({"success": True, "message": "Interests saved"})
-        else:
-            return jsonify({"error": "Failed to save interests"}), 500
-            
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@onboarding_bp.route('/preferences', methods=['POST'])
-@jwt_required()
-def save_preferences():
-    """Save user's preferences (budget, demographics)"""
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        
-        update_data = {
-            'budget_min': data.get('budget_min'),
-            'budget_max': data.get('budget_max'),
-            'updated_at': 'now()'
-        }
-        
-        result = SupabaseService.update_data('users', update_data, {'id': user_id})
-        
-        if result['success']:
-            return jsonify({"success": True, "message": "Preferences saved"})
-        else:
-            return jsonify({"error": "Failed to save preferences"}), 500
-            
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@onboarding_bp.route('/complete', methods=['PUT'])
-@jwt_required()
-def complete_onboarding():
-    """Mark onboarding as complete"""
-    try:
-        user_id = get_jwt_identity()
-        
-        update_data = {
+            'age': int(data.get('age')),
+            'city': data.get('location'),  # Assuming 'city' field in DB
+            'budget_min': int(data.get('budgetMin')),
+            'budget_max': int(data.get('budgetMax')),
+            'bedrooms': data.get('bedrooms'),
+            'interests': data.get('interests'),
+            'looking_for': data.get('lookingFor'),
             'onboarding_complete': True,
             'updated_at': 'now()'
         }
         
+        # Update user record in database
         result = SupabaseService.update_data('users', update_data, {'id': user_id})
+
+        print(result)
         
         if result['success']:
-            return jsonify({"success": True, "message": "Onboarding completed"})
+            return jsonify({
+                "success": True, 
+                "message": "Onboarding completed successfully",
+                "data": update_data
+            })
         else:
-            return jsonify({"error": "Failed to complete onboarding"}), 500
-            
+            return jsonify({"error": "Failed to save onboarding data"}), 500
+    
+    except ValueError as e:
+        return jsonify({"error": "Invalid data format. Please check your input."}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
