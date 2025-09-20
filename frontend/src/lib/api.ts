@@ -79,15 +79,19 @@ export class ApiService {
     return this.token;
   }
 
-  static async login(userInfo: { email: string; name: string; picture?: string }) {
+  static async login(userInfo: { email: string; password: string }) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ user_info: userInfo }),
+        body: JSON.stringify(userInfo),
       });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
 
       const data = await response.json();
       
@@ -103,15 +107,53 @@ export class ApiService {
     }
   }
 
+  static async register(userInfo: { name: string; email: string; password: string; age: number; location: string; budget_min: number; budget_max: number; interests: string[] }) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userInfo),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.access_token) {
+        this.setToken(data.access_token);
+        return data;
+      }
+      
+      throw new Error(data.error || 'Registration failed');
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
+  }
+
   static async getApartmentFeed() {
     const token = this.getToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) {
+      // Redirect to login if not authenticated
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Error('Not authenticated');
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/apartments/feed`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
 
     const data = await response.json();
     if (!data.success) throw new Error(data.error);
@@ -120,13 +162,23 @@ export class ApiService {
 
   static async getPeopleFeed() {
     const token = this.getToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) {
+      // Redirect to login if not authenticated
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Error('Not authenticated');
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/people/feed`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
 
     const data = await response.json();
     if (!data.success) throw new Error(data.error);
@@ -135,13 +187,23 @@ export class ApiService {
 
   static async getSpotsFeed() {
     const token = this.getToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) {
+      // Redirect to login if not authenticated
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Error('Not authenticated');
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/spots/feed`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
 
     const data = await response.json();
     if (!data.success) throw new Error(data.error);
@@ -150,7 +212,13 @@ export class ApiService {
 
   static async swipeApartment(apartmentId: string, direction: 'left' | 'right') {
     const token = this.getToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) {
+      // Redirect to login if not authenticated
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Error('Not authenticated');
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/apartments/swipe`, {
       method: 'POST',
@@ -164,6 +232,10 @@ export class ApiService {
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.json();
     if (!data.success) throw new Error(data.error);
     return data;
@@ -171,7 +243,13 @@ export class ApiService {
 
   static async swipePerson(personId: string, direction: 'left' | 'right') {
     const token = this.getToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) {
+      // Redirect to login if not authenticated
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Error('Not authenticated');
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/people/swipe`, {
       method: 'POST',
@@ -185,6 +263,10 @@ export class ApiService {
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.json();
     if (!data.success) throw new Error(data.error);
     return data;
@@ -192,7 +274,13 @@ export class ApiService {
 
   static async swipeSpot(spotId: string, direction: 'left' | 'right') {
     const token = this.getToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) {
+      // Redirect to login if not authenticated
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Error('Not authenticated');
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/spots/swipe`, {
       method: 'POST',
@@ -206,6 +294,10 @@ export class ApiService {
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.json();
     if (!data.success) throw new Error(data.error);
     return data;
@@ -213,13 +305,23 @@ export class ApiService {
 
   static async getMatches() {
     const token = this.getToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) {
+      // Redirect to login if not authenticated
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Error('Not authenticated');
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/matches`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
 
     const data = await response.json();
     if (!data.success) throw new Error(data.error);

@@ -1,29 +1,29 @@
 /* Card hover effects */
 .card-hover {
-    transition: all 0.3s ease;
-  }
-  
-  .card-hover:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-  }
-  
-  /* Card stack effects */
-  .card-stack {
-    position: relative;
-  }
-  
-  .card-stack .card:nth-child(1) {
-    z-index: 3;
-    transform: scale(1) translateY(0);
-  }
-  
-  .card-stack .card:nth-child(2) {
-    z-index: 2;
-    transform: scale(0.98) translateY(8px);
-  }
-  
-  .card-stack .card:nth-child(3) {
-    z-index: 1;
-    transform: scale(0.96) translateY(16px);
-  }
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Card stack effects */
+.card-stack {
+  position: relative;
+}
+
+.card-stack .card:nth-child(1) {
+  z-index: 3;
+  transform: scale(1) translateY(0);
+}
+
+.card-stack .card:nth-child(2) {
+  z-index: 2;
+  transform: scale(0.98) translateY(8px);
+}
+
+.card-stack .card:nth-child(3) {
+  z-index: 1;
+  transform: scale(0.96) translateY(16px);
+}

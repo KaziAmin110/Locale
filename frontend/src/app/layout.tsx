@@ -4,8 +4,8 @@ import './globals.css'
 import LoadingSpinner from './components/LoadingSpinner'
 
 export const metadata: Metadata = {
-  title: 'Locale - Find Your Perfect Living Space',
-  description: 'Discover apartments, meet potential roommates, and explore local spots that match your lifestyle',
+  title: 'CityMate - Find Your New City Life',
+  description: 'Discover apartments, meet people, and explore places in your new city',
 }
 
 export default function RootLayout({
@@ -15,8 +15,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <div className="min-h-screen">
+      <body suppressHydrationWarning={true}>
+        <div className="min-h-screen bg-white">
           <Suspense fallback={
             <div className="flex items-center justify-center min-h-screen">
               <LoadingSpinner size="lg" />

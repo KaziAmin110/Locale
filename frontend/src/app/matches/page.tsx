@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Heart, MapPin, Users } from 'lucide-react'
-import { ApiService } from '@/lib/api'
+import ApiService from '@/lib/api'
 import Header from '../components/Header'
 import MatchList from './components/MatchList'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -80,11 +80,7 @@ export default function MatchesPage() {
             <LoadingSpinner size="lg" />
           </div>
         ) : (
-          <MatchList 
-            matches={filteredMatches} 
-            activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
-          />
+          <MatchList matches={filteredMatches} />
         )}
       </div>
     </div>
