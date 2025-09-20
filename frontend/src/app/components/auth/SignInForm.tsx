@@ -23,7 +23,6 @@ const SignInForm = () => {
 
     try {
       const data = await ApiService.login({ email, password });
-      console.log("Sign-in successful:", data);
       
       // Redirect to onboarding or dashboard
       window.location.href = "/onboarding";
@@ -35,7 +34,7 @@ const SignInForm = () => {
   };
 
   return (
-    <form className="flex flex-col w-full mt-6 gap-4" onSubmit={handleSubmit}>
+    <form className="flex flex-col w-full gap-4 mt-6" onSubmit={handleSubmit}>
       <Input 
         placeholder="Email" 
         value={email} 
@@ -50,13 +49,13 @@ const SignInForm = () => {
       />
       
       {error && (
-        <p className="text-red-500 text-sm text-center">{error}</p>
+        <p className="text-sm text-center text-red-500">{error}</p>
       )}
       
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full p-3 font-medium text-white transition-colors bg-red-500 hover:bg-red-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? <LoadingSpinner /> : "Sign In"}
       </button>

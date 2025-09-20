@@ -90,15 +90,17 @@ export class ApiService {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+
         throw new Error(
-          `API request failed: ${response.status} ${response.statusText}`
+          errorData.error || `Login failed: ${response.statusText}`
         );
       }
 
       const data = await response.json();
 
-      if (data.success && data.access_token) {
-        this.setToken(data.access_token);
+      if (data.success && data.token) {
+        this.setToken(data.token);
         return data;
       }
 
