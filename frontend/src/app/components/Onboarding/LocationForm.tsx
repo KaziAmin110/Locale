@@ -9,9 +9,9 @@ import LoadingSpinner from "../LoadingSpinner";
 import { MapPin } from "lucide-react";
 
 type LocationFormProps = {
-  city: string;
+  location: string;
   updateFormData: (
-    field: "city" | "lat" | "lng",
+    field: "location" | "lat" | "lng",
     value: string | number
   ) => void;
   setCurrentStep: (step: number) => void;
@@ -23,7 +23,7 @@ type Coordinates = {
 };
 
 const LocationForm = ({
-  city,
+  location,
   updateFormData,
   setCurrentStep,
 }: LocationFormProps) => {
@@ -56,7 +56,7 @@ const LocationForm = ({
       const formattedAddress = place.formatted_address || "";
 
       if (lat && lng) {
-        updateFormData("city", formattedAddress);
+        updateFormData("location", formattedAddress);
         updateFormData("lat", lat);
         updateFormData("lng", lng);
         setSelectedLocation({ lat, lng });
@@ -77,13 +77,11 @@ const LocationForm = ({
             (results, status) => {
               if (status === "OK" && results && results[0]) {
                 const formattedAddress = results[0].formatted_address;
-                // Update all relevant states
-                updateFormData("city", formattedAddress);
+                updateFormData("location", formattedAddress);
                 updateFormData("lat", latitude);
                 updateFormData("lng", longitude);
                 setSelectedLocation({ lat: latitude, lng: longitude });
 
-                // Manually set the input's value
                 if (inputRef.current) {
                   inputRef.current.value = formattedAddress;
                 }
@@ -116,8 +114,8 @@ const LocationForm = ({
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-center mb-1">
-            <label htmlFor="city" className="text-lg text-black">
-              City
+            <label htmlFor="location" className="text-lg text-black">
+              Location:
             </label>
 
             <button
@@ -133,7 +131,7 @@ const LocationForm = ({
               ) : (
                 <>
                   <MapPin className="inline mr-2" size={20} />
-                  Enable Location
+                  Use Current Location
                 </>
               )}
             </button>
@@ -142,8 +140,8 @@ const LocationForm = ({
             <input
               ref={inputRef}
               type="text"
-              placeholder="Enter your city"
-              defaultValue={city}
+              placeholder="Enter your location"
+              defaultValue={location}
               className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
             />
           </Autocomplete>
@@ -164,7 +162,7 @@ const LocationForm = ({
 
       <button
         onClick={() => setCurrentStep(3)}
-        disabled={!city || !selectedLocation}
+        disabled={!location || !selectedLocation}
         className="w-full bg-[#333333] text-white p-3 rounded-full font-bold transition mt-6
                    hover:bg-[#444444] hover:cursor-pointer
                    disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"

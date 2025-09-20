@@ -4,13 +4,15 @@ import ProgressBar from "./ProgressBar";
 import QuestionDisplay from "./QuestionDisplay";
 import UserInfoForm from "./UserInfoForm";
 import LocationForm from "./LocationForm";
+import InterestsForm from "./InterestsForm"; // Import the new component
 
 type FormData = {
   name: string;
   age: string;
-  city: string;
+  location: string;
   lat: number | null;
   lng: number | null;
+  interests: string[];
 };
 
 const OnboardingPage = () => {
@@ -19,9 +21,10 @@ const OnboardingPage = () => {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     age: "",
-    city: "",
+    location: "",
     lat: null,
     lng: null,
+    interests: [],
   });
 
   const updateFormData = (field: keyof FormData, value: string | number) => {
@@ -31,6 +34,15 @@ const OnboardingPage = () => {
     }));
   };
 
+  const handleInterestToggle = (interest: string) => {
+    setFormData((prev) => {
+      const newInterests = prev.interests.includes(interest)
+        ? prev.interests.filter((item) => item !== interest)
+        : [...prev.interests, interest];
+      return { ...prev, interests: newInterests };
+    });
+  };
+
   return (
     <div className="flex flex-col items-center w-full min-h-screen p-4">
       <ProgressBar currentStep={currentStep} setCurrentStep={setCurrentStep} />
@@ -38,7 +50,7 @@ const OnboardingPage = () => {
         <QuestionDisplay currentStep={currentStep} />
       </div>
 
-      <div className="w-full flex-1 flex flex-col items-center justify-center">
+      <div className="w-full flex-1 flex flex-col justify-center items-center">
         {currentStep === 1 && (
           <UserInfoForm
             name={formData.name}
@@ -49,8 +61,16 @@ const OnboardingPage = () => {
         )}
         {currentStep === 2 && (
           <LocationForm
-            city={formData.city}
+            location={formData.location}
             updateFormData={updateFormData}
+            setCurrentStep={setCurrentStep}
+          />
+        )}
+
+        {currentStep === 3 && (
+          <InterestsForm
+            selectedInterests={formData.interests}
+            handleInterestToggle={handleInterestToggle}
             setCurrentStep={setCurrentStep}
           />
         )}

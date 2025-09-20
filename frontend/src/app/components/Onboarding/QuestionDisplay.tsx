@@ -1,7 +1,7 @@
 const QuestionDisplay = ({ currentStep }: { currentStep: number }) => {
   const questions = [
     "Let's get to know you. What are the basics?",
-    "What city are you moving to?",
+    "What location are you moving to?",
     "What do you love to do? Select a few interests.",
     "Let's find your perfect place. What's your monthly budget?",
   ];

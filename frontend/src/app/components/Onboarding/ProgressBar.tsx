@@ -7,7 +7,7 @@ const ProgressBar = ({
   currentStep: number;
   setCurrentStep: (step: number) => void;
 }) => {
-  const progress = (currentStep / 4) * 100;
+  const progress = (currentStep / 5) * 100;
   return (
     <div className="flex w-full gap-2 justify-center items-center mt-3">
       <button onClick={() => setCurrentStep(Math.max(currentStep - 1, 1))}>
