@@ -12,3 +12,4 @@ build
 *.db
 *.egg-info
 /venv
+/.venv

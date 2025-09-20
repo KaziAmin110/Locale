@@ -4,7 +4,7 @@ python-dotenv==1.0.0
 supabase==1.0.4
 requests==2.31.0
 scikit-learn==1.5.1
-numpy
+numpy==1.24.4
 pandas==2.0.3
 flask-jwt-extended==4.5.2
 google-auth==2.22.0
