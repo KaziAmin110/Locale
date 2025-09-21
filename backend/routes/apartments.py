@@ -57,7 +57,6 @@ def get_apartment_feed():
                 if price is None:
                     continue
 
-                print(item.get('bedrooms'), item.get('bathrooms'), item.get('sqft'))
 
                 bedrooms = item.get('bedrooms')
                 bathrooms = item.get('bathrooms')
@@ -65,7 +64,7 @@ def get_apartment_feed():
 
                 all_apartments.append({
                     'id': str(uuid.uuid4()),
-                    'title': f"{item.get('bedrooms', 'Studio')} in {item.get('address').split(',')[1]}",
+                    'title': f"{item.get('bedrooms', 'Studio')}, {bathrooms} in {item.get('address').split(',')[1]}",
                     'address': item.get('address'),
                     'price': price,
                     'bedrooms': bedrooms if bedrooms is not None else 0,
