@@ -23,31 +23,39 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
               details of a single property listing.
     """
 
-    # --- Browser Setup ---
+    # --- OPTIMIZED BROWSER SETUP ---
     chrome_options = Options()
-    chrome_options.add_argument("--start-maximized")
-    # Uncomment the line below to run in headless mode (without a visible browser window)
-    # chrome_options.add_argument("--headless=new")
+    # **SPEED OPTIMIZATION 1: Enable headless mode**
+    chrome_options.add_argument("--headless=new") 
+    
+    # **SPEED OPTIMIZATION 2: Add performance-enhancing arguments**
+    chrome_options.add_argument("--no-sandbox") # Standard for server environments
+    chrome_options.add_argument("--disable-dev-shm-usage") # Overcomes resource limitations
+    chrome_options.add_argument("--disable-gpu") # Not needed for headless
+    chrome_options.add_argument("--window-size=1920,1080") # Set a standard window size
+
+    # **SPEED OPTIMIZATION 3: Block images and CSS to load pages faster**
+    prefs = {
+        "profile.managed_default_content_settings.images": 2,
+        "profile.managed_default_content_settings.stylesheets": 2,
+    }
+    chrome_options.add_experimental_option("prefs", prefs)
+
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument(
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     )
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-    wait = WebDriverWait(driver, 20)
+    # Use a shorter wait time now that things should load faster
+    wait = WebDriverWait(driver, 15)
 
     listings_data = []
 
     try:
         driver.get("https://www.redfin.com")
 
-        try:
-            consent_btn = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Accept')]"))
-            )
-            consent_btn.click()
-        except TimeoutException:
-            print("✓ No cookie banner found, continuing.")
+        # The rest of the logic can remain mostly the same, just removing sleeps
 
         rent_tab = wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//li[@role='tab' and .//span[@data-text='Rent']]")
@@ -56,34 +64,29 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
 
         search_box = wait.until(EC.element_to_be_clickable((By.ID, "search-box-input")))
         search_box.clear()
-        for char in location:
-            search_box.send_keys(char)
-            time.sleep(0.05)
+        search_box.send_keys(location)
         
-        time.sleep(1.5) 
-
+        # **SPEED OPTIMIZATION 4: Removed time.sleep(1.5)**
+        # WebDriverWait is sufficient to find the suggestion.
         first_suggestion = wait.until(EC.element_to_be_clickable(
             (By.CSS_SELECTOR, "div.item-row[role='link'], a.item-title")
         ))
         first_suggestion.click()
-        print("✓ Selected first location suggestion.")
 
-        print("- Waiting for property listings to load...")
         wait.until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, "div.HomeCardsContainer")
         ))
         
-        print("- Scrolling to load more results...")
-        for _ in range(4):
+        # **SPEED OPTIMIZATION 5: Reduced scroll delay**
+        # Scrolling should be faster without rendering images/CSS.
+        for _ in range(3): # Reduced scroll count
             driver.execute_script("window.scrollBy(0, document.body.scrollHeight)")
-            time.sleep(1.5)
+            time.sleep(0.5) # Shorter wait
 
-        print("✓ Page loaded. Parsing property data...")
         html_content = driver.page_source
         soup = BeautifulSoup(html_content, 'lxml')
         
         property_cards = soup.select('div.HomeCardContainer')
-        print(f"- Found {len(property_cards)} potential listings on the page.")
 
         for card in property_cards[:max_listings]:
             def get_text(selector):
@@ -98,7 +101,6 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
             sqft_element = card.select_one('span.bp-Homecard__LockedStat--value') or card.select_one('span.bp-Homecard__Stats--sqft')
             sqft = sqft_element.get_text(strip=True) if sqft_element else None
             
-            # *** FINAL IMAGE FIX STARTS HERE ***
             image = None
             source_tag = card.select_one('picture.bp-Homecard__Photo--image source')
             if source_tag and source_tag.get('srcset'):
@@ -119,25 +121,20 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
                     "image": image,
                 })
         
-        print(f"✓ Successfully parsed {len(listings_data)} listings.")
-
-    except TimeoutException:
-        print(f"❌ A timeout occurred. The page might have changed or failed to load. Check 'redfin_error.png'.")
-        driver.save_screenshot("redfin_error.png")
     except Exception as e:
-        print(f"❌ An unexpected error occurred: {e}")
-        driver.save_screenshot("redfin_error.png")
+        # Catching generic exception to see any errors during API integration
+        print(f"❌ An error occurred: {e}")
     finally:
-        print("- Closing the browser.")
         driver.quit()
     
     return listings_data
 
 if __name__ == "__main__":
-    # --- Configuration ---
     SEARCH_LOCATION = "3071 White Ash Trail"
     MAX_PROPERTIES_TO_SCRAPE = 30
     OUTPUT_FILENAME = "redfin_listings.json"
+
+    print(f"🚀 Starting headless scraper for: {SEARCH_LOCATION}")
 
     scraped_data = scrape_redfin_rentals(
         location=SEARCH_LOCATION, 
@@ -148,8 +145,6 @@ if __name__ == "__main__":
         with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
             json.dump(scraped_data, f, ensure_ascii=False, indent=4)
         print(f"\n✅ Data successfully saved to '{OUTPUT_FILENAME}'")
-
-        print("\n--- Scraped Data Preview ---")
-        print(json.dumps(scraped_data[:3], indent=2))
+        print(f"--- Successfully parsed {len(scraped_data)} listings. ---")
     else:
-        print("\n⚠️ No data was scraped. The script might need adjustments for website updates.")
+        print("\n⚠️ No data was scraped. The script might need adjustments.")
