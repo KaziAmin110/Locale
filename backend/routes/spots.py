@@ -187,27 +187,3 @@ def record_spot_swipe():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 # --- Swipe endpoint is unchanged ---
-@spots_bp.route('/swipe', methods=['POST'])
-@jwt_required()
-def record_spot_swipe():
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        spot_id = data.get('spot_id')
-        direction = data.get('direction')
-        is_like = direction == 'right'
-
-        if not spot_id or not direction:
-            return jsonify({'success': False, 'error': 'Missing spot_id or direction'}), 400
-        
-        swipe_data = {'user_id': user_id,'spot_id': spot_id,'is_like': is_like}
-        result = SupabaseService.insert_data('spot_swipes', swipe_data)
-
-        if not result['success']:
-            print(f"Failed to record spot swipe: {result.get('error')}")
-            return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500
-        return jsonify({'success': True}), 200
-    except Exception as e:
-        print(f"Spot swipe error: {str(e)}")
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': 'An internal server error occurred'}), 500
