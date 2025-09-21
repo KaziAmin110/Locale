@@ -224,10 +224,12 @@ export default function SwipeCard({
         </div>
         <div className="flex items-center justify-around pt-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-100">
           <div className="flex items-center gap-1 text-center">
-            <BedDouble /> {apartment.bedrooms ?? "N/A"}
+            <BedDouble />{" "}
+            {apartment.bedrooms ? apartment.bedrooms + " Beds" : "N/A"}
           </div>
           <div className="flex items-center gap-1 text-center">
-            <Bath /> {apartment.bathrooms ?? "N/A"}
+            <Bath />{" "}
+            {apartment.bathrooms ? apartment.bathrooms + " Baths" : "N/A"}
           </div>
           <div className="flex items-center gap-1 text-center">
             <Grid />

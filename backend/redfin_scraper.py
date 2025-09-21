@@ -128,23 +128,3 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
         driver.quit()
     
     return listings_data
-
-if __name__ == "__main__":
-    SEARCH_LOCATION = "3071 White Ash Trail"
-    MAX_PROPERTIES_TO_SCRAPE = 30
-    OUTPUT_FILENAME = "redfin_listings.json"
-
-    print(f"🚀 Starting headless scraper for: {SEARCH_LOCATION}")
-
-    scraped_data = scrape_redfin_rentals(
-        location=SEARCH_LOCATION, 
-        max_listings=MAX_PROPERTIES_TO_SCRAPE
-    )
-
-    if scraped_data:
-        with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
-            json.dump(scraped_data, f, ensure_ascii=False, indent=4)
-        print(f"\n✅ Data successfully saved to '{OUTPUT_FILENAME}'")
-        print(f"--- Successfully parsed {len(scraped_data)} listings. ---")
-    else:
-        print("\n⚠️ No data was scraped. The script might need adjustments.")
