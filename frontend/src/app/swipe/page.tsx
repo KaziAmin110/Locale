@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { ApiService } from "@/lib/api";
+import {
+  fallbackApartments,
+  fallbackPeople,
+  fallbackSpots,
+} from "@/lib/fallbackData";
+
 import LoadingSpinner from "./components/LoadingSpinner";
 import Header from "./components/Header";
 import TabNavigation from "./components/TabNavigation";
@@ -29,24 +35,25 @@ export default function SwipePage() {
   const loadItems = async (type: TabType) => {
     setLoading(true);
     try {
-      let response;
+      let response: ItemType[];
       switch (type) {
         case "apartments":
           response = await ApiService.getApartmentFeed();
-          setItems(response || []);
           break;
         case "people":
           response = await ApiService.getPeopleFeed();
-          setItems(response || []);
           break;
         case "spots":
           response = await ApiService.getSpotsFeed();
-          setItems(response || []);
           break;
+        default:
+          response = [];
       }
+      setItems(response || []);
     } catch (error) {
-      console.error("Failed to load items:", error);
-      setItems([]);
+      console.error(`Failed to load ${type}:`, error);
+      // As a final backup, you can still set fallback data here, but api.ts should handle it.
+      setItems([]); // Set to empty on a critical failure
     } finally {
       setLoading(false);
     }
@@ -55,8 +62,11 @@ export default function SwipePage() {
   const handleSwipe = async (action: "like" | "pass") => {
     if (items.length === 0) return;
 
-    const currentItem = items[0];
     const remainingItems = items.slice(1);
+
+    setItems(remainingItems);
+
+    const currentItem = items[0];
     const direction = action === "like" ? "right" : "left";
 
     try {
@@ -77,24 +87,17 @@ export default function SwipePage() {
         setMatchedItem(currentItem);
         setShowMatchModal(true);
       }
-
-      setItems(remainingItems);
-
-      // Load more items if running low
-      if (remainingItems.length <= 2) {
-        loadItems(activeTab);
-      }
     } catch (error) {
-      console.error("Swipe failed:", error);
-      setItems(remainingItems); // Still update UI
+      console.error("Swipe to backend failed (ignored in UI):", error);
     }
   };
 
+  // --- The returned JSX remains exactly the same ---
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
 
-      <div className="container max-w-md px-4 pt-6 mx-auto">
+      <div className="container max-w-md px-4 mx-auto">
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
         <div
@@ -109,7 +112,7 @@ export default function SwipePage() {
               onRefresh={() => loadItems(activeTab)}
             />
           ) : (
-            <div className="relative w-full h-full max-w-sm mx-auto">
+            <div className="relative w-full h-full max-w-sm mx-auto mt-7">
               {items.slice(0, 3).map((item, index) => (
                 <SwipeCard
                   key={item.id}

@@ -18,7 +18,7 @@ export default function TabNavigation({
   ];
 
   return (
-    <div className="flex p-1 mt-5 bg-white border border-gray-100 shadow-sm md:mt-10 rounded-2xl">
+    <div className="flex p-1 bg-white border border-gray-100 shadow-sm rounded-2xl">
       {tabs.map((tab) => (
         <button
           key={tab.key}
