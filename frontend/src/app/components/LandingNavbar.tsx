@@ -184,7 +184,7 @@ const ExtravagantNavbar = ({ user, onLogout }: LandingNavbarProps) => {
               <div className="w-12 h-12 bg-white/90 rounded-lg flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
                 <Sparkles className="w-7 h-7 text-indigo-600" />
               </div>
-              <span className="text-2xl font-bold text-slate-800 tracking-wide">Locale</span>
+              <span className="text-2xl font-bold text-slate-800 tracking-wide">CityMate</span>
             </a>
             <div className="hidden lg:flex items-center gap-8">
               <NavItem menuKey="buy">
