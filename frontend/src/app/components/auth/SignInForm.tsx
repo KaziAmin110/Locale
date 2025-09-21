@@ -23,9 +23,26 @@ const SignInForm = () => {
 
     try {
       const data = await ApiService.login({ email, password });
-      
-      // Redirect to onboarding or dashboard
-      window.location.href = "/onboarding";
+
+      if (!data.success || !data.token) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Store the token
+      localStorage.setItem("auth_token", data.token);
+
+      const user_data = await ApiService.getProfile();
+
+      if (data.success && user_data) {
+        // Redirect to onboarding if profile is incomplete
+        if (!user_data.onboarding_complete) {
+          window.location.href = "/onboarding";
+        } else {
+          window.location.href = "/swipe";
+        }
+      } else {
+        throw new Error("Failed to fetch user profile");
+      }
     } catch (error: any) {
       setError(error.message || "Failed to sign in. Please try again.");
     } finally {
@@ -35,23 +52,21 @@ const SignInForm = () => {
 
   return (
     <form className="flex flex-col w-full gap-4 mt-6" onSubmit={handleSubmit}>
-      <Input 
-        placeholder="Email" 
-        value={email} 
-        setValue={setEmail} 
+      <Input
+        placeholder="Email"
+        value={email}
+        setValue={setEmail}
         type="email"
       />
-      <Input 
-        placeholder="Password" 
-        value={password} 
-        setValue={setPassword} 
+      <Input
+        placeholder="Password"
+        value={password}
+        setValue={setPassword}
         type="password"
       />
-      
-      {error && (
-        <p className="text-sm text-center text-red-500">{error}</p>
-      )}
-      
+
+      {error && <p className="text-sm text-center text-red-500">{error}</p>}
+
       <button
         type="submit"
         disabled={isSubmitting}

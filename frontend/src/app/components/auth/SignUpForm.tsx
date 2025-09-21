@@ -36,8 +36,19 @@ const SignUpForm = () => {
         throw new Error(data.error || "Failed to create account");
       }
 
-      // Redirect to onboarding after successful signup
-      window.location.href = "/onboarding";
+      const user_data = await ApiService.getProfile();
+
+      if (data.success && user_data) {
+        // Redirect to onboarding if profile is incomplete
+        if (!user_data.onboarding_complete) {
+          window.location.href = "/onboarding";
+        } else {
+          window.location.href = "/swipe";
+        }
+      } else {
+        throw new Error("Failed to fetch user profile");
+      }
+      
     } catch (error: any) {
       setError(error.message || "Failed to create account. Please try again.");
     } finally {

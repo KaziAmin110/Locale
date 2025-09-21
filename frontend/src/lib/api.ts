@@ -29,6 +29,20 @@ export interface Person {
   occupation?: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  age?: number;
+  bio?: string;
+  city?: string;
+  budget_min?: number;
+  budget_max?: number;
+  interests?: string[];
+  photos?: string[]; // Added photos based on your backend
+  onboarding_complete: boolean;
+}
+
 export interface Spot {
   id: string;
   name: string;
@@ -385,5 +399,37 @@ export class ApiService {
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
     return result;
+  }
+
+  static async getProfile(): Promise<User> {
+    const token = this.getToken();
+    if (!token) {
+      // Redirect to login if not authenticated
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error ||
+          `API request failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to fetch profile");
+    }
+
+    return data.user;
   }
 }
