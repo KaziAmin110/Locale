@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import type { Apartment, Person, Spot } from "@/lib/api";
 import Image from "next/image";
+import { Map } from "lucide-react";
 
 type ItemType = Apartment | Person | Spot;
 type TabType = "apartments" | "people" | "spots";
@@ -13,7 +14,7 @@ interface SwipeCardProps {
   style?: React.CSSProperties;
 }
 
-// --- SVG Icons for Apartment Stats ---
+// --- SVG Icons ---
 const BedIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -53,7 +54,6 @@ const SqftIcon = () => (
     />
   </svg>
 );
-
 const LocationIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -64,6 +64,31 @@ const LocationIcon = () => (
     <path
       fillRule="evenodd"
       d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+const MapIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-5 h-5"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path d="M17.586 2.414a2 2 0 00-2.828 0L12 5.172V4a1 1 0 10-2 0v2.828l-4.243-4.242a2 2 0 10-2.828 2.828L7.172 8H4a1 1 0 100 2h2.828l-4.242 4.243a2 2 0 102.828 2.828L8 12.828V16a1 1 0 102 0v-2.828l4.243 4.242a2 2 0 102.828-2.828L12.828 12H16a1 1 0 100-2h-2.828l4.242-4.243a2 2 0 000-2.828z" />
+  </svg>
+);
+
+const ImageIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-5 h-5"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path
+      fillRule="evenodd"
+      d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
       clipRule="evenodd"
     />
   </svg>
@@ -82,6 +107,8 @@ export default function SwipeCard({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const startPos = useRef({ x: 0, y: 0 });
 
+  const [isMapView, setIsMapView] = useState(false);
+
   const images =
     item.photos && item.photos.length > 0
       ? item.photos
@@ -90,7 +117,8 @@ export default function SwipeCard({
         ];
 
   const handleStart = (clientX: number, clientY: number) => {
-    if (!isTopCard) return;
+    // --- MODIFIED --- Disable dragging when map is open
+    if (!isTopCard || isMapView) return;
     setIsDragging(true);
     startPos.current = { x: clientX, y: clientY };
     document.addEventListener("mousemove", handleMouseMove);
@@ -142,6 +170,12 @@ export default function SwipeCard({
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
+  // --- NEW --- Function to toggle between map and image view
+  const toggleMapView = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevents card drag
+    setIsMapView((prev) => !prev);
+  };
+
   const getSwipeIndicator = () => {
     if (!isDragging) return null;
     const opacity = Math.min(Math.abs(dragOffset.x) / 100, 1);
@@ -167,9 +201,18 @@ export default function SwipeCard({
     return null;
   };
 
+  // --- NEW --- Helper to generate the map embed URL
+  const getMapUrl = () => {
+    if (type !== "apartments" || !item.address) return "";
+
+    const API_KEY =
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_MAPS_API_KEY";
+    const encodedAddress = encodeURIComponent(item.address);
+    return `https://www.google.com/maps/embed/v1/place?key=${API_KEY}&q=${encodedAddress}`;
+  };
+
   const renderApartmentDetails = () => {
     const apartment = item as Apartment;
-    console.log("Apartment Item:", apartment);
     return (
       <>
         <div className="flex items-start justify-end">
@@ -184,8 +227,6 @@ export default function SwipeCard({
           <LocationIcon />
           <p className="truncate">{apartment.address}</p>
         </div>
-
-        {/* Rich Stats Bar */}
         <div className="flex items-center justify-around pt-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-100">
           <div className="text-center">
             <BedIcon /> {apartment.bedrooms ?? "N/A"}
@@ -217,7 +258,9 @@ export default function SwipeCard({
   return (
     <div
       className={`absolute inset-0 w-full h-full select-none my-5 ${
-        isTopCard ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+        isTopCard && !isMapView
+          ? "cursor-grab active:cursor-grabbing"
+          : "cursor-default"
       }`}
       style={{
         ...style,
@@ -237,47 +280,68 @@ export default function SwipeCard({
         {getSwipeIndicator()}
 
         <div className="relative overflow-hidden h-3/5">
-          <Image
-            src={images[currentImageIndex]}
-            alt={item.name || "image"}
-            fill
-            className="object-cover w-full h-full"
-            draggable={false}
-            sizes="(max-width: 600px) 100vw, 600px"
-            priority={isTopCard}
-            onError={(e) => {
-              e.currentTarget.src =
-                "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=600&fit=crop";
-            }}
-          />
-
-          {images.length > 1 && (
-            <div className="absolute flex space-x-1.5 transform -translate-x-1/2 top-3 left-1/2 z-20">
-              {images.map((_, index) => (
-                <div
-                  key={index}
-                  className={`h-1.5 rounded-full ${
-                    index === currentImageIndex
-                      ? "bg-white w-6"
-                      : "bg-white/60 w-4"
-                  }`}
-                  style={{ transition: "width 0.3s ease" }}
-                />
-              ))}
-            </div>
+          {isMapView && type === "apartments" ? (
+            <iframe
+              className="w-full h-full border-0"
+              loading="lazy"
+              allowFullScreen
+              src={getMapUrl()}
+            ></iframe>
+          ) : (
+            <>
+              <Image
+                src={images[currentImageIndex]}
+                alt={item.name || "image"}
+                fill
+                className="object-cover w-full h-full"
+                draggable={false}
+                sizes="(max-width: 600px) 100vw, 600px"
+                priority={isTopCard}
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=600&fit=crop";
+                }}
+              />
+              {images.length > 1 && (
+                <div className="absolute flex space-x-1.5 transform -translate-x-1/2 top-3 left-1/2 z-20">
+                  {images.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`h-1.5 rounded-full ${
+                        index === currentImageIndex
+                          ? "bg-white w-6"
+                          : "bg-white/60 w-4"
+                      }`}
+                      style={{ transition: "width 0.3s ease" }}
+                    />
+                  ))}
+                </div>
+              )}
+              {images.length > 1 && isTopCard && (
+                <>
+                  <div
+                    className="absolute top-0 left-0 z-10 w-1/3 h-full"
+                    onClick={prevImage}
+                  />
+                  <div
+                    className="absolute top-0 right-0 z-10 w-1/3 h-full"
+                    onClick={nextImage}
+                  />
+                </>
+              )}
+              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent" />
+            </>
           )}
 
-          {images.length > 1 && isTopCard && (
-            <>
-              <div
-                className="absolute top-0 left-0 z-10 w-1/3 h-full"
-                onClick={prevImage}
-              />
-              <div
-                className="absolute top-0 right-0 z-10 w-1/3 h-full"
-                onClick={nextImage}
-              />
-            </>
+          {/* --- MODIFIED --- Toggle button now shows Map or Image icon */}
+          {type === "apartments" && (
+            <button
+              onClick={toggleMapView}
+              className="absolute z-20 p-2 text-white transition-colors rounded-full top-14 right-4 bg-black/70 backdrop-blur-sm hover:bg-black/90"
+              aria-label={isMapView ? "Show images" : "Show map"}
+            >
+              {isMapView ? <ImageIcon /> : <Map />}
+            </button>
           )}
 
           <div className="absolute px-3 py-1 rounded-full top-4 right-4 bg-black/70 backdrop-blur-sm">
@@ -285,8 +349,6 @@ export default function SwipeCard({
               {Math.round((item.match_score || 0.8) * 100)}% Match
             </span>
           </div>
-
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
 
         <div className="flex flex-col justify-between p-6 h-2/5">
