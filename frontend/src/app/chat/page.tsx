@@ -17,6 +17,18 @@ export default function ChatPage() {
 
   useEffect(() => {
     loadData();
+    
+    // Check for URL parameters to auto-start conversation
+    const urlParams = new URLSearchParams(window.location.search);
+    const startMatchId = urlParams.get('start');
+    const matchType = urlParams.get('type');
+    
+    if (startMatchId && matchType) {
+      // Auto-start conversation after data loads
+      setTimeout(() => {
+        startConversation(startMatchId, matchType);
+      }, 1000);
+    }
   }, []);
 
   const loadData = async () => {
@@ -25,7 +37,7 @@ export default function ChatPage() {
       
       // Load conversations
       try {
-        const convResponse = await fetch('/api/chat/conversations', {
+        const convResponse = await fetch('http://localhost:5003/api/chat/conversations', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
           }
@@ -58,7 +70,7 @@ export default function ChatPage() {
 
   const startConversation = async (matchId: string, matchType: string) => {
     try {
-      const response = await fetch('/api/chat/start', {
+      const response = await fetch('http://localhost:5003/api/chat/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,11 +180,11 @@ export default function ChatPage() {
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
-                              {conversation.other_user.name.charAt(0).toUpperCase()}
+                              {(conversation.other_user?.name || 'U').charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-gray-900 truncate">
-                                {conversation.other_user.name}
+                                {conversation.other_user?.name || 'Unknown User'}
                               </h3>
                               <p className="text-sm text-gray-500 truncate">
                                 {conversation.last_message || 'Start your conversation!'}

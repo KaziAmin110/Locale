@@ -80,18 +80,27 @@ def get_apartment_feed():
             print(f"⚠️ Scraper threw an exception: {scraper_error}")
             all_apartments = [] # Ensure list is empty if scraper fails midway
 
-        # --- FALLBACK DATA SOURCE: GENERATED APARTMENTS ---
+        # --- FALLBACK DATA SOURCE: DATABASE APARTMENTS ---
         if not all_apartments:
-            print("✅ Scraper returned no results. Falling back to generated data.")
-            data_source = "fallback_generated"
-            city, state = 'Austin', 'TX'
-            if ',' in user_city_state:
-                parts = [p.strip() for p in user_city_state.split(',')]
-                if len(parts) >= 2:
-                    city = parts[-2]
-                    state_zip = parts[-1].split(' ')
-                    state = state_zip[0]
-            all_apartments = generate_realistic_apartments_for_city(city, state, user)
+            print("✅ Scraper returned no results. Falling back to database apartments.")
+            data_source = "database_fallback"
+            
+            # Get apartments from database instead of generating new ones
+            db_apartments = SupabaseService.get_data('apartments', {})
+            if db_apartments['success'] and db_apartments['data']:
+                all_apartments = db_apartments['data']
+                print(f"✅ Using {len(all_apartments)} apartments from database")
+            else:
+                # Last resort: generate apartments but save them to database
+                print("⚠️ No database apartments found. Generating new ones.")
+                city, state = 'Austin', 'TX'
+                if ',' in user_city_state:
+                    parts = [p.strip() for p in user_city_state.split(',')]
+                    if len(parts) >= 2:
+                        city = parts[-2]
+                        state_zip = parts[-1].split(' ')
+                        state = state_zip[0]
+                all_apartments = generate_and_save_apartments_for_city(city, state, user)
 
         print(f"✅ Data source used: '{data_source}'. Total apartments: {len(all_apartments)}.")
 
@@ -142,12 +151,16 @@ def record_apartment_swipe():
         user_id = get_jwt_identity()
         data = request.get_json()
         
+        print(f"DEBUG: Swipe request from user {user_id}")
+        print(f"DEBUG: Request data: {data}")
+        
         # Handle both frontend formats
         apartment_id = data.get('apartment_id') or data.get('item_id')
         direction = data.get('direction', 'right')
         action = 'like' if direction == 'right' else 'pass'
         
         if not apartment_id:
+            print("DEBUG: Missing apartment_id")
             return jsonify({'success': False, 'error': 'Missing apartment_id'}), 400
         
         # Record swipe
@@ -155,12 +168,15 @@ def record_apartment_swipe():
             'id': str(uuid.uuid4()), 
             'user_id': user_id, 
             'apartment_id': apartment_id, 
-            'is_like': action == 'like',
+            'direction': direction,
             'created_at': 'now()'
         }
+        print(f"DEBUG: Inserting swipe data: {swipe_data}")
         result = SupabaseService.insert_data('apartment_swipes', swipe_data)
+        print(f"DEBUG: Insert result: {result}")
         if not result['success']:
-            return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500
+            print(f"DEBUG: Insert failed: {result['error']}")
+            return jsonify({'success': False, 'error': f'Failed to record swipe: {result["error"]}'}), 500
         
         # Create match if liked
         is_match = action == 'like'
@@ -225,5 +241,19 @@ def generate_realistic_apartments_for_city(city, state, user):
             'match_score': round(random.uniform(0.7, 0.95), 2)
         }
         apartments.append(apartment)
+    
+    return apartments
+
+def generate_and_save_apartments_for_city(city, state, user):
+    """Generate apartments and save them to database."""
+    apartments = generate_realistic_apartments_for_city(city, state, user)
+    
+    # Save apartments to database
+    for apartment in apartments:
+        # Remove match_score before saving to database
+        db_apartment = {k: v for k, v in apartment.items() if k != 'match_score'}
+        result = SupabaseService.insert_data('apartments', db_apartment)
+        if not result['success']:
+            print(f"Warning: Failed to save apartment {apartment['id']}: {result['error']}")
     
     return apartments

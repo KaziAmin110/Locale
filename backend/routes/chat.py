@@ -91,10 +91,47 @@ def get_messages(conversation_id):
             # Sort by sent_at
             messages.sort(key=lambda x: x['sent_at'])
         
+        # Get other user details
+        other_user_id = conversation['user2_id'] if conversation['user1_id'] == user_id else conversation['user1_id']
+        
+        # Try to get user from users table first, then mock data
+        other_user_data = SupabaseService.get_data('users', {'id': other_user_id})
+        other_user = None
+        
+        if other_user_data['success'] and other_user_data['data']:
+            other_user = other_user_data['data'][0]
+        else:
+            # Fallback to mock data
+            from data.mock_data import MOCK_PEOPLE
+            other_user = next((p for p in MOCK_PEOPLE if p['id'] == other_user_id), None)
+        
+        if not other_user:
+            other_user = {
+                'id': other_user_id,
+                'name': 'Unknown User',
+                'photos': [],
+                'age': 25
+            }
+        
+        # Format conversation data for frontend
+        conversation_data = {
+            'conversation_id': conversation['id'],
+            'other_user': {
+                'id': other_user['id'],
+                'name': other_user['name'],
+                'image': other_user.get('photos', [''])[0] if other_user.get('photos') else '',
+                'age': other_user.get('age', 25)
+            },
+            'last_message': "Start your conversation!",
+            'last_message_at': conversation.get('last_message_at', conversation['created_at']),
+            'created_at': conversation['created_at'],
+            'messages': messages
+        }
+        
         return jsonify({
             "success": True,
             "messages": messages,
-            "conversation": conversation
+            "conversation": conversation_data
         })
         
     except Exception as e:
@@ -156,9 +193,34 @@ def start_conversation():
         user_id = get_jwt_identity()
         data = request.get_json()
         other_user_id = data.get('user_id')
+        match_type = data.get('match_type', 'person')
         
         if not other_user_id:
             return jsonify({"error": "Other user ID required"}), 400
+        
+        # For apartment matches, we need to create a conversation with a "landlord"
+        # For now, we'll create a system landlord user for apartment conversations
+        if match_type == 'apartment':
+            # Create a deterministic UUID for the landlord based on apartment ID
+            import hashlib
+            landlord_hash = hashlib.md5(f"landlord-{other_user_id}".encode()).hexdigest()
+            landlord_id = f"{landlord_hash[:8]}-{landlord_hash[8:12]}-{landlord_hash[12:16]}-{landlord_hash[16:20]}-{landlord_hash[20:32]}"
+            
+            # Check if landlord user exists, if not create one
+            landlord_data = SupabaseService.get_data('users', {'id': landlord_id})
+            if not landlord_data['success'] or not landlord_data['data']:
+                # Create a landlord user
+                landlord_user = {
+                    'id': landlord_id,
+                    'name': 'Property Manager',
+                    'email': f'landlord-{other_user_id}@locale.com',
+                    'photos': ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'],
+                    'age': 35,
+                    'created_at': 'now()'
+                }
+                SupabaseService.insert_data('users', landlord_user)
+            
+            other_user_id = landlord_id
         
         # Check if conversation already exists
         existing_conv1 = SupabaseService.get_data('conversations', {
@@ -197,7 +259,8 @@ def start_conversation():
                 "message": "Conversation started"
             })
         else:
-            return jsonify({"error": "Failed to start conversation"}), 500
+            print(f"Supabase insert error: {result.get('error')}")
+            return jsonify({"error": f"Failed to start conversation: {result.get('error')}"}), 500
             
     except Exception as e:
         return jsonify({"error": str(e)}), 500

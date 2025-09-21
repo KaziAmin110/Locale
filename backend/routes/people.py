@@ -90,7 +90,7 @@ def record_people_swipe():
             'id': str(uuid.uuid4()),
             'swiper_id': user_id,
             'swiped_id': swiped_id,
-            'is_like': is_like,
+            'direction': direction,
             'created_at': 'now()'
         }
         
@@ -101,7 +101,7 @@ def record_people_swipe():
             mutual_swipe = SupabaseService.get_data('people_swipes', {
                 'swiper_id': swiped_id,
                 'swiped_id': user_id,
-                'is_like': True
+                'direction': 'right'
             })
             
             is_mutual = mutual_swipe['success'] and len(mutual_swipe['data']) > 0

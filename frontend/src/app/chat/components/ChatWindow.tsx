@@ -28,7 +28,7 @@ const ChatWindow = ({ conversationId, onBack }: ChatWindowProps) => {
 
   const loadConversation = async () => {
     try {
-      const response = await fetch(`/api/chat/${conversationId}`, {
+      const response = await fetch(`http://localhost:5003/api/chat/${conversationId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
@@ -54,7 +54,7 @@ const ChatWindow = ({ conversationId, onBack }: ChatWindowProps) => {
 
     setSending(true)
     try {
-      const response = await fetch(`/api/chat/${conversationId}`, {
+      const response = await fetch(`http://localhost:5003/api/chat/${conversationId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -101,12 +101,12 @@ const ChatWindow = ({ conversationId, onBack }: ChatWindowProps) => {
         </button>
         
         <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
-          {conversation.other_user.name.charAt(0).toUpperCase()}
+          {(conversation.other_user?.name || 'U').charAt(0).toUpperCase()}
         </div>
         
         <div>
           <h3 className="font-semibold text-gray-900">
-            {conversation.other_user.name}
+            {conversation.other_user?.name || 'Unknown User'}
           </h3>
           <p className="text-sm text-gray-500">Online</p>
         </div>

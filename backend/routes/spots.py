@@ -131,7 +131,7 @@ def record_spot_swipe():
             'id': str(uuid.uuid4()),
             'user_id': user_id,
             'spot_id': spot_id,
-            'is_like': is_like,
+            'direction': direction,
             'created_at': 'now()'
         }
         

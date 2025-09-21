@@ -39,3 +39,15 @@ class SupabaseService:
             return {"success": True, "data": result.data}
         except Exception as e:
             return {"success": False, "error": str(e)}
+    
+    @staticmethod
+    def delete_data(table, filters=None):
+        try:
+            query = supabase.table(table).delete()
+            if filters:
+                for key, value in filters.items():
+                    query = query.eq(key, value)
+            result = query.execute()
+            return {"success": True, "data": result.data}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
