@@ -177,24 +177,21 @@ export default function SwipeCard({
             ${apartment.price?.toLocaleString()}/mo
           </span>
         </div>
-        <h2 className="mb-4 text-2xl font-bold text-gray-900 truncate-lines-1">
+        <h2 className="text-2xl font-bold text-gray-900 clamp-1">
           {apartment.title}
         </h2>
-        <div className="flex items-start mb-2 text-sm text-gray-500">
+        <div className="flex items-start text-sm text-gray-500">
           <LocationIcon />
           <p className="truncate">{apartment.address}</p>
         </div>
-        <p className="text-sm leading-relaxed text-gray-600 line-clamp-1">
-          {apartment.description}
-        </p>
 
         {/* Rich Stats Bar */}
         <div className="flex items-center justify-around pt-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-100">
           <div className="text-center">
-            <BedIcon /> {apartment.bedrooms ?? "N/A"} beds
+            <BedIcon /> {apartment.bedrooms ?? "N/A"}
           </div>
           <div className="text-center">
-            <BathIcon /> {apartment.bathrooms ?? "N/A"} baths
+            <BathIcon /> {apartment.bathrooms ?? "N/A"}
           </div>
           <div className="text-center">
             <SqftIcon /> {apartment.square_feet?.toLocaleString() ?? "N/A"} sqft

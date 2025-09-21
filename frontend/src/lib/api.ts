@@ -13,6 +13,9 @@ export interface Apartment {
   description: string;
   match_score: number;
   amenities?: string[];
+  square_feet?: number;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Person {

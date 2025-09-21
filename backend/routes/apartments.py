@@ -57,22 +57,24 @@ def get_apartment_feed():
                 if price is None:
                     continue
 
-                bedrooms = parse_stat(item.get('bedrooms'))
-                bathrooms = parse_stat(item.get('bathrooms'))
-                sqft_val = parse_stat(item.get('sqft'))
+                print(item.get('bedrooms'), item.get('bathrooms'), item.get('sqft'))
+
+                bedrooms = item.get('bedrooms')
+                bathrooms = item.get('bathrooms')
+                sqft_val = item.get('sqft')
 
                 all_apartments.append({
                     'id': str(uuid.uuid4()),
-                    'title': f"{item.get('bedrooms', 'Studio')} in {user_city_state.split(',')[0]}",
+                    'title': f"{item.get('bedrooms', 'Studio')} in {item.get('address').split(',')[1]}",
                     'address': item.get('address'),
                     'price': price,
-                    'bedrooms': int(bedrooms) if bedrooms is not None else 0,
+                    'bedrooms': bedrooms if bedrooms is not None else 0,
                     'bathrooms': bathrooms if bathrooms is not None else 1,
-                    'square_feet': int(sqft_val) if sqft_val is not None else None,
+                    'square_feet': sqft_val if sqft_val is not None else None,
                     'lat': float(user_lat) + random.uniform(-0.05, 0.05),
                     'lng': float(user_lng) + random.uniform(-0.05, 0.05),
                     'photos': [item.get('image')] if item.get('image') else [],
-                    'description': "A great rental opportunity found on Redfin.",
+                    'description': "A spacious apartment available for rent.",
                     'amenities': [],
                 })
         except Exception as scraper_error:
