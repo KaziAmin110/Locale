@@ -22,7 +22,6 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
         list: A list of dictionaries, where each dictionary contains
               details of a single property listing.
     """
-    print(f"🚀 Starting Redfin scraper for rental properties in: {location}")
 
     # --- Browser Setup ---
     chrome_options = Options()
@@ -47,16 +46,13 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
                 EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Accept')]"))
             )
             consent_btn.click()
-            print("✓ Accepted cookie policy.")
         except TimeoutException:
             print("✓ No cookie banner found, continuing.")
 
-        print("- Clicking on the 'Rent' tab...")
         rent_tab = wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//li[@role='tab' and .//span[@data-text='Rent']]")
         ))
         driver.execute_script("arguments[0].click();", rent_tab)
-        print("✓ Switched to 'Rent' tab.")
 
         search_box = wait.until(EC.element_to_be_clickable((By.ID, "search-box-input")))
         search_box.clear()
@@ -64,7 +60,6 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
             search_box.send_keys(char)
             time.sleep(0.05)
         
-        print(f"- Searching for '{location}'...")
         time.sleep(1.5) 
 
         first_suggestion = wait.until(EC.element_to_be_clickable(
@@ -140,7 +135,7 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
 
 if __name__ == "__main__":
     # --- Configuration ---
-    SEARCH_LOCATION = "Orlando, FL"
+    SEARCH_LOCATION = "3071 White Ash Trail"
     MAX_PROPERTIES_TO_SCRAPE = 30
     OUTPUT_FILENAME = "redfin_listings.json"
 
