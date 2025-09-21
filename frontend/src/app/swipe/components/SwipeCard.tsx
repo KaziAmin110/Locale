@@ -110,16 +110,6 @@ const Grid = () => (
     />
   </svg>
 );
-const MapIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-5 h-5"
-    viewBox="0 0 20 20"
-    fill="currentColor"
-  >
-    <path d="M17.586 2.414a2 2 0 00-2.828 0L12 5.172V4a1 1 0 10-2 0v2.828l-4.243-4.242a2 2 0 10-2.828 2.828L7.172 8H4a1 1 0 100 2h2.828l-4.242 4.243a2 2 0 102.828 2.828L8 12.828V16a1 1 0 102 0v-2.828l4.243 4.242a2 2 0 102.828-2.828L12.828 12H16a1 1 0 100-2h-2.828l4.242-4.243a2 2 0 000-2.828z" />
-  </svg>
-);
 
 export default function SwipeCard({
   item,
