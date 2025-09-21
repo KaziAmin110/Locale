@@ -167,6 +167,7 @@ export class ApiService {
     }
 
     const data = await response.json();
+    console.log("Apartment Feed Data:", data);
     if (!data.success) throw new Error(data.error);
     return data.apartments;
   }
