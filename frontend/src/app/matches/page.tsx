@@ -133,7 +133,7 @@ export default function MatchesPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="mb-8">
+        <div className="mb-8 md:mb-20">
           <div className="flex gap-2 pb-2 overflow-x-auto scrollbar-hide">
             {filterOptions.map(({ id, label, icon: Icon, count }) => (
               <button

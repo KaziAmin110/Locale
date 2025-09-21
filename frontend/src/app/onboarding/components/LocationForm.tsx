@@ -156,7 +156,7 @@ const LocationForm = ({
               placeholder="Enter a city, state, or zip code"
               value={locationInput}
               onChange={handleLocationChange}
-              className="w-full px-4 py-3 transition-colors border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-4 py-3 transition-colors border border-gray-300 rounded-xl focus:ring-2 focus:border-transparent"
             />
           </Autocomplete>
 
@@ -177,14 +177,14 @@ const LocationForm = ({
       <div className="flex gap-3 mt-8">
         <button
           onClick={() => setCurrentStep(2)}
-          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-xl font-medium transition-colors"
+          className="flex-1 p-3 font-medium text-gray-700 transition-colors bg-gray-200 hover:bg-gray-300 rounded-xl"
         >
           Back
         </button>
         <button
           onClick={() => setCurrentStep(4)}
           disabled={!locationInput.trim()}
-          className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 p-3 font-medium text-white transition-colors bg-red-500 hover:bg-red-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Continue
         </button>
