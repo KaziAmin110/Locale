@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { ApiService } from "@/lib/api";
 import LoadingSpinner from "./components/LoadingSpinner";
-import Header from "./components/Header";
 import TabNavigation from "./components/TabNavigation";
 import EmptyState from "./components/EmptyState";
 import SwipeCard from "./components/SwipeCard";
@@ -92,8 +91,6 @@ export default function SwipePage() {
 
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-br from-gray-50 to-gray-100">
-      <Header />
-
       <div className="container max-w-md px-4 pt-6 mx-auto">
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
