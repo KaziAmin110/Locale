@@ -239,6 +239,7 @@ export class ApiService {
     }
 
     const data = await response.json();
+    console.log("Spots Feed Data:", data);
     if (!data.success) throw new Error(data.error);
     return data.spots;
   }

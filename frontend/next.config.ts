@@ -21,6 +21,12 @@ const nextConfig = {
         port: "",
         pathname: "/photo/rent/**",
       },
+      {
+        protocol: "https",
+        hostname: "s3-media0.fl.yelpcdn.com",
+        port: "",
+        pathname: "/bphoto/**",
+      },
     ],
   },
 };

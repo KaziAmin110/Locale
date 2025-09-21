@@ -117,7 +117,6 @@ export default function SwipeCard({
         ];
 
   const handleStart = (clientX: number, clientY: number) => {
-    // --- MODIFIED --- Disable dragging when map is open
     if (!isTopCard || isMapView) return;
     setIsDragging(true);
     startPos.current = { x: clientX, y: clientY };
@@ -170,7 +169,6 @@ export default function SwipeCard({
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  // --- NEW --- Function to toggle between map and image view
   const toggleMapView = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevents card drag
     setIsMapView((prev) => !prev);
@@ -201,7 +199,6 @@ export default function SwipeCard({
     return null;
   };
 
-  // --- NEW --- Helper to generate the map embed URL
   const getMapUrl = () => {
     if (type !== "apartments" || !item.address) return "";
 
@@ -333,8 +330,7 @@ export default function SwipeCard({
             </>
           )}
 
-          {/* --- MODIFIED --- Toggle button now shows Map or Image icon */}
-          {type === "apartments" && (
+          {(type === "apartments" || type === "spots") && (
             <button
               onClick={toggleMapView}
               className="absolute z-20 p-2 text-white transition-colors rounded-full top-14 right-4 bg-black/70 backdrop-blur-sm hover:bg-black/90"

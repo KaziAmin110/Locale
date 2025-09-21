@@ -17,7 +17,7 @@ class Config:
     RENTSPREE_API_KEY = os.getenv('RENTSPREE_API_KEY')
     RAPIDAPI_KEY = os.getenv('RAPIDAPI_KEY')  # For Zillow
     
-    # Places APIs
+    # Places and YELP APIs
     GOOGLE_PLACES_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
     YELP_API_KEY = os.getenv('YELP_API_KEY')
     
