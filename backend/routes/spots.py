@@ -144,10 +144,13 @@ def record_spot_swipe():
         spot_id = data.get('spot_id')
         direction = data.get('direction')
         is_like = direction == 'right'
+
         if not spot_id or not direction:
             return jsonify({'success': False, 'error': 'Missing spot_id or direction'}), 400
-        swipe_data = {'id': str(uuid.uuid4()),'user_id': user_id,'spot_id': spot_id,'is_like': is_like}
+        
+        swipe_data = {'user_id': user_id,'spot_id': spot_id,'is_like': is_like}
         result = SupabaseService.insert_data('spot_swipes', swipe_data)
+
         if not result['success']:
             print(f"Failed to record spot swipe: {result.get('error')}")
             return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500

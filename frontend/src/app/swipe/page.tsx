@@ -25,6 +25,9 @@ export default function SwipePage() {
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [matchedItem, setMatchedItem] = useState<ItemType | null>(null);
 
+  // --- FIX --- Add a state to prevent double-swipes
+  const [isSwiping, setIsSwiping] = useState(false);
+
   useEffect(() => {
     const isDataMissing =
       (activeTab === "apartments" && apartments.length === 0) ||
@@ -36,7 +39,6 @@ export default function SwipePage() {
     } else {
       setLoading(false);
     }
-    // --- FIX --- Only depend on activeTab. This is the root cause of the infinite loop.
   }, [activeTab]);
 
   const currentItems = useMemo(() => {
@@ -50,7 +52,6 @@ export default function SwipePage() {
       default:
         return [];
     }
-    // --- FIX --- Add all data arrays as dependencies so this updates when data is loaded.
   }, [activeTab, apartments, people, spots]);
 
   const loadItems = async (type: TabType) => {
@@ -82,12 +83,13 @@ export default function SwipePage() {
   };
 
   const handleSwipe = async (action: "like" | "pass") => {
-    if (currentItems.length === 0) return;
+    if (isSwiping || currentItems.length === 0) return;
+
+    setIsSwiping(true);
 
     const currentItem = currentItems[0];
     const direction = action === "like" ? "right" : "left";
 
-    // Optimistically update the UI before waiting for the API call
     const updateState = (
       setter: React.Dispatch<React.SetStateAction<any[]>>
     ) => {
@@ -127,11 +129,13 @@ export default function SwipePage() {
 
       const remainingItems = currentItems.slice(1);
       if (remainingItems.length <= 2) {
-        loadItems(activeTab);
+        await loadItems(activeTab); // wait for new items to load before unlocking
       }
     } catch (error) {
       console.error("Swipe failed:", error);
-      // Note: UI is already updated, so no need for error handling here unless you want to revert the state
+    } finally {
+      // --- FIX --- Unlock the function once everything is done.
+      setIsSwiping(false);
     }
   };
 
@@ -178,6 +182,8 @@ export default function SwipePage() {
           <SwipeControls
             onPass={() => handleSwipe("pass")}
             onLike={() => handleSwipe("like")}
+            // --- FIX --- Disable buttons while a swipe is in progress.
+            disabled={isSwiping}
           />
         )}
       </div>

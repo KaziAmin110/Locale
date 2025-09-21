@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
+import { motion, PanInfo } from "framer-motion";
 import type { Apartment, Person, Spot } from "@/lib/api";
 import Image from "next/image";
-import { Bath, BedDouble, Grid, Map } from "lucide-react";
 
 type ItemType = Apartment | Person | Spot;
 type TabType = "apartments" | "people" | "spots";
@@ -17,6 +17,7 @@ interface SwipeCardProps {
   index: number;
 }
 
+// --- SVG Icons (Self-contained for consistency) ---
 const LocationIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -31,7 +32,6 @@ const LocationIcon = () => (
     />
   </svg>
 );
-
 const ImageIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -70,6 +70,55 @@ const CategoryIcon = () => (
     />
   </svg>
 );
+const BedDouble = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4 mr-1.5 inline-block"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path d="M3 7v10h14V7H3zm-1-3a1 1 0 00-1 1v12a1 1 0 001 1h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1z" />
+    <path d="M8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+  </svg>
+);
+const Bath = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4 mr-1.5 inline-block"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path
+      fillRule="evenodd"
+      d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 5a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zm1 3a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm-1 5a1 1 0 00-1 1v3a1 1 0 001 1h12a1 1 0 001-1v-3a1 1 0 00-1-1H4z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+const Grid = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4 mr-1.5 inline-block"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path
+      fillRule="evenodd"
+      d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 5a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zm1 3a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm-1 5a1 1 0 00-1 1v3a1 1 0 001 1h12a1 1 0 001-1v-3a1 1 0 00-1-1H4z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+const MapIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-5 h-5"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path d="M17.586 2.414a2 2 0 00-2.828 0L12 5.172V4a1 1 0 10-2 0v2.828l-4.243-4.242a2 2 0 10-2.828 2.828L7.172 8H4a1 1 0 100 2h2.828l-4.242 4.243a2 2 0 102.828 2.828L8 12.828V16a1 1 0 102 0v-2.828l4.243 4.242a2 2 0 102.828-2.828L12.828 12H16a1 1 0 100-2h-2.828l4.242-4.243a2 2 0 000-2.828z" />
+  </svg>
+);
 
 export default function SwipeCard({
   item,
@@ -79,23 +128,22 @@ export default function SwipeCard({
   style,
   index,
 }: SwipeCardProps) {
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const dragRef = useRef({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [rotation, setRotation] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isMapView, setIsMapView] = useState(false);
-  const startPos = useRef({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+
+  // --- FIX --- Add ref to prevent multiple backend calls
+  const hasSwipedRef = useRef(false);
 
   useEffect(() => {
     setIsMapView(false);
     setCurrentImageIndex(0);
+    // Reset swipe flag when item changes
+    hasSwipedRef.current = false;
   }, [item.id]);
 
   const spotInfo = useMemo(() => {
-    if (type !== "spots") {
-      return null;
-    }
+    if (type !== "spots") return null;
     const spot = item as Spot;
     const parts = spot.description?.split("•").map((p) => p.trim());
     return {
@@ -105,7 +153,7 @@ export default function SwipeCard({
           ?.replace(/_/g, " ")
           ?.replace(/\b\w/g, (c) => c.toUpperCase()) || "Activity",
     };
-  }, [item, type]); // It depends on item and type
+  }, [item, type]);
 
   const images =
     item.photos && item.photos.length > 0
@@ -114,80 +162,35 @@ export default function SwipeCard({
           "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=600&fit=crop",
         ];
 
-  const handleStart = (clientX: number, clientY: number) => {
-    if (!isTopCard || isMapView) return;
-    console.log("[SwipeCard] Drag start");
-    setIsDragging(true);
-    startPos.current = { x: clientX, y: clientY };
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleEnd);
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
-    document.addEventListener("touchend", handleEnd, { passive: true });
-  };
+  const SWIPE_THRESHOLD = 100;
+  const SWIPE_VELOCITY_THRESHOLD = 500;
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || !isTopCard) return;
-    const next = {
-      x: e.clientX - startPos.current.x,
-      y: e.clientY - startPos.current.y,
-    };
-    dragRef.current = next;          // always up-to-date
-    setDragOffset(next);
-    setRotation(next.x * 0.1);
-    if (Math.abs(e.clientX - startPos.current.x) > 2) {
-      console.log("[SwipeCard] moving", next);
-    }
-  };
-
-  const handleTouchMove = (e: TouchEvent) => {
-    if (!isDragging || !isTopCard) return;
-    e.preventDefault();
-    const t = e.touches[0];
-    const next = {
-      x: t.clientX - startPos.current.x,
-      y: t.clientY - startPos.current.y,
-    };
-    dragRef.current = next;
-    setDragOffset(next);
-    setRotation(next.x * 0.1);
-    console.log("[SwipeCard] moving", next);
-  };
-
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [pendingAction, setPendingAction] = useState<"like" | "pass" | null>(null);
-  const SWIPE_THRESHOLD = 50;
-
-  const handleEnd = () => {
-    if (!isDragging || !isTopCard) return;
-    document.removeEventListener("mousemove", handleMouseMove);
-    document.removeEventListener("mouseup", handleEnd);
-    document.removeEventListener("touchmove", handleTouchMove);
-    document.removeEventListener("touchend", handleEnd);
+  const handleDragEnd = (event: any, info: PanInfo) => {
     setIsDragging(false);
 
-    const { x } = dragRef.current;  
-    const { y } = dragRef.current; // use ref, not state
-    console.log("[SwipeCard] end", dragRef.current);
-
-    if (Math.abs(x) > SWIPE_THRESHOLD) {
-      const action: "like" | "pass" = x > 0 ? "like" : "pass";
-      setPendingAction(action);
-      setIsAnimating(true);
-
-      // fling it far outside viewport
-      const offscreenX = (x > 0 ? 1 : -1) * (window.innerWidth + 200);
-      //const offscreenY = (y > 0 ? 1 : -1) * (window.innerWidth + 200);
-
-      setDragOffset({ x: offscreenX, y: 0 });
-      setRotation(x > 0 ? 25 : -25);
-
-      // DO NOT call onSwipe here — wait for onTransitionEnd
+    // Prevent multiple swipe calls
+    if (hasSwipedRef.current || !isTopCard) {
       return;
     }
 
-    dragRef.current = { x: 0, y: 0 };
-    setDragOffset({ x: 0, y: 0 });
-    setRotation(0);
+    const { offset, velocity } = info;
+    const swipeDistance = Math.abs(offset.x);
+    const swipeVelocity = Math.abs(velocity.x);
+
+    // Only trigger swipe if threshold is met
+    if (
+      swipeDistance > SWIPE_THRESHOLD ||
+      swipeVelocity > SWIPE_VELOCITY_THRESHOLD
+    ) {
+      // Mark as swiped to prevent duplicate calls
+      hasSwipedRef.current = true;
+
+      // Determine swipe direction
+      const action = offset.x > 0 ? "like" : "pass";
+
+      // Call the swipe handler
+      onSwipe(action);
+    }
   };
 
   const nextImage = (e: React.MouseEvent) => {
@@ -203,31 +206,6 @@ export default function SwipeCard({
   const toggleMapView = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsMapView((prev) => !prev);
-  };
-
-  const getSwipeIndicator = () => {
-    if (!isDragging) return null;
-    const opacity = Math.min(Math.abs(dragOffset.x) / 100, 1);
-    if (dragOffset.x > 50) {
-      return (
-        <div
-          className="absolute z-10 px-6 py-3 text-xl font-bold text-white transform bg-green-500 top-12 right-12 rounded-2xl rotate-12"
-          style={{ opacity }}
-        >
-          LIKE
-        </div>
-      );
-    } else if (dragOffset.x < -50) {
-      return (
-        <div
-          className="absolute z-10 px-6 py-3 text-xl font-bold text-white transform bg-red-500 top-12 left-12 rounded-2xl -rotate-12"
-          style={{ opacity }}
-        >
-          PASS
-        </div>
-      );
-    }
-    return null;
   };
 
   const getMapUrl = () => {
@@ -254,14 +232,14 @@ export default function SwipeCard({
           <p className="truncate">{apartment.address}</p>
         </div>
         <div className="flex items-center justify-around pt-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-100">
-          <div className="flex items-center gap-2 text-center">
-            <BedDouble size={16} /> {apartment.bedrooms ?? "N/A"}
+          <div className="flex items-center gap-1 text-center">
+            <BedDouble /> {apartment.bedrooms ?? "N/A"}
           </div>
-          <div className="flex items-center gap-2 text-center">
-            <Bath size={16} /> {apartment.bathrooms ?? "N/A"}
+          <div className="flex items-center gap-1 text-center">
+            <Bath /> {apartment.bathrooms ?? "N/A"}
           </div>
-          <div className="flex items-center gap-2 text-center">
-            <Grid size={16} />{" "}
+          <div className="flex items-center gap-1 text-center">
+            <Grid />
             {apartment.square_feet?.toLocaleString() ?? "N/A"} sqft
           </div>
         </div>
@@ -278,16 +256,16 @@ export default function SwipeCard({
         </h2>
         <div className="flex items-start text-sm text-gray-500">
           <LocationIcon />
-          <p className="">{spot.address}</p>
+          <p className="truncate">{spot.address}</p>
         </div>
         <div className="flex items-center justify-between pt-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-200">
-          <div className="text-center">
+          <div className="flex items-center text-center">
             <StarIcon /> {spot.rating ?? "N/A"}
           </div>
           <div className="flex items-center text-center capitalize">
             <CategoryIcon /> {spotInfo?.category}
           </div>
-          <div className="flex items-center px-2 py-1 text-center text-white bg-green-600 border border-green-600 rounded-full">
+          <div className="flex items-center px-2 py-1 text-sm text-center text-white bg-green-600 border border-green-600 rounded-full">
             {spotInfo?.price}
           </div>
         </div>
@@ -309,44 +287,58 @@ export default function SwipeCard({
   );
 
   return (
-    <div
+    <motion.div
       className={`absolute inset-0 w-full h-full select-none my-5 ${
         isTopCard && !isMapView
           ? "cursor-grab active:cursor-grabbing"
           : "cursor-default"
       }`}
-      style={{
-        ...style,
-        transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${rotation}deg)`,
-        // keep transitions when not actively dragging (so fling animates)
-        transition: isDragging
-          ? "none"
-          : "transform 300ms ease-out, opacity 300ms ease-out",
-        touchAction: isTopCard && !isMapView ? "none" : "auto",
-        // optional fade during fling
-        opacity: isAnimating ? 0 : 1,
+      style={style}
+      drag={isTopCard && !isMapView ? "x" : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
+      onDragStart={() => setIsDragging(true)}
+      onDragEnd={handleDragEnd}
+      animate={{
+        rotate: 0,
+        scale: 1,
       }}
-      onMouseDown={(e) => {
-        e.preventDefault();
-        handleStart(e.clientX, e.clientY);
+      exit={{
+        x: 300,
+        opacity: 0,
+        scale: 0.8,
+        transition: { duration: 0.3 },
       }}
-      onTouchStart={(e) => {
-        e.preventDefault();
-        handleStart(e.touches[0].clientX, e.touches[0].clientY);
+      whileDrag={{
+        rotate: 0,
+        scale: 1.05,
+        transition: { type: "spring", stiffness: 300, damping: 30 },
       }}
-      onTransitionEnd={() => {
-      // Only fire after our fling completes
-      if (isAnimating && pendingAction) {
-        setIsAnimating(false);
-        const act = pendingAction;
-        setPendingAction(null);
-        onSwipe(act); // page.tsx will remove this card from the stack
-        // no need to reset drag here; parent removes the card
-      }
-    }}
     >
       <div className="relative h-full overflow-hidden bg-white border border-gray-100 shadow-xl rounded-3xl">
-        {getSwipeIndicator()}
+        {/* Swipe indicators */}
+        {isDragging && (
+          <>
+            <motion.div
+              className="absolute z-10 px-6 py-3 text-xl font-bold text-white transform bg-green-500 top-12 right-12 rounded-2xl rotate-12"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "spring" }}
+            >
+              LIKE
+            </motion.div>
+
+            <motion.div
+              className="absolute z-10 px-6 py-3 text-xl font-bold text-white transform bg-red-500 top-12 left-12 rounded-2xl -rotate-12"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "spring" }}
+            >
+              PASS
+            </motion.div>
+          </>
+        )}
+
         <div className="relative overflow-hidden h-3/5">
           {isMapView && (type === "apartments" || type === "spots") ? (
             <iframe
@@ -400,24 +392,21 @@ export default function SwipeCard({
               <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent" />
             </>
           )}
-
           {(type === "apartments" || type === "spots") && (
             <button
               onClick={toggleMapView}
               className="absolute z-20 p-2 text-white transition-colors rounded-full top-14 right-4 bg-black/70 backdrop-blur-sm hover:bg-black/90"
               aria-label={isMapView ? "Show images" : "Show map"}
             >
-              {isMapView ? <ImageIcon /> : <Map />}
+              {isMapView ? <ImageIcon /> : <MapIcon />}
             </button>
           )}
-
           <div className="absolute px-3 py-1 rounded-full top-4 right-4 bg-black/70 backdrop-blur-sm">
             <span className="text-sm font-semibold text-white">
               {Math.round((item.match_score || 0.8) * 100)}% Match
             </span>
           </div>
         </div>
-
         {index < 2 && (
           <div className="flex flex-col justify-between p-6 h-2/5">
             {(() => {
@@ -435,6 +424,6 @@ export default function SwipeCard({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
