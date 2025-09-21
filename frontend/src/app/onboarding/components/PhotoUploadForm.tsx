@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Camera, X, Plus } from "lucide-react";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import Image from "next/image";
 
 interface PhotoUploadFormProps {
   photos: string[];
@@ -16,7 +17,9 @@ const PhotoUploadForm = ({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
@@ -55,10 +58,12 @@ const PhotoUploadForm = ({
   const canContinue = photos.length >= 1;
 
   return (
-    <div className="flex-1 flex flex-col justify-evenly w-full max-w-lg px-4 pt-8 pb-4">
+    <div className="flex flex-col flex-1 w-full max-w-lg px-4 pt-8 pb-4 justify-evenly">
       <div className="space-y-6">
-        <div className="text-center space-y-2">
-          <h3 className="text-lg font-semibold text-gray-800">Add Your Photos</h3>
+        <div className="space-y-2 text-center">
+          <h3 className="text-lg font-semibold text-gray-800">
+            Add Your Photos
+          </h3>
           <p className="text-sm text-gray-600">
             Add at least 1 photo so people can get to know you better
           </p>
@@ -68,14 +73,16 @@ const PhotoUploadForm = ({
         <div className="grid grid-cols-3 gap-3">
           {photos.map((photo, index) => (
             <div key={index} className="relative aspect-square">
-              <img
+              <Image
                 src={photo}
                 alt={`Photo ${index + 1}`}
-                className="w-full h-full object-cover rounded-lg"
+                sizes="(max-width: 600px) 100vw, 33vw"
+                fill
+                className="object-cover rounded-lg"
               />
               <button
                 onClick={() => removePhoto(index)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                className="absolute flex items-center justify-center w-6 h-6 text-white transition-colors bg-red-500 rounded-full -top-2 -right-2 hover:bg-red-600"
               >
                 <X size={14} />
               </button>
@@ -87,13 +94,13 @@ const PhotoUploadForm = ({
             <button
               onClick={openFileSelector}
               disabled={isUploading}
-              className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-red-400 hover:bg-red-50 transition-colors disabled:opacity-50"
+              className="flex flex-col items-center justify-center transition-colors border-2 border-gray-300 border-dashed rounded-lg aspect-square hover:border-red-400 hover:bg-red-50 disabled:opacity-50"
             >
               {isUploading ? (
                 <LoadingSpinner />
               ) : (
                 <>
-                  <Plus size={24} className="text-gray-400 mb-1" />
+                  <Plus size={24} className="mb-1 text-gray-400" />
                   <span className="text-xs text-gray-500">Add Photo</span>
                 </>
               )}
@@ -102,7 +109,7 @@ const PhotoUploadForm = ({
         </div>
 
         {/* Camera Tip */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="p-3 border border-blue-200 rounded-lg bg-blue-50">
           <div className="flex items-start space-x-2">
             <Camera size={16} className="text-blue-500 mt-0.5" />
             <div className="text-xs text-blue-700">
@@ -131,14 +138,14 @@ const PhotoUploadForm = ({
       <div className="flex gap-3">
         <button
           onClick={() => setCurrentStep(1)}
-          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-xl font-medium transition-colors"
+          className="flex-1 p-3 font-medium text-gray-700 transition-colors bg-gray-200 hover:bg-gray-300 rounded-xl"
         >
           Back
         </button>
         <button
           onClick={() => setCurrentStep(3)}
           disabled={!canContinue}
-          className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 p-3 font-medium text-white transition-colors bg-red-500 hover:bg-red-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Continue
         </button>
