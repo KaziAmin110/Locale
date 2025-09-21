@@ -269,6 +269,8 @@ export class ApiService {
       }),
     });
 
+    console.log("Swipe Apartment Response:", response);
+
     if (!response.ok) {
       throw new Error(
         `API request failed: ${response.status} ${response.statusText}`

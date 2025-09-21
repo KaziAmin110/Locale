@@ -70,16 +70,6 @@ const CategoryIcon = () => (
     />
   </svg>
 );
-const PriceIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4 mr-1.5 inline-block"
-    viewBox="0 0 20 20"
-    fill="currentColor"
-  >
-    <path d="M8.433 7.418c.158-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-.737 0-1.33.664-1.33 1.475 0 .81.593 1.475 1.33 1.475.737 0 1.33-.665 1.33-1.475v-1.698a2.5 2.5 0 001.168.217c.737 0 1.33-.664 1.33-1.475 0-.81-.593-1.475-1.33-1.475-.325 0-.618.12-.84.312V4a1 1 0 00-1-1H7a1 1 0 00-1 1v.018a2.5 2.5 0 000 4.964zM10 18a8 8 0 100-16 8 8 0 000 16z" />
-  </svg>
-);
 
 export default function SwipeCard({
   item,
@@ -102,9 +92,7 @@ export default function SwipeCard({
     setCurrentImageIndex(0);
   }, [item.id]);
 
-  // --- FIX --- Moved useMemo to the top level of the component
   const spotInfo = useMemo(() => {
-    // Only perform this calculation if the card is a "spot"
     if (type !== "spots") {
       return null;
     }
@@ -126,7 +114,6 @@ export default function SwipeCard({
           "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=600&fit=crop",
         ];
 
-  // ... (All handlers like handleStart, handleEnd, etc. remain unchanged)
   const handleStart = (clientX: number, clientY: number) => {
     if (!isTopCard || isMapView) return;
     console.log("[SwipeCard] Drag start");
