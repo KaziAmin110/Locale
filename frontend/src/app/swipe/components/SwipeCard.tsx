@@ -3,6 +3,7 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import type { Apartment, Person, Spot } from "@/lib/api";
 import Image from "next/image";
+import { Bath, BedDouble, Grid, Map } from "lucide-react";
 
 type ItemType = Apartment | Person | Spot;
 type TabType = "apartments" | "people" | "spots";
@@ -16,46 +17,6 @@ interface SwipeCardProps {
   index: number;
 }
 
-// --- SVG Icons ---
-const BedIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4 mr-1.5 inline-block"
-    viewBox="0 0 20 20"
-    fill="currentColor"
-  >
-    <path d="M3 7v10h14V7H3zm-1-3a1 1 0 00-1 1v12a1 1 0 001 1h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1z" />
-    <path d="M8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-  </svg>
-);
-const BathIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4 mr-1.5 inline-block"
-    viewBox="0 0 20 20"
-    fill="currentColor"
-  >
-    <path
-      fillRule="evenodd"
-      d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 5a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zm1 3a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm-1 5a1 1 0 00-1 1v3a1 1 0 001 1h12a1 1 0 001-1v-3a1 1 0 00-1-1H4z"
-      clipRule="evenodd"
-    />
-  </svg>
-);
-const SqftIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4 mr-1.5 inline-block"
-    viewBox="0 0 20 20"
-    fill="currentColor"
-  >
-    <path
-      fillRule="evenodd"
-      d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 5a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zm1 3a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm-1 5a1 1 0 00-1 1v3a1 1 0 001 1h12a1 1 0 001-1v-3a1 1 0 00-1-1H4z"
-      clipRule="evenodd"
-    />
-  </svg>
-);
 const LocationIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -70,16 +31,7 @@ const LocationIcon = () => (
     />
   </svg>
 );
-const MapIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-5 h-5"
-    viewBox="0 0 20 20"
-    fill="currentColor"
-  >
-    <path d="M17.586 2.414a2 2 0 00-2.828 0L12 5.172V4a1 1 0 10-2 0v2.828l-4.243-4.242a2 2 0 10-2.828 2.828L7.172 8H4a1 1 0 100 2h2.828l-4.242 4.243a2 2 0 102.828 2.828L8 12.828V16a1 1 0 102 0v-2.828l4.243 4.242a2 2 0 102.828-2.828L12.828 12H16a1 1 0 100-2h-2.828l4.242-4.243a2 2 0 000-2.828z" />
-  </svg>
-);
+
 const ImageIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -279,14 +231,15 @@ export default function SwipeCard({
           <p className="truncate">{apartment.address}</p>
         </div>
         <div className="flex items-center justify-around pt-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-100">
-          <div className="text-center">
-            <BedIcon /> {apartment.bedrooms ?? "N/A"}
+          <div className="flex items-center gap-2 text-center">
+            <BedDouble size={16} /> {apartment.bedrooms ?? "N/A"}
           </div>
-          <div className="text-center">
-            <BathIcon /> {apartment.bathrooms ?? "N/A"}
+          <div className="flex items-center gap-2 text-center">
+            <Bath size={16} /> {apartment.bathrooms ?? "N/A"}
           </div>
-          <div className="text-center">
-            <SqftIcon /> {apartment.square_feet?.toLocaleString() ?? "N/A"} sqft
+          <div className="flex items-center gap-2 text-center">
+            <Grid size={16} />{" "}
+            {apartment.square_feet?.toLocaleString() ?? "N/A"} sqft
           </div>
         </div>
       </>
@@ -295,7 +248,6 @@ export default function SwipeCard({
 
   const renderSpotDetails = () => {
     const spot = item as Spot;
-    // --- FIX --- spotInfo is now taken from the top-level useMemo
     return (
       <>
         <h2 className="text-2xl font-bold text-gray-900 clamp-1">
@@ -303,17 +255,17 @@ export default function SwipeCard({
         </h2>
         <div className="flex items-start text-sm text-gray-500">
           <LocationIcon />
-          <p className="truncate">{spot.address}</p>
+          <p className="">{spot.address}</p>
         </div>
-        <div className="flex items-center justify-around pt-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-200">
           <div className="text-center">
             <StarIcon /> {spot.rating ?? "N/A"}
           </div>
           <div className="flex items-center text-center capitalize">
             <CategoryIcon /> {spotInfo?.category}
           </div>
-          <div className="flex items-center text-center text-green-700">
-            <PriceIcon /> {spotInfo?.price}
+          <div className="flex items-center px-2 py-1 text-center text-white bg-green-600 border border-green-600 rounded-full">
+            {spotInfo?.price}
           </div>
         </div>
       </>
@@ -416,7 +368,7 @@ export default function SwipeCard({
               className="absolute z-20 p-2 text-white transition-colors rounded-full top-14 right-4 bg-black/70 backdrop-blur-sm hover:bg-black/90"
               aria-label={isMapView ? "Show images" : "Show map"}
             >
-              {isMapView ? <ImageIcon /> : <MapIcon />}
+              {isMapView ? <ImageIcon /> : <Map />}
             </button>
           )}
 
