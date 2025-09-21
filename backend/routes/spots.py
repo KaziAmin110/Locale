@@ -134,7 +134,6 @@ def get_spots_feed():
         traceback.print_exc()
         return jsonify({"error": "An internal error occurred"}), 500
 
-<<<<<<< HEAD
 @spots_bp.route('/swipe', methods=['POST'])
 @jwt_required()
 def record_spot_swipe():
@@ -187,7 +186,6 @@ def record_spot_swipe():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-=======
 # --- Swipe endpoint is unchanged ---
 @spots_bp.route('/swipe', methods=['POST'])
 @jwt_required()
@@ -213,4 +211,3 @@ def record_spot_swipe():
         print(f"Spot swipe error: {str(e)}")
         traceback.print_exc()
         return jsonify({'success': False, 'error': 'An internal server error occurred'}), 500
->>>>>>> 893480753741deb3f98fc0e142c546b9504db0c8

@@ -111,7 +111,6 @@ def get_apartment_feed():
             print(f"⚠️ Scraper threw an exception: {scraper_error}")
             all_apartments = []
 
-<<<<<<< HEAD
         # --- FALLBACK DATA SOURCE: DATABASE APARTMENTS ---
         if not all_apartments:
             print("✅ Scraper returned no results. Falling back to database apartments.")
@@ -183,7 +182,6 @@ def record_apartment_swipe():
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
-<<<<<<< HEAD
         
         print(f"DEBUG: Swipe request from user {user_id}")
         print(f"DEBUG: Request data: {data}")
@@ -291,25 +289,3 @@ def generate_and_save_apartments_for_city(city, state, user):
             print(f"Warning: Failed to save apartment {apartment['id']}: {result['error']}")
     
     return apartments
-=======
-        apartment_id = data.get('apartment_id')
-        direction = data.get('direction')
-        is_like = direction == 'right'
-
-        if not apartment_id or not direction:
-            return jsonify({'success': False, 'error': 'Missing apartment_id or action'}), 400
-        
-        swipe_data = {'id': str(uuid.uuid4()), 'user_id': user_id, 'apartment_id': apartment_id, 'is_like': is_like}
-        result = SupabaseService.insert_data('apartment_swipes', swipe_data)
-
-        
-        if not result['success']:
-            print("Data already exists or insertion failed. (Swiped before?)")
-            return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500
-        
-        return jsonify({'success': True}), 200
-
-    except Exception as e:
-        print(f"Apartment swipe error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
->>>>>>> 893480753741deb3f98fc0e142c546b9504db0c8
