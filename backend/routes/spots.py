@@ -96,8 +96,6 @@ def get_spots_feed():
                 spot['match_score'] = rec['score']
                 result_spots.append(spot)
         
-        print(result_spots);
-        
         return jsonify({
             "success": True,
             "spots": result_spots,

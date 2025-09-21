@@ -1,7 +1,9 @@
-import React, { useState, useRef } from "react";
+"use client";
+
+import React, { useState, useRef, useMemo } from "react";
 import type { Apartment, Person, Spot } from "@/lib/api";
 import Image from "next/image";
-import { Map } from "lucide-react";
+import { Receipt } from "lucide-react";
 
 type ItemType = Apartment | Person | Spot;
 type TabType = "apartments" | "people" | "spots";
@@ -78,7 +80,6 @@ const MapIcon = () => (
     <path d="M17.586 2.414a2 2 0 00-2.828 0L12 5.172V4a1 1 0 10-2 0v2.828l-4.243-4.242a2 2 0 10-2.828 2.828L7.172 8H4a1 1 0 100 2h2.828l-4.242 4.243a2 2 0 102.828 2.828L8 12.828V16a1 1 0 102 0v-2.828l4.243 4.242a2 2 0 102.828-2.828L12.828 12H16a1 1 0 100-2h-2.828l4.242-4.243a2 2 0 000-2.828z" />
   </svg>
 );
-
 const ImageIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -89,6 +90,31 @@ const ImageIcon = () => (
     <path
       fillRule="evenodd"
       d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+const StarIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4 mr-1.5 inline-block text-yellow-500"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+  </svg>
+);
+
+const CategoryIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4 mr-1.5 inline-block"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path
+      fillRule="evenodd"
+      d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5a.997.997 0 01.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z"
       clipRule="evenodd"
     />
   </svg>
@@ -105,9 +131,8 @@ export default function SwipeCard({
   const [isDragging, setIsDragging] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const startPos = useRef({ x: 0, y: 0 });
-
   const [isMapView, setIsMapView] = useState(false);
+  const startPos = useRef({ x: 0, y: 0 });
 
   const images =
     item.photos && item.photos.length > 0
@@ -170,7 +195,7 @@ export default function SwipeCard({
   };
 
   const toggleMapView = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevents card drag
+    e.stopPropagation();
     setIsMapView((prev) => !prev);
   };
 
@@ -201,9 +226,7 @@ export default function SwipeCard({
 
   const getMapUrl = () => {
     if (type !== "apartments" || !item.address) return "";
-
-    const API_KEY =
-      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_MAPS_API_KEY";
+    const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""; // Use your environment variable
     const encodedAddress = encodeURIComponent(item.address);
     return `https://www.google.com/maps/embed/v1/place?key=${API_KEY}&q=${encodedAddress}`;
   };
@@ -239,6 +262,43 @@ export default function SwipeCard({
     );
   };
 
+  const renderSpotDetails = () => {
+    const spot = item as Spot;
+    const spotInfo = useMemo(() => {
+      const parts = spot.description?.split("•").map((p) => p.trim());
+      return {
+        price: parts?.find((p) => p.startsWith("$")) || "$$",
+        category:
+          spot.category
+            ?.replace(/_/g, " ")
+            ?.replace(/\b\w/g, (c) => c.toUpperCase()) || "Activity",
+      };
+    }, [spot.description, spot.category]);
+
+    return (
+      <>
+        <h2 className="text-2xl font-bold text-gray-900 clamp-1">
+          {spot.name}
+        </h2>
+        <div className="flex items-start text-sm text-gray-500">
+          <LocationIcon />
+          <p className="truncate">{spot.address}</p>
+        </div>
+        <div className="flex items-center justify-around pt-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-100">
+          <div className="text-center">
+            <StarIcon /> {spot.rating ?? "N/A"}
+          </div>
+          <div className="text-center capitalize">
+            <CategoryIcon /> {spotInfo.category}
+          </div>
+          <div className="flex gap-2 text-lg text-center text-green-800">
+            {spotInfo.price}
+          </div>
+        </div>
+      </>
+    );
+  };
+
   const renderDefaultDetails = () => (
     <>
       <div className="flex items-center justify-between mb-2">
@@ -247,7 +307,7 @@ export default function SwipeCard({
         </h2>
       </div>
       <p className="text-sm leading-relaxed text-gray-600 line-clamp-3">
-        {item.description || item.bio || "No description available"}
+        {(item as Person).bio || "No description available"}
       </p>
     </>
   );
@@ -275,7 +335,6 @@ export default function SwipeCard({
     >
       <div className="relative h-full overflow-hidden bg-white border border-gray-100 shadow-xl rounded-3xl">
         {getSwipeIndicator()}
-
         <div className="relative overflow-hidden h-3/5">
           {isMapView && type === "apartments" ? (
             <iframe
@@ -330,13 +389,13 @@ export default function SwipeCard({
             </>
           )}
 
-          {(type === "apartments" || type === "spots") && (
+          {type === "apartments" && (
             <button
               onClick={toggleMapView}
-              className="absolute z-20 p-2 text-white transition-colors rounded-full top-14 right-4 bg-black/70 backdrop-blur-sm hover:bg-black/90"
+              className="absolute z-20 p-2 text-white transition-colors rounded-full bottom-4 left-4 bg-black/70 backdrop-blur-sm hover:bg-black/90"
               aria-label={isMapView ? "Show images" : "Show map"}
             >
-              {isMapView ? <ImageIcon /> : <Map />}
+              {isMapView ? <ImageIcon /> : <MapIcon />}
             </button>
           )}
 
@@ -348,9 +407,18 @@ export default function SwipeCard({
         </div>
 
         <div className="flex flex-col justify-between p-6 h-2/5">
-          {type === "apartments"
-            ? renderApartmentDetails()
-            : renderDefaultDetails()}
+          {(() => {
+            switch (type) {
+              case "apartments":
+                return renderApartmentDetails();
+              case "spots":
+                return renderSpotDetails();
+              case "people":
+                return renderDefaultDetails();
+              default:
+                return null;
+            }
+          })()}
         </div>
       </div>
     </div>

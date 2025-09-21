@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ApiService } from "@/lib/api";
 import LoadingSpinner from "./components/LoadingSpinner";
 import TabNavigation from "./components/TabNavigation";
@@ -16,14 +16,42 @@ type ItemType = Apartment | Person | Spot;
 
 export default function SwipePage() {
   const [activeTab, setActiveTab] = useState<TabType>("apartments");
-  const [items, setItems] = useState<ItemType[]>([]);
+
+  const [apartments, setApartments] = useState<Apartment[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [spots, setSpots] = useState<Spot[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [matchedItem, setMatchedItem] = useState<ItemType | null>(null);
 
   useEffect(() => {
-    loadItems(activeTab);
+    const isDataMissing =
+      (activeTab === "apartments" && apartments.length === 0) ||
+      (activeTab === "people" && people.length === 0) ||
+      (activeTab === "spots" && spots.length === 0);
+
+    if (isDataMissing) {
+      loadItems(activeTab);
+    } else {
+      setLoading(false);
+    }
+    // --- FIX --- Only depend on activeTab. This is the root cause of the infinite loop.
   }, [activeTab]);
+
+  const currentItems = useMemo(() => {
+    switch (activeTab) {
+      case "apartments":
+        return apartments;
+      case "people":
+        return people;
+      case "spots":
+        return spots;
+      default:
+        return [];
+    }
+    // --- FIX --- Add all data arrays as dependencies so this updates when data is loaded.
+  }, [activeTab, apartments, people, spots]);
 
   const loadItems = async (type: TabType) => {
     setLoading(true);
@@ -32,31 +60,51 @@ export default function SwipePage() {
       switch (type) {
         case "apartments":
           response = await ApiService.getApartmentFeed();
-          setItems(response || []);
+          setApartments(response || []);
           break;
         case "people":
           response = await ApiService.getPeopleFeed();
-          setItems(response || []);
+          setPeople(response || []);
           break;
         case "spots":
           response = await ApiService.getSpotsFeed();
-          setItems(response || []);
+          setSpots(response || []);
           break;
       }
     } catch (error) {
-      console.error("Failed to load items:", error);
-      setItems([]);
+      console.error(`Failed to load ${type}:`, error);
+      if (type === "apartments") setApartments([]);
+      if (type === "people") setPeople([]);
+      if (type === "spots") setSpots([]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSwipe = async (action: "like" | "pass") => {
-    if (items.length === 0) return;
+    if (currentItems.length === 0) return;
 
-    const currentItem = items[0];
-    const remainingItems = items.slice(1);
+    const currentItem = currentItems[0];
     const direction = action === "like" ? "right" : "left";
+
+    // Optimistically update the UI before waiting for the API call
+    const updateState = (
+      setter: React.Dispatch<React.SetStateAction<any[]>>
+    ) => {
+      setter((prev) => prev.slice(1));
+    };
+
+    switch (activeTab) {
+      case "apartments":
+        updateState(setApartments);
+        break;
+      case "people":
+        updateState(setPeople);
+        break;
+      case "spots":
+        updateState(setSpots);
+        break;
+    }
 
     try {
       let response;
@@ -77,15 +125,13 @@ export default function SwipePage() {
         setShowMatchModal(true);
       }
 
-      setItems(remainingItems);
-
-      // Load more items if running low
+      const remainingItems = currentItems.slice(1);
       if (remainingItems.length <= 2) {
         loadItems(activeTab);
       }
     } catch (error) {
       console.error("Swipe failed:", error);
-      setItems(remainingItems); // Still update UI
+      // Note: UI is already updated, so no need for error handling here unless you want to revert the state
     }
   };
 
@@ -100,14 +146,14 @@ export default function SwipePage() {
         >
           {loading ? (
             <LoadingSpinner />
-          ) : items.length === 0 ? (
+          ) : currentItems.length === 0 ? (
             <EmptyState
               activeTab={activeTab}
               onRefresh={() => loadItems(activeTab)}
             />
           ) : (
             <div className="relative w-full h-full max-w-sm mx-auto">
-              {items.slice(0, 3).map((item, index) => (
+              {currentItems.slice(0, 3).map((item, index) => (
                 <SwipeCard
                   key={item.id}
                   item={item}
@@ -127,7 +173,7 @@ export default function SwipePage() {
           )}
         </div>
 
-        {items.length > 0 && (
+        {currentItems.length > 0 && !loading && (
           <SwipeControls
             onPass={() => handleSwipe("pass")}
             onLike={() => handleSwipe("like")}
@@ -141,7 +187,6 @@ export default function SwipePage() {
         type={activeTab}
         onClose={() => setShowMatchModal(false)}
       />
-
       <BottomNavigation />
     </div>
   );
