@@ -275,6 +275,8 @@ export class ApiService {
       }),
     });
 
+    console.log("Swipe Apartment Response:", response);
+
     if (!response.ok) {
       throw new Error(
         `API request failed: ${response.status} ${response.statusText}`
@@ -328,6 +330,9 @@ export class ApiService {
       }
       throw new Error("Not authenticated");
     }
+
+    console.log("Spot ID:", spotId);
+    console.log("Direction:", direction);
 
     const response = await fetch(`${API_BASE_URL}/api/spots/swipe`, {
       method: "POST",
