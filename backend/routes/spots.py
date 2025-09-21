@@ -5,7 +5,6 @@ from services.ml_engine import MLEngine
 from config import Config
 from external_apis.google_places_api import GooglePlacesAPI 
 from external_apis.yelp_api import YelpAPI
-from data.mock_data import MOCK_SPOTS
 import uuid
 import traceback
 
@@ -16,8 +15,8 @@ ml_engine = MLEngine()
 @jwt_required()
 def get_spots_feed():
     """
-    Generates a feed of local spots, inserting new ones into the database,
-    and ranking them based on user preferences.
+    Generates a feed of local spots by fetching from APIs, inserting new ones 
+    into the database, and ranking the fresh results for the user.
     """
     try:
         user_id = get_jwt_identity()
@@ -55,14 +54,9 @@ def get_spots_feed():
                 all_spots.extend(yelp_result['spots'])
                 data_source = "yelp"
 
-        is_real_data = bool(all_spots)
-        if not all_spots:
-            print("❌ APIs returned no data. Falling back to mock data for this feed.")
-            all_spots = MOCK_SPOTS 
-            data_source = "mock"
-
         # --- DATABASE INSERTION LOGIC ---
-        if is_real_data:
+        # Only try to insert if we got real data from an API
+        if all_spots:
             new_spots_to_insert = []
             print("🔍 Checking for existing spots in the database...")
             existing_spots_result = SupabaseService.get_data('spots')
@@ -85,14 +79,16 @@ def get_spots_feed():
                     print(f"🔥 Database insertion for spots failed: {insertion_result.get('error')}")
             else:
                 print("✅ No new spots to insert.")
+        else:
+            print("❌ APIs returned no data. No data to insert.")
 
         # --- FILTERING & RANKING ---
-        spots_data = SupabaseService.get_data('spots')['data']
+        db_spots = SupabaseService.get_data('spots')['data']
         swipes_data = SupabaseService.get_data('spot_swipes', {'user_id': user_id})
-
         swiped_ids = {swipe['spot_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
-
-        available_spots = [spot for spot in spots_data if spot['id'] not in swiped_ids]
+        
+        # --- FIX --- Filter the 'all_spots' list that was just fetched from the APIs.
+        available_spots = [spot for spot in db_spots if spot['id'] not in swiped_ids]
         
         if not available_spots:
             return jsonify({
@@ -144,7 +140,9 @@ def record_spot_swipe():
         if not spot_id or not direction:
             return jsonify({'success': False, 'error': 'Missing spot_id or direction'}), 400
         
+        # --- FIX --- Added a unique ID for the swipe record itself.
         swipe_data = {
+            'id': str(uuid.uuid4()),
             'user_id': user_id,
             'spot_id': spot_id,
             'is_like': is_like

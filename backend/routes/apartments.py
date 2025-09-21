@@ -18,7 +18,6 @@ def parse_price(price_str):
         return None
     cleaned_price = re.sub(r'[$,+A-Za-z/]', '', price_str).strip()
     try:
-        # Take the first number in case of a range like "1500-1600"
         return int(cleaned_price.split('-')[0])
     except (ValueError, IndexError):
         return None
@@ -27,7 +26,6 @@ def parse_integer_value(value):
     """Removes commas and other characters to parse an integer from a string."""
     if value is None:
         return None
-    # Convert to string to be safe, then remove all non-digit characters
     cleaned_value = re.sub(r'[^\d]', '', str(value))
     if cleaned_value:
         try:
@@ -48,8 +46,8 @@ def get_apartment_feed():
         
         user = user_result['data'][0]
         user_city_state = user.get('city', 'University Park, FL')
-        user_lat = user.get('lat') or 27.3365  # Default to University Park, FL
-        user_lng = user.get('lng') or -82.5307 # Default to University Park, FL
+        user_lat = user.get('lat') or 27.3365
+        user_lng = user.get('lng') or -82.5307
         
         all_apartments = []
         data_source = "redfin_scraper"
@@ -60,7 +58,6 @@ def get_apartment_feed():
             
             new_apartments_to_insert = []
             
-            # 1. Fetch existing apartment addresses to prevent duplicates
             print("🔍 Checking for existing apartments in the database...")
             existing_apartments_result = SupabaseService.get_data('apartments')
             existing_addresses = {
@@ -68,7 +65,6 @@ def get_apartment_feed():
             } if existing_apartments_result.get('success') else set()
             print(f"Found {len(existing_addresses)} existing addresses.")
 
-            # Process scraped data
             for item in raw_scraped_data:
                 price = parse_price(item.get('price'))
                 if price is None:
@@ -78,12 +74,10 @@ def get_apartment_feed():
                 if not address:
                     continue
                 
-                # Clean integer-based fields
                 bedrooms = parse_integer_value(item.get('bedrooms'))
                 bathrooms = parse_integer_value(item.get('bathrooms'))
                 sqft_val = parse_integer_value(item.get('sqft'))
                 
-                # Format the apartment data
                 apartment_data = {
                     'id': str(uuid.uuid4()),
                     'title': f"{bedrooms or 'Studio'}, {bathrooms or 1} bath in {address.split(',')[1].strip()}",
@@ -100,12 +94,10 @@ def get_apartment_feed():
                 }
                 all_apartments.append(apartment_data)
 
-                # 2. Check if the apartment is new before adding it to the insert list
                 if address not in existing_addresses:
                     new_apartments_to_insert.append(apartment_data)
                     existing_addresses.add(address)
             
-            # 3. Insert new apartments into the database if any were found
             if new_apartments_to_insert:
                 print(f"✍️ Inserting {len(new_apartments_to_insert)} new apartments into the database...")
                 insertion_result = SupabaseService.insert_data('apartments', new_apartments_to_insert)
@@ -119,12 +111,12 @@ def get_apartment_feed():
             traceback.print_exc()
             all_apartments = []
 
-        # --- Filter out swiped items and apply ML ---
-        apartment_data = SupabaseService.get_data('apartments')['data']
+        # --- FILTERING & RANKING ---
         swipes_data = SupabaseService.get_data('apartment_swipes', {'user_id': user_id})
         swiped_ids = {swipe['apartment_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
         
-        available_apartments = [apt for apt in apartment_data if apt['id'] not in swiped_ids]
+        # --- FIX --- Filter the 'all_apartments' list from the scraper, not the entire database.
+        available_apartments = [apt for apt in all_apartments if apt['id'] not in swiped_ids]
         
         if not available_apartments:
             return jsonify({
