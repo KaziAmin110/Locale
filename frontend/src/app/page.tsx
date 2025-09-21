@@ -217,7 +217,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <p className="text-slate-600 italic">"Locale's platform made finding our dream home incredibly easy. The personalized matches were spot on!"</p>
+              <p className="text-slate-600 italic">"CityMate's platform made finding our dream home incredibly easy. The personalized matches were spot on!"</p>
             </div>
              <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center mb-4">
@@ -241,7 +241,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <p className="text-slate-600 italic">"Our agent, found through Locale, was exceptional. The entire process was smooth and stress-free."</p>
+              <p className="text-slate-600 italic">"Our agent, found through CityMate, was exceptional. The entire process was smooth and stress-free."</p>
             </div>
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function Home() {
                 <div className="w-10 h-10 bg-white/90 rounded-lg flex items-center justify-center">
                   <Award className="w-6 h-6 text-indigo-600" />
                 </div>
-                <span className="text-xl font-bold text-white tracking-wide">Locale</span>
+                <span className="text-xl font-bold text-white tracking-wide">CityMate</span>
               </a>
               <p className="mt-4 text-sm text-slate-400">The future of real estate.</p>
             </div>
@@ -308,7 +308,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-16 border-t border-slate-700 pt-8 text-center text-sm text-slate-400">
-            <p>&copy; {new Date().getFullYear()} Locale. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} CityMate. All rights reserved.</p>
           </div>
         </div>
       </footer>
