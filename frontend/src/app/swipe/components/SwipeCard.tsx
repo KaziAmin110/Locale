@@ -4,6 +4,7 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { motion, PanInfo } from "framer-motion";
 import type { Apartment, Person, Spot } from "@/lib/api";
 import Image from "next/image";
+import { Map } from "lucide-react";
 
 type ItemType = Apartment | Person | Spot;
 type TabType = "apartments" | "people" | "spots";
@@ -398,7 +399,7 @@ export default function SwipeCard({
               className="absolute z-20 p-2 text-white transition-colors rounded-full top-14 right-4 bg-black/70 backdrop-blur-sm hover:bg-black/90"
               aria-label={isMapView ? "Show images" : "Show map"}
             >
-              {isMapView ? <ImageIcon /> : <MapIcon />}
+              {isMapView ? <ImageIcon /> : <Map />}
             </button>
           )}
           <div className="absolute px-3 py-1 rounded-full top-4 right-4 bg-black/70 backdrop-blur-sm">
