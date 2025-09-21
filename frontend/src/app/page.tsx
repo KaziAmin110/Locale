@@ -328,6 +328,33 @@ export default function Home() {
         .animate-fade-in-up {
           animation: fade-in-up 0.8s ease-out forwards;
         }
+
+        .shimmer-button {
+          display: inline-block;
+          padding: 1rem 2.5rem;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: white;
+          background: linear-gradient(110deg, #6366F1 0%, #8B5CF6 50%, #6366F1 100%);
+          background-size: 200% 100%;
+          border: none;
+          border-radius: 0.75rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          animation: shimmer 5s infinite linear;
+          box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25);
+        }
+
+        .shimmer-button:hover {
+          transform: scale(1.05);
+          box-shadow: 0 15px 30px rgba(99, 102, 241, 0.35);
+        }
+
+        @keyframes shimmer {
+          to {
+            background-position: -200% 0;
+          }
+        }
       `}</style>
     </div>
   )
