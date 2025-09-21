@@ -38,6 +38,7 @@ export default function SwipePage() {
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   const currentItems = useMemo(() => {
@@ -134,59 +135,69 @@ export default function SwipePage() {
   };
 
   // ---------- Map data (addresses only) ----------
-  const activeId = currentItems[0]?.id;
 
-  // Helper to build a robust address string from varying shapes
+  // Robustly build an address string from either Apartments or Spots.
   const getAddressString = (a: any): string | null => {
-    // Prefer a single full field if present
-    if (typeof a.address === "string" && a.address.trim()) return a.address.trim();
-    if (typeof a.fullAddress === "string" && a.fullAddress.trim()) return a.fullAddress.trim();
+    if (typeof a?.address === "string" && a.address.trim()) return a.address.trim();
+    if (typeof a?.fullAddress === "string" && a.fullAddress.trim()) return a.fullAddress.trim();
 
-    // Otherwise combine pieces if present
+    // Spots might have parts; Apartments might too — merge what’s available:
     const parts = [
-      a.street || a.street1 || a.line1,
-      a.city,
-      a.state || a.region || a.province,
-      a.zip || a.postalCode,
+      a?.street || a?.street1 || a?.line1,
+      a?.city,
+      a?.state || a?.region || a?.province,
+      a?.zip || a?.postalCode,
     ].filter(Boolean);
 
-    if (parts.length >= 2) return parts.join(", ");
-    return null;
+    return parts.length >= 2 ? parts.join(", ") : null;
   };
 
-  const mapItems =
-    activeTab === "apartments"
-      ? apartments
-          .map((a) => {
-            const addr = getAddressString(a);
-            return addr
-              ? {
-                  id: a.id,
-                  title: (a as any).title || (a as any).name || "",
-                  address: addr,
-                }
-              : null;
-          })
-          .filter(Boolean) as { id: string; title?: string; address: string }[]
-      : [];
+  // Convert the active tab’s items to BackgroundMap items.
+  const mapItems = useMemo(() => {
+    const source =
+      activeTab === "apartments" ? apartments :
+      activeTab === "spots" ? spots : [];
 
-  // Fit key: refit once when area changes (e.g., "Orlando, FL")
-  const fitKey =
-    activeTab === "apartments" && mapItems[0]?.address
-      ? mapItems[0].address.split(",").slice(-2).join(",").trim()
-      : null;
+    return (source
+      .map((it: any) => {
+        const addr = getAddressString(it);
+        return addr
+          ? {
+              id: it.id,
+              title: it.title || it.name || "",
+              address: addr,
+            }
+          : null;
+      })
+      .filter(Boolean)) as { id: string; title?: string; address: string }[];
+  }, [activeTab, apartments, spots]);
 
-  // Debug (first load only gets noisy; comment out later)
-  useEffect(() => {
-    console.log("[page] apartments:", apartments.length);
-    console.log("[page] mapItems sample:", mapItems.slice(0, 3));
-  }, [apartments, mapItems.length]);
+  // Active card id for focusing the pin.
+  const activeId = currentItems[0]?.id;
+
+  // Fit key: refit once when area changes (use last two address tokens like "City, ST")
+  const fitKey = useMemo(() => {
+    if (!mapItems.length) return null;
+    const sample = mapItems[0].address;
+    const tail = sample.split(",").slice(-2).map(s => s.trim()).join(", ");
+    return `${activeTab}:${tail}`;
+  }, [activeTab, mapItems]);
 
   return (
     <div className="relative min-h-screen pb-20">
-      {/* Background map behind everything (apartments tab only) */}
-      {activeTab === "apartments" && (
-        <BackgroundMap items={mapItems} activeId={activeId} dim={0.1} fitKey={fitKey} />
+      {/* Background map for Apartments & Spots */}
+      {(activeTab === "apartments" || activeTab === "spots") && (
+        <BackgroundMap
+          items={mapItems}
+          activeId={activeId}
+          fitKey={fitKey}
+          dim={0.1}
+          focusZoom={16}
+          minZoom={11}
+          maxZoom={17}
+          focusOffsetPx={{ x: 400, y: 0 }}          // push pin out from under the card
+          fitPadding={{ top: 60, right: 280, bottom: 60, left: 60 }}
+        />
       )}
 
       {/* Foreground UI */}
@@ -197,10 +208,7 @@ export default function SwipePage() {
           {loading ? (
             <LoadingSpinner />
           ) : currentItems.length === 0 ? (
-            <EmptyState
-              activeTab={activeTab}
-              onRefresh={() => loadItems(activeTab)}
-            />
+            <EmptyState activeTab={activeTab} onRefresh={() => loadItems(activeTab)} />
           ) : (
             <div className="relative w-full h-full max-w-sm mx-auto">
               {currentItems.slice(0, 3).map((item, index) => (
