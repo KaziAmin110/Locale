@@ -118,11 +118,8 @@ def get_apartment_feed():
         swipes_data = SupabaseService.get_data('apartment_swipes', {'user_id': user_id})
 
         swiped_ids = {swipe['apartment_id'] for swipe in swipes_data['data']} if swipes_data['success'] else set()
-
-        print(apartment_data[0]['id'] in swiped_ids)
         available_apartments = [apt for apt in apartment_data if apt['id'] not in swiped_ids]
 
-        print("Test Available Apartments:", available_apartments[0])
         if not available_apartments:
             return jsonify({
                 "success": True, 
