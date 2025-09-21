@@ -9,6 +9,7 @@ import SwipeCard from "./components/SwipeCard";
 import SwipeControls from "./components/SwipeControls";
 import MatchModal from "./components/MatchModal";
 import BottomNavigation from "./components/BottomNavigation";
+import BackgroundMap from "./components/BackgroundMap";
 import type { Apartment, Person, Spot } from "@/lib/api";
 
 type TabType = "apartments" | "people" | "spots";
@@ -24,8 +25,6 @@ export default function SwipePage() {
   const [loading, setLoading] = useState(true);
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [matchedItem, setMatchedItem] = useState<ItemType | null>(null);
-
-  // --- FIX --- Add a state to prevent double-swipes
   const [isSwiping, setIsSwiping] = useState(false);
 
   useEffect(() => {
@@ -84,17 +83,13 @@ export default function SwipePage() {
 
   const handleSwipe = async (action: "like" | "pass") => {
     if (isSwiping || currentItems.length === 0) return;
-
     setIsSwiping(true);
 
     const currentItem = currentItems[0];
     const direction = action === "like" ? "right" : "left";
 
-    const updateState = (
-      setter: React.Dispatch<React.SetStateAction<any[]>>
-    ) => {
+    const updateState = (setter: React.Dispatch<React.SetStateAction<any[]>>) =>
       setter((prev) => prev.slice(1));
-    };
 
     switch (activeTab) {
       case "apartments":
@@ -129,25 +124,76 @@ export default function SwipePage() {
 
       const remainingItems = currentItems.slice(1);
       if (remainingItems.length <= 2) {
-        await loadItems(activeTab); // wait for new items to load before unlocking
+        await loadItems(activeTab);
       }
     } catch (error) {
       console.error("Swipe failed:", error);
     } finally {
-      // --- FIX --- Unlock the function once everything is done.
       setIsSwiping(false);
     }
   };
 
+  // ---------- Map data (addresses only) ----------
+  const activeId = currentItems[0]?.id;
+
+  // Helper to build a robust address string from varying shapes
+  const getAddressString = (a: any): string | null => {
+    // Prefer a single full field if present
+    if (typeof a.address === "string" && a.address.trim()) return a.address.trim();
+    if (typeof a.fullAddress === "string" && a.fullAddress.trim()) return a.fullAddress.trim();
+
+    // Otherwise combine pieces if present
+    const parts = [
+      a.street || a.street1 || a.line1,
+      a.city,
+      a.state || a.region || a.province,
+      a.zip || a.postalCode,
+    ].filter(Boolean);
+
+    if (parts.length >= 2) return parts.join(", ");
+    return null;
+  };
+
+  const mapItems =
+    activeTab === "apartments"
+      ? apartments
+          .map((a) => {
+            const addr = getAddressString(a);
+            return addr
+              ? {
+                  id: a.id,
+                  title: (a as any).title || (a as any).name || "",
+                  address: addr,
+                }
+              : null;
+          })
+          .filter(Boolean) as { id: string; title?: string; address: string }[]
+      : [];
+
+  // Fit key: refit once when area changes (e.g., "Orlando, FL")
+  const fitKey =
+    activeTab === "apartments" && mapItems[0]?.address
+      ? mapItems[0].address.split(",").slice(-2).join(",").trim()
+      : null;
+
+  // Debug (first load only gets noisy; comment out later)
+  useEffect(() => {
+    console.log("[page] apartments:", apartments.length);
+    console.log("[page] mapItems sample:", mapItems.slice(0, 3));
+  }, [apartments, mapItems.length]);
+
   return (
-    <div className="min-h-screen pb-20 bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container max-w-md px-4 pt-6 mx-auto">
+    <div className="relative min-h-screen pb-20">
+      {/* Background map behind everything (apartments tab only) */}
+      {activeTab === "apartments" && (
+        <BackgroundMap items={mapItems} activeId={activeId} dim={0.1} fitKey={fitKey} />
+      )}
+
+      {/* Foreground UI */}
+      <div className="relative z-10 container max-w-md px-4 pt-6 mx-auto">
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <div
-          className="flex items-center justify-center"
-          style={{ height: "70vh" }}
-        >
+        <div className="flex items-center justify-center" style={{ height: "70vh" }}>
           {loading ? (
             <LoadingSpinner />
           ) : currentItems.length === 0 ? (
@@ -167,9 +213,7 @@ export default function SwipePage() {
                   onSwipe={index === 0 ? handleSwipe : () => {}}
                   style={{
                     zIndex: 3 - index,
-                    transform: `scale(${1 - index * 0.05}) translateY(${
-                      index * 8
-                    }px)`,
+                    transform: `scale(${1 - index * 0.05}) translateY(${index * 8}px)`,
                     opacity: 1 - index * 0.1,
                   }}
                 />
@@ -182,7 +226,6 @@ export default function SwipePage() {
           <SwipeControls
             onPass={() => handleSwipe("pass")}
             onLike={() => handleSwipe("like")}
-            // --- FIX --- Disable buttons while a swipe is in progress.
             disabled={isSwiping}
           />
         )}
