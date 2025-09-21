@@ -159,6 +159,7 @@ export default function SwipePage() {
                   item={item}
                   type={activeTab}
                   isTopCard={index === 0}
+                  index={index}
                   onSwipe={index === 0 ? handleSwipe : () => {}}
                   style={{
                     zIndex: 3 - index,
