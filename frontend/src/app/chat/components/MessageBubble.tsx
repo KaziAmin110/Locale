@@ -19,7 +19,7 @@ const MessageBubble = ({ message, isOwn }: MessageBubbleProps) => {
         <p className={`text-xs mt-1 ${
           isOwn ? 'text-white/70' : 'text-gray-500'
         }`}>
-          {new Date(message.timestamp).toLocaleTimeString([], { 
+          {new Date(message.created_at || message.timestamp || Date.now()).toLocaleTimeString([], { 
             hour: '2-digit', 
             minute: '2-digit' 
           })}

@@ -66,19 +66,25 @@ export interface Match {
 
 export interface Message {
   id: string;
-  sender: "user" | "match";
+  sender_id: string;
   content: string;
-  timestamp: string;
+  created_at: string;
+  timestamp?: string;
 }
 
 export interface Conversation {
   id: string;
-  name: string;
-  type: "apartment" | "person" | "spot";
-  photo: string;
-  lastMessage?: string;
-  lastMessageTime?: string;
-  unreadCount?: number;
+  conversation_id: string;
+  other_user: {
+    id: string;
+    name: string;
+    image?: string;
+    age?: number;
+  };
+  messages?: Message[];
+  last_message?: string;
+  last_message_at?: string;
+  created_at: string;
 }
 
 export class ApiService {
@@ -437,5 +443,96 @@ export class ApiService {
     }
 
     return data.user;
+  }
+
+  // Chat methods
+  static async getConversations() {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error);
+    return data;
+  }
+
+  static async getConversation(conversationId: string) {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/chat/${conversationId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error);
+    return data;
+  }
+
+  static async sendMessage(conversationId: string, content: string) {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/chat/${conversationId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ content }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error);
+    return data;
+  }
+
+  static async startConversation(userId: string) {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/chat/start`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ user_id: userId }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error);
+    return data;
   }
 }

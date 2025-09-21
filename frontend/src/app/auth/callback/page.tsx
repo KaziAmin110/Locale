@@ -58,9 +58,9 @@ export default function GoogleCallback() {
           setStatus("success");
           setMessage("Successfully authenticated with Google!");
 
-          // Redirect to onboarding or dashboard
+          // Redirect to onboarding first
           setTimeout(() => {
-            router.push("/swipe");
+            router.push("/onboarding");
           }, 1500);
         } else {
           setStatus("error");

@@ -8,6 +8,7 @@ import os
 import sys
 import uuid
 import random
+from services.photo_service import PhotoService
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
@@ -54,10 +55,7 @@ def generate_mock_users():
             'budget_min': budget_min,
             'budget_max': budget_max,
             'interests': user_interests,
-            'photos': [
-                f'https://images.unsplash.com/photo-{1600000000 + i}?w=400',
-                f'https://images.unsplash.com/photo-{1600000100 + i}?w=400'
-            ],
+            'photos': PhotoService.get_random_photos("people", 2),
             'onboarding_complete': True,
             'created_at': (datetime.now() - timedelta(days=random.randint(1, 30))).isoformat(),
             'updated_at': datetime.now().isoformat()

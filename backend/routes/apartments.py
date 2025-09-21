@@ -111,7 +111,29 @@ def get_apartment_feed():
             print(f"⚠️ Scraper threw an exception: {scraper_error}")
             all_apartments = []
 
-        print(f"✅ Data source used: '{data_source}'. Total apartments for this feed: {len(all_apartments)}.")
+        # --- FALLBACK DATA SOURCE: DATABASE APARTMENTS ---
+        if not all_apartments:
+            print("✅ Scraper returned no results. Falling back to database apartments.")
+            data_source = "database_fallback"
+            
+            # Get apartments from database instead of generating new ones
+            db_apartments = SupabaseService.get_data('apartments', {})
+            if db_apartments['success'] and db_apartments['data']:
+                all_apartments = db_apartments['data']
+                print(f"✅ Using {len(all_apartments)} apartments from database")
+            else:
+                # Last resort: generate apartments but save them to database
+                print("⚠️ No database apartments found. Generating new ones.")
+                city, state = 'Austin', 'TX'
+                if ',' in user_city_state:
+                    parts = [p.strip() for p in user_city_state.split(',')]
+                    if len(parts) >= 2:
+                        city = parts[-2]
+                        state_zip = parts[-1].split(' ')
+                        state = state_zip[0]
+                all_apartments = generate_and_save_apartments_for_city(city, state, user)
+
+        print(f"✅ Data source used: '{data_source}'. Total apartments: {len(all_apartments)}.")
 
         # --- Filter out swiped items and apply ML ---
         apartment_data = SupabaseService.get_data('apartments')['data']
@@ -160,23 +182,110 @@ def record_apartment_swipe():
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
-        apartment_id = data.get('apartment_id')
-        direction = data.get('direction')
-        is_like = direction == 'right'
-
-        if not apartment_id or not direction:
-            return jsonify({'success': False, 'error': 'Missing apartment_id or action'}), 400
         
-        swipe_data = {'id': str(uuid.uuid4()), 'user_id': user_id, 'apartment_id': apartment_id, 'is_like': is_like}
+        print(f"DEBUG: Swipe request from user {user_id}")
+        print(f"DEBUG: Request data: {data}")
+        
+        # Handle both frontend formats
+        apartment_id = data.get('apartment_id') or data.get('item_id')
+        direction = data.get('direction', 'right')
+        action = 'like' if direction == 'right' else 'pass'
+        
+        if not apartment_id:
+            print("DEBUG: Missing apartment_id")
+            return jsonify({'success': False, 'error': 'Missing apartment_id'}), 400
+        
+        # Record swipe
+        swipe_data = {
+            'id': str(uuid.uuid4()), 
+            'user_id': user_id, 
+            'apartment_id': apartment_id, 
+            'direction': direction,
+            'created_at': 'now()'
+        }
+        print(f"DEBUG: Inserting swipe data: {swipe_data}")
         result = SupabaseService.insert_data('apartment_swipes', swipe_data)
-
-        
+        print(f"DEBUG: Insert result: {result}")
         if not result['success']:
-            print("Data already exists or insertion failed. (Swiped before?)")
-            return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500
+            print(f"DEBUG: Insert failed: {result['error']}")
+            return jsonify({'success': False, 'error': f'Failed to record swipe: {result["error"]}'}), 500
         
-        return jsonify({'success': True}), 200
-
+        # Create match if liked
+        is_match = action == 'like'
+        if is_match:
+            match_data = {
+                'id': str(uuid.uuid4()), 
+                'user_id': user_id, 
+                'apartment_id': apartment_id, 
+                'created_at': 'now()'
+            }
+            match_result = SupabaseService.insert_data('apartment_matches', match_data)
+            if match_result['success']:
+                return jsonify({
+                    'success': True, 
+                    'match': True,
+                    'message': 'Apartment liked! Added to your matches.'
+                }), 200
+        
+        return jsonify({
+            'success': True, 
+            'match': False,
+            'message': 'Swipe recorded'
+        }), 200
+        
     except Exception as e:
         print(f"Apartment swipe error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+def generate_realistic_apartments_for_city(city, state, user):
+    """Fallback function to generate apartment data if scraper fails."""
+    neighborhoods = {'austin': ['Downtown', 'South Austin'], 'orlando': ['Downtown', 'Lake Nona']}
+    city_neighborhoods = neighborhoods.get(city.lower(), ['Downtown', 'Midtown'])
+    
+    user_lat = user.get('lat') or 30.2672
+    user_lng = user.get('lng') or -97.7431
+    budget_min = user.get('budget_min', 1000) 
+    budget_max = user.get('budget_max', 3000)
+    
+    apartments = []
+    apartment_photos = [
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&h=400&fit=crop',
+    ]
+    
+    for i in range(25):
+        neighborhood = random.choice(city_neighborhoods)
+        bedrooms = random.choice([0, 1, 1, 2, 2, 3])
+        apartment = {
+            'id': str(uuid.uuid4()),
+            'title': f"Spacious {bedrooms}BR in {neighborhood}",
+            'address': f"{random.randint(100, 9999)} Main St, {neighborhood}, {city}, {state}",
+            'price': random.randint(max(budget_min - 200, 800), min(budget_max + 300, 5000)),
+            'bedrooms': bedrooms,
+            'bathrooms': max(1, bedrooms),
+            'square_feet': random.randint(400, 1200),
+            'lat': float(user_lat) + random.uniform(-0.1, 0.1),
+            'lng': float(user_lng) + random.uniform(-0.1, 0.1),
+            'photos': random.sample(apartment_photos, 2),
+            'description': f"A beautiful apartment in {neighborhood}.",
+            'amenities': ['Pool', 'Gym'],
+            'match_score': round(random.uniform(0.7, 0.95), 2)
+        }
+        apartments.append(apartment)
+    
+    return apartments
+
+def generate_and_save_apartments_for_city(city, state, user):
+    """Generate apartments and save them to database."""
+    apartments = generate_realistic_apartments_for_city(city, state, user)
+    
+    # Save apartments to database
+    for apartment in apartments:
+        # Remove match_score before saving to database
+        db_apartment = {k: v for k, v in apartment.items() if k != 'match_score'}
+        result = SupabaseService.insert_data('apartments', db_apartment)
+        if not result['success']:
+            print(f"Warning: Failed to save apartment {apartment['id']}: {result['error']}")
+    
+    return apartments

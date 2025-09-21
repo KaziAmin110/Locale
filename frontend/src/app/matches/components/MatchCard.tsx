@@ -29,9 +29,13 @@ const MatchCard = ({ match }: MatchCardProps) => {
   }
 
   const handleChat = () => {
-    if (match.type === 'person') {
-      window.location.href = '/chat'
+    // For apartments, redirect to chat to contact landlord
+    // For people, redirect to chat to start conversation
+    if (match.type === 'person' || match.type === 'apartment') {
+      // Pass the match ID as a URL parameter to auto-start conversation
+      window.location.href = `/chat?start=${match.id}&type=${match.type}`
     }
+    // For spots, we could add directions or other functionality
   }
 
   const handleViewDetails = () => {

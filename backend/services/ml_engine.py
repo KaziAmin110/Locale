@@ -11,6 +11,8 @@ class MLEngine:
         ]
     
     def encode_interests(self, interests):
+        if not interests:
+            interests = []
         vector = [1 if interest in interests else 0 for interest in self.interest_categories]
         return vector
     

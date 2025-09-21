@@ -28,9 +28,18 @@ const ChatWindow = ({ conversationId, onBack }: ChatWindowProps) => {
 
   const loadConversation = async () => {
     try {
-      // Load conversation from API
-      // const response = await ApiService.getConversation(conversationId)
-      // setConversation(response.conversation)
+      const response = await fetch(`http://localhost:5003/api/chat/${conversationId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setConversation(data)
+        }
+      }
     } catch (error) {
       console.error('Failed to load conversation:', error)
     }
@@ -45,14 +54,19 @@ const ChatWindow = ({ conversationId, onBack }: ChatWindowProps) => {
 
     setSending(true)
     try {
-      // Send message via API
-      // await ApiService.sendMessage({
-      //   conversation_id: conversationId,
-      //   content: newMessage
-      // })
+      const response = await fetch(`http://localhost:5003/api/chat/${conversationId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({ content: newMessage })
+      })
       
-      setNewMessage('')
-      loadConversation() // Reload to get new message
+      if (response.ok) {
+        setNewMessage('')
+        loadConversation() // Reload to get new message
+      }
     } catch (error) {
       console.error('Failed to send message:', error)
     } finally {
@@ -86,15 +100,13 @@ const ChatWindow = ({ conversationId, onBack }: ChatWindowProps) => {
           <ArrowLeft size={20} />
         </button>
         
-        <Avatar
-          src={conversation.other_user.image}
-          alt={conversation.other_user.name}
-          size="md"
-        />
+        <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
+          {(conversation.other_user?.name || 'U').charAt(0).toUpperCase()}
+        </div>
         
         <div>
           <h3 className="font-semibold text-gray-900">
-            {conversation.other_user.name}
+            {conversation.other_user?.name || 'Unknown User'}
           </h3>
           <p className="text-sm text-gray-500">Online</p>
         </div>
@@ -102,13 +114,19 @@ const ChatWindow = ({ conversationId, onBack }: ChatWindowProps) => {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {conversation.messages.map((message) => (
-          <MessageBubble 
-            key={message.id} 
-            message={message}
-            isOwn={message.sender_id === 'current-user-id'} // Replace with actual user ID
-          />
-        ))}
+        {conversation.messages && conversation.messages.length > 0 ? (
+          conversation.messages.map((message) => (
+            <MessageBubble 
+              key={message.id} 
+              message={message}
+              isOwn={message.sender_id === localStorage.getItem('user_id')}
+            />
+          ))
+        ) : (
+          <div className="text-center text-gray-500 py-8">
+            <p>No messages yet. Start the conversation!</p>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 

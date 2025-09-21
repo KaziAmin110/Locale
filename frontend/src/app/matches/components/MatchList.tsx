@@ -67,17 +67,26 @@ const MatchList = ({ matches }: MatchListProps) => {
     return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
   });
 
+  // Separate new matches (last 24 hours) from older matches
+  const now = new Date();
+  const newMatches = sortedMatches.filter((match) => {
+    if (!match.timestamp) return false;
+    const matchTime = new Date(match.timestamp);
+    const diffHours = (now.getTime() - matchTime.getTime()) / (1000 * 60 * 60);
+    return diffHours < 24;
+  });
+  
+  const olderMatches = sortedMatches.filter((match) => {
+    if (!match.timestamp) return true;
+    const matchTime = new Date(match.timestamp);
+    const diffHours = (now.getTime() - matchTime.getTime()) / (1000 * 60 * 60);
+    return diffHours >= 24;
+  });
+
   return (
     <div className="space-y-6">
       {/* Recent matches section */}
-      {sortedMatches.some((m) => {
-        if (!m.timestamp) return false;
-        const matchTime = new Date(m.timestamp);
-        const now = new Date();
-        const diffHours =
-          (now.getTime() - matchTime.getTime()) / (1000 * 60 * 60);
-        return diffHours < 24;
-      }) && (
+      {newMatches.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-primary to-secondary">
@@ -88,19 +97,9 @@ const MatchList = ({ matches }: MatchListProps) => {
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {sortedMatches
-              .filter((match) => {
-                if (!match.timestamp) return false;
-                const matchTime = new Date(match.timestamp);
-                const now = new Date();
-                const diffHours =
-                  (now.getTime() - matchTime.getTime()) / (1000 * 60 * 60);
-                return diffHours < 24;
-              })
-              .slice(0, 3)
-              .map((match) => (
-                <MatchCard key={match.id} match={match} />
-              ))}
+            {newMatches.slice(0, 3).map((match) => (
+              <MatchCard key={`new-${match.id}`} match={match} />
+            ))}
           </div>
         </div>
       )}
@@ -121,8 +120,8 @@ const MatchList = ({ matches }: MatchListProps) => {
         </div>
 
         <div className="grid grid-cols-1 gap-6 pb-8 md:grid-cols-2 lg:grid-cols-3">
-          {sortedMatches.map((match) => (
-            <MatchCard key={match.id} match={match} />
+          {olderMatches.map((match) => (
+            <MatchCard key={`old-${match.id}`} match={match} />
           ))}
         </div>
       </div>
