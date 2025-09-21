@@ -26,7 +26,17 @@ def get_conversations():
         conversation_list = []
         for conv in all_conversations:
             other_user_id = conv['user2_id'] if conv['user1_id'] == user_id else conv['user1_id']
-            other_user = next((p for p in MOCK_PEOPLE if p['id'] == other_user_id), None)
+            
+            # Try to get user from users table first, then mock data
+            other_user_data = SupabaseService.get_data('users', {'id': other_user_id})
+            other_user = None
+            
+            if other_user_data['success'] and other_user_data['data']:
+                other_user = other_user_data['data'][0]
+            else:
+                # Fallback to mock data
+                from data.mock_data import MOCK_PEOPLE
+                other_user = next((p for p in MOCK_PEOPLE if p['id'] == other_user_id), None)
             
             if other_user:
                 # Get last message (simplified - would use actual query in production)
@@ -37,17 +47,17 @@ def get_conversations():
                     'other_user': {
                         'id': other_user['id'],
                         'name': other_user['name'],
-                        'photos': other_user['photos'],
-                        'age': other_user['age']
+                        'image': other_user.get('photos', [''])[0] if other_user.get('photos') else '',
+                        'age': other_user.get('age', 25)
                     },
                     'last_message': last_message,
-                    'last_message_at': conv['last_message_at'],
+                    'last_message_at': conv.get('last_message_at', conv['created_at']),
                     'created_at': conv['created_at']
                 }
                 conversation_list.append(conversation_data)
         
-        # Sort by last message time
-        conversation_list.sort(key=lambda x: x['last_message_at'], reverse=True)
+        # Sort by last message time (handle None values)
+        conversation_list.sort(key=lambda x: x['last_message_at'] or x['created_at'], reverse=True)
         
         return jsonify({
             "success": True,

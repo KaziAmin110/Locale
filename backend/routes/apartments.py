@@ -141,23 +141,49 @@ def record_apartment_swipe():
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
-        apartment_id = data.get('item_id')
-        action = data.get('action')
         
-        if not apartment_id or not action:
-            return jsonify({'success': False, 'error': 'Missing apartment_id or action'}), 400
+        # Handle both frontend formats
+        apartment_id = data.get('apartment_id') or data.get('item_id')
+        direction = data.get('direction', 'right')
+        action = 'like' if direction == 'right' else 'pass'
         
-        swipe_data = {'id': str(uuid.uuid4()), 'user_id': user_id, 'apartment_id': apartment_id, 'action': action, 'created_at': 'now()'}
+        if not apartment_id:
+            return jsonify({'success': False, 'error': 'Missing apartment_id'}), 400
+        
+        # Record swipe
+        swipe_data = {
+            'id': str(uuid.uuid4()), 
+            'user_id': user_id, 
+            'apartment_id': apartment_id, 
+            'is_like': action == 'like',
+            'created_at': 'now()'
+        }
         result = SupabaseService.insert_data('apartment_swipes', swipe_data)
         if not result['success']:
             return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500
         
+        # Create match if liked
         is_match = action == 'like'
         if is_match:
-            match_data = {'id': str(uuid.uuid4()), 'user_id': user_id, 'apartment_id': apartment_id, 'created_at': 'now()'}
-            SupabaseService.insert_data('apartment_matches', match_data)
+            match_data = {
+                'id': str(uuid.uuid4()), 
+                'user_id': user_id, 
+                'apartment_id': apartment_id, 
+                'created_at': 'now()'
+            }
+            match_result = SupabaseService.insert_data('apartment_matches', match_data)
+            if match_result['success']:
+                return jsonify({
+                    'success': True, 
+                    'match': True,
+                    'message': 'Apartment liked! Added to your matches.'
+                }), 200
         
-        return jsonify({'success': True, 'match': is_match}), 200
+        return jsonify({
+            'success': True, 
+            'match': False,
+            'message': 'Swipe recorded'
+        }), 200
         
     except Exception as e:
         print(f"Apartment swipe error: {str(e)}")

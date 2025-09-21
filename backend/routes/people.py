@@ -77,8 +77,10 @@ def record_people_swipe():
         user_id = get_jwt_identity()
         data = request.get_json()
         
-        swiped_id = data.get('person_id')
-        direction = data.get('direction')  # 'left' or 'right'
+        # Handle both frontend formats
+        swiped_id = data.get('person_id') or data.get('item_id')
+        direction = data.get('direction', 'right')
+        is_like = direction == 'right'
         
         if not swiped_id or direction not in ['left', 'right']:
             return jsonify({"error": "Invalid swipe data"}), 400
@@ -88,18 +90,18 @@ def record_people_swipe():
             'id': str(uuid.uuid4()),
             'swiper_id': user_id,
             'swiped_id': swiped_id,
-            'direction': direction,
+            'is_like': is_like,
             'created_at': 'now()'
         }
         
         result = SupabaseService.insert_data('people_swipes', swipe_data)
         
-        if result['success'] and direction == 'right':
+        if result['success'] and is_like:
             # Check for mutual match
             mutual_swipe = SupabaseService.get_data('people_swipes', {
                 'swiper_id': swiped_id,
                 'swiped_id': user_id,
-                'direction': 'right'
+                'is_like': True
             })
             
             is_mutual = mutual_swipe['success'] and len(mutual_swipe['data']) > 0
@@ -109,8 +111,6 @@ def record_people_swipe():
                 'id': str(uuid.uuid4()),
                 'user1_id': user_id,
                 'user2_id': swiped_id,
-                'match_score': 0.8,
-                'is_mutual': is_mutual,
                 'created_at': 'now()'
             }
             SupabaseService.insert_data('people_matches', match_data)
@@ -128,15 +128,15 @@ def record_people_swipe():
             
             return jsonify({
                 "success": True,
+                "match": True,
                 "message": "Person liked!" + (" It's a mutual match!" if is_mutual else ""),
-                "is_match": True,
                 "is_mutual": is_mutual
             })
         else:
             return jsonify({
                 "success": True,
-                "message": "Person passed",
-                "is_match": False
+                "match": False,
+                "message": "Person passed"
             })
             
     except Exception as e:

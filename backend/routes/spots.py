@@ -109,3 +109,56 @@ def get_spots_feed():
         print(f"❌ An error occurred in the spots feed: {str(e)}")
         traceback.print_exc()
         return jsonify({"error": "An internal error occurred"}), 500
+
+@spots_bp.route('/swipe', methods=['POST'])
+@jwt_required()
+def record_spot_swipe():
+    """Record spot swipe"""
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        # Handle both frontend formats
+        spot_id = data.get('spot_id') or data.get('item_id')
+        direction = data.get('direction', 'right')
+        is_like = direction == 'right'
+        
+        if not spot_id or direction not in ['left', 'right']:
+            return jsonify({"error": "Invalid swipe data"}), 400
+        
+        # Record swipe
+        swipe_data = {
+            'id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'spot_id': spot_id,
+            'is_like': is_like,
+            'created_at': 'now()'
+        }
+        
+        result = SupabaseService.insert_data('spot_swipes', swipe_data)
+        
+        if result['success'] and is_like:
+            # Create match entry for spots
+            match_data = {
+                'id': str(uuid.uuid4()),
+                'user_id': user_id,
+                'spot_id': spot_id,
+                'created_at': 'now()'
+            }
+            match_result = SupabaseService.insert_data('spot_matches', match_data)
+            
+            if match_result['success']:
+                return jsonify({
+                    "success": True,
+                    "match": True,
+                    "message": "Spot liked! Added to your matches."
+                })
+        
+        return jsonify({
+            "success": True,
+            "match": False,
+            "message": "Spot swipe recorded"
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
