@@ -24,7 +24,9 @@ def save_onboarding_data():
         # Validate interests array has at least 3 items
         if len(data.get('interests', [])) < 3:
             return jsonify({"error": "Please select at least 3 interests"}), 400
-        
+
+        print("Validated onboarding data:", data)
+
         # Prepare update data matching your database schema
         update_data = {
             'name': data.get('name'),

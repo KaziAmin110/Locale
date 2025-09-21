@@ -140,6 +140,9 @@ const LocationForm = ({
             );
             setIsLocating(false);
           } else {
+            setError(
+              "Browser location failed. Trying to find location by network..."
+            );
             getLocationByIp(); // Fallback to IP Geolocation
           }
         },
@@ -225,13 +228,15 @@ const LocationForm = ({
                         ? "bg-red-100 cursor-pointer p-4"
                         : "bg-white cursor-pointer p-4";
 
-                      const { key, ...suggestionProps } =
-                        getSuggestionItemProps(suggestion, {
+                      const { key, ...suggestionProps } = getSuggestionItemProps(
+                        suggestion,
+                        {
                           className,
-                        });
+                        }
+                      );
 
                       return (
-                        <div key={key} {...suggestionProps}>
+                        <div key={suggestion.placeId} {...suggestionProps}>
                           <span className="font-medium">
                             {suggestion.formattedSuggestion.mainText}
                           </span>
