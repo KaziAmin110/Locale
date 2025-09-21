@@ -90,6 +90,7 @@ export default function SwipeCard({
   index,
 }: SwipeCardProps) {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -128,30 +129,46 @@ export default function SwipeCard({
   // ... (All handlers like handleStart, handleEnd, etc. remain unchanged)
   const handleStart = (clientX: number, clientY: number) => {
     if (!isTopCard || isMapView) return;
+    console.log("[SwipeCard] Drag start");
     setIsDragging(true);
     startPos.current = { x: clientX, y: clientY };
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleEnd);
-    document.addEventListener("touchmove", handleTouchMove);
-    document.addEventListener("touchend", handleEnd);
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", handleEnd, { passive: true });
   };
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging || !isTopCard) return;
-    const deltaX = e.clientX - startPos.current.x;
-    const deltaY = e.clientY - startPos.current.y;
-    setDragOffset({ x: deltaX, y: deltaY });
-    setRotation(deltaX * 0.1);
+    const next = {
+      x: e.clientX - startPos.current.x,
+      y: e.clientY - startPos.current.y,
+    };
+    dragRef.current = next;          // always up-to-date
+    setDragOffset(next);
+    setRotation(next.x * 0.1);
+    if (Math.abs(e.clientX - startPos.current.x) > 2) {
+      console.log("[SwipeCard] moving", next);
+    }
   };
 
   const handleTouchMove = (e: TouchEvent) => {
     if (!isDragging || !isTopCard) return;
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - startPos.current.x;
-    const deltaY = touch.clientY - startPos.current.y;
-    setDragOffset({ x: deltaX, y: deltaY });
-    setRotation(deltaX * 0.1);
+    e.preventDefault();
+    const t = e.touches[0];
+    const next = {
+      x: t.clientX - startPos.current.x,
+      y: t.clientY - startPos.current.y,
+    };
+    dragRef.current = next;
+    setDragOffset(next);
+    setRotation(next.x * 0.1);
+    console.log("[SwipeCard] moving", next);
   };
+
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"like" | "pass" | null>(null);
+  const SWIPE_THRESHOLD = 50;
 
   const handleEnd = () => {
     if (!isDragging || !isTopCard) return;
@@ -160,9 +177,28 @@ export default function SwipeCard({
     document.removeEventListener("touchmove", handleTouchMove);
     document.removeEventListener("touchend", handleEnd);
     setIsDragging(false);
-    if (Math.abs(dragOffset.x) > 100) {
-      onSwipe(dragOffset.x > 0 ? "like" : "pass");
+
+    const { x } = dragRef.current;  
+    const { y } = dragRef.current; // use ref, not state
+    console.log("[SwipeCard] end", dragRef.current);
+
+    if (Math.abs(x) > SWIPE_THRESHOLD) {
+      const action: "like" | "pass" = x > 0 ? "like" : "pass";
+      setPendingAction(action);
+      setIsAnimating(true);
+
+      // fling it far outside viewport
+      const offscreenX = (x > 0 ? 1 : -1) * (window.innerWidth + 200);
+      //const offscreenY = (y > 0 ? 1 : -1) * (window.innerWidth + 200);
+
+      setDragOffset({ x: offscreenX, y: 0 });
+      setRotation(x > 0 ? 25 : -25);
+
+      // DO NOT call onSwipe here — wait for onTransitionEnd
+      return;
     }
+
+    dragRef.current = { x: 0, y: 0 };
     setDragOffset({ x: 0, y: 0 });
     setRotation(0);
   };
@@ -294,8 +330,14 @@ export default function SwipeCard({
       }`}
       style={{
         ...style,
-        transition: isDragging ? "none" : "all 0.3s ease-out",
         transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${rotation}deg)`,
+        // keep transitions when not actively dragging (so fling animates)
+        transition: isDragging
+          ? "none"
+          : "transform 300ms ease-out, opacity 300ms ease-out",
+        touchAction: isTopCard && !isMapView ? "none" : "auto",
+        // optional fade during fling
+        opacity: isAnimating ? 0 : 1,
       }}
       onMouseDown={(e) => {
         e.preventDefault();
@@ -305,6 +347,16 @@ export default function SwipeCard({
         e.preventDefault();
         handleStart(e.touches[0].clientX, e.touches[0].clientY);
       }}
+      onTransitionEnd={() => {
+      // Only fire after our fling completes
+      if (isAnimating && pendingAction) {
+        setIsAnimating(false);
+        const act = pendingAction;
+        setPendingAction(null);
+        onSwipe(act); // page.tsx will remove this card from the stack
+        // no need to reset drag here; parent removes the card
+      }
+    }}
     >
       <div className="relative h-full overflow-hidden bg-white border border-gray-100 shadow-xl rounded-3xl">
         {getSwipeIndicator()}
