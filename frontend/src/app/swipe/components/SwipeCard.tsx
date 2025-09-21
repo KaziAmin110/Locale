@@ -169,6 +169,7 @@ export default function SwipeCard({
 
   const renderApartmentDetails = () => {
     const apartment = item as Apartment;
+    console.log("Apartment Item:", apartment);
     return (
       <>
         <div className="flex items-start justify-end">

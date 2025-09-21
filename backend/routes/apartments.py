@@ -10,7 +10,7 @@ import random
 apartments_bp = Blueprint('apartments', __name__)
 ml_engine = MLEngine()
 
-# --- HELPER FUNCTIONS (No changes needed here) ---
+# --- HELPER FUNCTIONS ---
 def parse_price(price_str):
     if not price_str or "contact" in price_str.lower():
         return None
@@ -42,18 +42,16 @@ def get_apartment_feed():
         
         user = user_result['data'][0]
         user_city_state = user.get('city', 'Austin, TX')
-        
-        # **FIX 1: Safely get user lat/lng with defaults for the whole function**
         user_lat = user.get('lat') or 30.2672
         user_lng = user.get('lng') or -97.7431
         
-        scraped_apartments = []
-        data_source = "realistic_generated"
+        all_apartments = []
+        data_source = "redfin_scraper"
+        
+        # --- PRIMARY DATA SOURCE: SCRAPER ---
         try:
             raw_scraped_data = scrape_redfin_rentals(location=user_city_state, max_listings=20)
-            if raw_scraped_data:
-                data_source = "redfin_scraper"
-
+            
             for item in raw_scraped_data:
                 price = parse_price(item.get('price'))
                 if price is None:
@@ -63,7 +61,7 @@ def get_apartment_feed():
                 bathrooms = parse_stat(item.get('bathrooms'))
                 sqft_val = parse_stat(item.get('sqft'))
 
-                scraped_apartments.append({
+                all_apartments.append({
                     'id': str(uuid.uuid4()),
                     'title': f"{item.get('bedrooms', 'Studio')} in {user_city_state.split(',')[0]}",
                     'address': item.get('address'),
@@ -78,22 +76,25 @@ def get_apartment_feed():
                     'amenities': [],
                 })
         except Exception as scraper_error:
-            print(f"⚠️ Scraper failed, falling back to generated data. Error: {scraper_error}")
-            data_source = "fallback_generated"
-        
-        city, state = 'Austin', 'TX'
-        if ',' in user_city_state:
-            parts = [p.strip() for p in user_city_state.split(',')]
-            if len(parts) >= 2:
-                city = parts[-2]
-                state_zip = parts[-1].split(' ')
-                state = state_zip[0]
-        
-        generated_apartments = generate_realistic_apartments_for_city(city, state, user)
-        
-        all_apartments = scraped_apartments + generated_apartments
-        print(f"✅ Combined data: {len(scraped_apartments)} scraped, {len(generated_apartments)} generated.")
+            print(f"⚠️ Scraper threw an exception: {scraper_error}")
+            all_apartments = [] # Ensure list is empty if scraper fails midway
 
+        # --- FALLBACK DATA SOURCE: GENERATED APARTMENTS ---
+        if not all_apartments:
+            print("✅ Scraper returned no results. Falling back to generated data.")
+            data_source = "fallback_generated"
+            city, state = 'Austin', 'TX'
+            if ',' in user_city_state:
+                parts = [p.strip() for p in user_city_state.split(',')]
+                if len(parts) >= 2:
+                    city = parts[-2]
+                    state_zip = parts[-1].split(' ')
+                    state = state_zip[0]
+            all_apartments = generate_realistic_apartments_for_city(city, state, user)
+
+        print(f"✅ Data source used: '{data_source}'. Total apartments: {len(all_apartments)}.")
+
+        # --- Filter out swiped items and apply ML ---
         swipes_data = SupabaseService.get_data('apartment_swipes', {'user_id': user_id})
         swiped_ids = [swipe['apartment_id'] for swipe in swipes_data['data']] if swipes_data['success'] else []
         
@@ -108,7 +109,6 @@ def get_apartment_feed():
             })
         
         user_vector = ml_engine.create_user_vector(user)
-        # **FIX 2: Use the safe lat/lng variables for the ML engine call**
         recommendations = ml_engine.apartment_recommendations(
             user_vector, 
             available_apartments, 
@@ -163,10 +163,10 @@ def record_apartment_swipe():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def generate_realistic_apartments_for_city(city, state, user):
+    """Fallback function to generate apartment data if scraper fails."""
     neighborhoods = {'austin': ['Downtown', 'South Austin'], 'orlando': ['Downtown', 'Lake Nona']}
     city_neighborhoods = neighborhoods.get(city.lower(), ['Downtown', 'Midtown'])
     
-    # **FIX 3: Use the same safe pattern for lat/lng here**
     user_lat = user.get('lat') or 30.2672
     user_lng = user.get('lng') or -97.7431
     budget_min = user.get('budget_min', 1000) 
