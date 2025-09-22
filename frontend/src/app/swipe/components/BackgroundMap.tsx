@@ -11,6 +11,7 @@ export type MapItem = {
 
 type LatLng = { lat: number; lng: number };
 
+
 const BRIGHT_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: "poi", stylers: [{ visibility: "off" }] },
   { featureType: "transit", stylers: [{ visibility: "off" }] },
