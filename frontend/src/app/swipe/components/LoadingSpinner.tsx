@@ -3,13 +3,11 @@ import React from 'react'
 export default function LoadingSpinner() {
   return (
     <div className="flex flex-col items-center justify-center py-12">
-      {/* Animated spinner */}
       <div className="relative">
         <div className="w-16 h-16 border-4 border-gray-200 rounded-full animate-spin">
           <div className="absolute top-0 left-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
         
-        {/* Heart in center */}
         <div className="absolute inset-0 flex items-center justify-center">
           <svg 
             className="w-6 h-6 text-primary animate-pulse" 
@@ -21,12 +19,10 @@ export default function LoadingSpinner() {
         </div>
       </div>
       
-      {/* Loading text */}
       <p className="text-gray-600 mt-4 font-medium">
         Finding perfect matches...
       </p>
       
-      {/* Animated dots */}
       <div className="flex space-x-1 mt-2">
         <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
         <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
