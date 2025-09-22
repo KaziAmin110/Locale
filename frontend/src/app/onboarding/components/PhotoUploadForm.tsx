@@ -1,93 +1,60 @@
-"use client";
-
-import React, { useState } from "react";
-import { MapPin, Loader2 } from "lucide-react";
-import { useJsApiLoader, GoogleMap, MarkerF } from "@react-google-maps/api";
-import PlacesAutocomplete, {
-  geocodeByAddress,
-  getLatLng,
-} from "react-places-autocomplete";
+import React, { useState, useRef } from "react";
+import { Camera, X, Plus, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
-// Custom dark theme styles for the Google Map to match our UI
-const mapStyles = [
-  { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
-  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
-  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
-  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
-  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
-  { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
-  { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] },
-];
-
-const libraries: "places"[] = ["places"];
-
-type LocationFormProps = {
-  updateFormData: (field: "location" | "lat" | "lng", value: string | number | null) => void;
+// Define the component's props
+interface PhotoUploadFormProps {
+  photos: string[];
+  updateFormData: (field: "photos", value: string[]) => void;
   setCurrentStep: (step: number) => void;
-};
+}
 
-const LocationForm = ({ updateFormData, setCurrentStep }: LocationFormProps) => {
-  const [address, setAddress] = useState("");
-  const [isLocating, setIsLocating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+const PhotoUploadForm = ({ photos, updateFormData, setCurrentStep }: PhotoUploadFormProps) => {
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries,
-  });
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []).slice(0, 6 - photos.length);
+    if (files.length === 0) return;
 
-  const handleSelect = async (selectedAddress: string) => {
-    setAddress(selectedAddress);
-    setError(null);
+    setIsUploading(true);
+    // In production, you'd upload to a cloud service. We simulate for effect.
+    await new Promise(res => setTimeout(res, 1000));
+
     try {
-      const results = await geocodeByAddress(selectedAddress);
-      const latLng = await getLatLng(results[0]);
-      updateFormData("location", results[0].formatted_address);
-      updateFormData("lat", latLng.lat);
-      updateFormData("lng", latLng.lng);
-      setMapCenter(latLng);
+      const newPhotos = await Promise.all(
+        files.map((file) => new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(file);
+        }))
+      );
+      
+      updateFormData("photos", [...photos, ...newPhotos]);
     } catch (error) {
-      console.error("Error selecting address:", error);
-      setError("Could not get location details. Please try again.");
+      console.error("Photo upload failed:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const handleGetCurrentLocation = () => {
-    // This logic remains the same as your original file
+  const removePhoto = (indexToRemove: number) => {
+    updateFormData("photos", photos.filter((_, index) => index !== indexToRemove));
   };
 
+  const canContinue = photos.length >= 1;
+
+  // Animation variants for a powerful entrance/exit
   const variants = {
     hidden: (direction: number) => ({ opacity: 0, x: direction * 100 }),
     visible: { opacity: 1, x: 0 },
     exit: (direction: number) => ({ opacity: 0, x: direction * -100 }),
   };
 
-  if (!isLoaded) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
-        <Loader2 className="animate-spin text-red-500" size={32} />
-        <span>Initializing Global Map...</span>
-      </div>
-    );
-  }
-
   return (
     <motion.div
-      custom={1}
+      custom={1} // Forward direction
       variants={variants}
       initial="hidden"
       animate="visible"
@@ -95,68 +62,82 @@ const LocationForm = ({ updateFormData, setCurrentStep }: LocationFormProps) => 
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
       className="flex flex-col w-full h-full items-center justify-between"
     >
-      <div className="w-full max-w-lg space-y-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <label htmlFor="location" className="text-lg font-semibold tracking-wide text-slate-300">
-            Target Location
-          </label>
-          <button
-            type="button"
-            onClick={handleGetCurrentLocation}
-            disabled={isLocating}
-            className="w-full sm:w-auto flex items-center justify-center px-4 py-2 text-sm font-semibold text-white transition-all duration-300 bg-red-600 rounded-lg hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
-          >
-            {isLocating ? (
-              <><Loader2 className="mr-2 animate-spin" size={16} /> Acquiring Signal...</>
-            ) : (
-              <><MapPin className="mr-2" size={16} /> Use Current Coordinates</>
-            )}
-          </button>
+      <div className="w-full max-w-lg space-y-6 mt-4">
+        {/* Photo Grid */}
+        <div className="grid grid-cols-3 gap-4">
+          {photos.map((photo, index) => (
+            <div key={index} className="relative aspect-square group">
+              <Image
+                src={photo}
+                alt={`Photo ${index + 1}`}
+                fill
+                sizes="(max-width: 768px) 33vw, 150px"
+                className="object-cover rounded-lg border-2 border-white/20"
+              />
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"/>
+              <button
+                onClick={() => removePhoto(index)}
+                className="absolute flex items-center justify-center w-8 h-8 text-white transition-all duration-300 bg-red-600 rounded-full -top-3 -right-3 hover:bg-red-500 hover:scale-110 scale-0 group-hover:scale-100"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          ))}
+
+          {/* Add Photo Button */}
+          {photos.length < 6 && (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="flex flex-col items-center justify-center transition-all duration-300 border-2 border-dashed rounded-lg aspect-square border-white/30 hover:border-red-400 hover:bg-white/10 text-slate-400 hover:text-red-300 disabled:opacity-50"
+            >
+              {isUploading ? (
+                <Loader2 size={32} className="animate-spin text-red-400" />
+              ) : (
+                <>
+                  <Plus size={32} />
+                  <span className="mt-1 text-xs font-semibold tracking-wider uppercase">Upload</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
 
-        <PlacesAutocomplete value={address} onChange={setAddress} onSelect={handleSelect}>
-          {({ getInputProps, suggestions, getSuggestionItemProps }) => (
-            <div className="relative">
-              <input {...getInputProps({
-                placeholder: "Designate city, state, or address...",
-                className: "w-full px-4 py-3 bg-white/10 border-2 border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/50 transition-all duration-300",
-              })} />
-              {suggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-2 overflow-y-auto bg-slate-900/80 backdrop-blur-md border border-white/20 shadow-lg max-h-60 rounded-lg">
-                  {suggestions.map((suggestion) => (
-                    <div {...getSuggestionItemProps(suggestion, {
-                      className: `cursor-pointer p-4 ${suggestion.active ? 'bg-red-500/20 text-red-300' : 'text-slate-300 hover:bg-white/10'}`
-                    })}>
-                      <span className="font-medium">{suggestion.formattedSuggestion.mainText}</span>
-                      <span className="ml-2 text-sm text-slate-500">{suggestion.formattedSuggestion.secondaryText}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+        {/* Visual Data Protocol Box */}
+        <div className="p-4 border border-white/20 rounded-lg bg-white/10">
+          <div className="flex items-start space-x-3">
+            <Camera size={20} className="text-red-400 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-slate-300">
+              <p className="font-bold text-white">Visual Data Protocol:</p>
+              <ul className="mt-1 space-y-1 list-disc list-inside text-slate-400">
+                <li>Utilize high-resolution images with clear lighting.</li>
+                <li>Ensure primary subject (face) is clearly visible.</li>
+                <li>Include visuals that define your personality matrix.</li>
+              </ul>
             </div>
-          )}
-        </PlacesAutocomplete>
-
-        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
-
-        <div className="mt-4 h-56 w-full rounded-lg overflow-hidden border-2 border-white/20">
-          <GoogleMap
-            mapContainerStyle={{ width: "100%", height: "100%" }}
-            center={mapCenter || { lat: 25.7617, lng: -80.1918 }} // Default to Miami area
-            zoom={mapCenter ? 14 : 9}
-            options={{ styles: mapStyles, disableDefaultUI: true, zoomControl: true }}
-          >
-            {mapCenter && <MarkerF position={mapCenter} />}
-          </GoogleMap>
+          </div>
         </div>
       </div>
 
+      <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileSelect} className="hidden"/>
+
       <div className="w-full max-w-lg flex justify-between">
-        <button onClick={() => setCurrentStep(2)} className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105 active:scale-100">Back</button>
-        <button onClick={() => setCurrentStep(4)} disabled={!address.trim()} className="px-10 py-4 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-lg font-bold text-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/40 active:scale-100">Proceed</button>
+        <button
+          onClick={() => setCurrentStep(1)}
+          className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105 active:scale-100"
+        >
+          Back
+        </button>
+        <button
+          onClick={() => setCurrentStep(3)}
+          disabled={!canContinue}
+          className="px-10 py-4 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-lg font-bold text-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/40 active:scale-100"
+        >
+          Proceed
+        </button>
       </div>
     </motion.div>
   );
 };
 
-export default LocationForm;
+export default PhotoUploadForm;
