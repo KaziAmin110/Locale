@@ -1,45 +1,107 @@
 'use client'
 
 import Link from 'next/link'
-import { Heart } from 'lucide-react'
+import { Heart, MoveRight } from 'lucide-react'
+import { motion } from 'framer-motion'
 import GoogleAuth from '../components/auth/GoogleAuth'
 import SignUpForm from '../components/auth/SignUpForm'
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-primary rounded-2xl mb-4">
-            <Heart size={32} className="text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Create your profile</h1>
-          <p className="text-gray-600 mt-2">Join CityMate and find your new city life</p>
-        </div>
+    <div className="min-h-screen w-full bg-gray-900 text-white relative overflow-hidden">
+      {/* Animated Gradient Background - Consistent with Login Page */}
+      <div className="absolute inset-0 z-0">
+        <motion.div
+          animate={{
+            backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+          }}
+          transition={{
+            duration: 20,
+            ease: 'linear',
+            repeat: Infinity,
+          }}
+          className="w-full h-full bg-gradient-to-r from-rose-500 via-red-500 to-pink-600 opacity-30"
+          style={{ backgroundSize: '400% 400%' }}
+        />
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+      </div>
 
-        {/* Auth Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <GoogleAuth />
-          
-          <div className="flex w-full mt-6 items-center">
-            <span className="bg-gray-300 h-[1px] w-1/2"></span>
-            <span className="text-xs mx-2 text-gray-500 font-bold">OR</span>
-            <span className="bg-gray-300 h-[1px] w-1/2"></span>
-          </div>
-          
-          <SignUpForm />
-          
-          <div className="flex justify-center w-full mt-6 items-center gap-2">
-            <p className="text-gray-600">Existing user?</p>
-            <Link
-              href="/login"
-              className="text-primary hover:text-primary-hover font-medium"
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeInOut' }}
+          className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-lg border border-white/10"
+          style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+          }}
+        >
+          {/* Left Panel - Branding */}
+          <div className="hidden md:flex flex-col items-center justify-center p-12 bg-black/20 text-center border-r border-white/10">
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5, type: 'spring' }}
             >
-              Sign in
-            </Link>
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-red-500 to-pink-500 rounded-3xl mb-6 shadow-lg">
+                <Heart size={40} className="text-white" />
+              </div>
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="text-4xl font-bold tracking-tight text-white"
+            >
+              Join the Community.
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              className="text-gray-300 mt-4 max-w-sm"
+            >
+              Create your profile to start connecting with like-minded people and exploring your city together.
+            </motion.p>
           </div>
-        </div>
+
+          {/* Right Panel - Form */}
+          <div className="flex flex-col justify-center p-8 sm:p-12">
+            <div className="text-left mb-8">
+              <h2 className="text-3xl font-bold text-white">Create Account</h2>
+              <p className="text-gray-400 mt-2">
+                Let's get you started.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <GoogleAuth />
+
+              <div className="flex w-full items-center">
+                <span className="bg-gray-600 h-[1px] w-full"></span>
+                <span className="text-xs mx-4 text-gray-400 font-bold uppercase">
+                  OR
+                </span>
+                <span className="bg-gray-600 h-[1px] w-full"></span>
+              </div>
+
+              <SignUpForm />
+            </div>
+
+            <div className="text-center mt-8">
+              <Link
+                href="/login"
+                className="group text-sm text-gray-300 hover:text-white transition-colors duration-300"
+              >
+                Already have an account?{' '}
+                <span className="font-semibold text-red-400 group-hover:underline">
+                  Sign in
+                </span>
+                <MoveRight className="inline w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </Link>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   )
