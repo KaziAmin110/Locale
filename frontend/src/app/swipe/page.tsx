@@ -59,17 +59,19 @@ export default function SwipePage() {
       let response;
       switch (type) {
         case "apartments":
-          // Assuming the corrected ApiService returns an object with an `items` array
-          response = await ApiService.getApartmentsFeed();
-          setApartments(response.items || []);
+          // FIX: Called singular `getApartmentFeed` and used the response array directly
+          response = await ApiService.getApartmentFeed();
+          setApartments(response || []);
           break;
         case "people":
+          // FIX: Called singular `getPeopleFeed` and used the response array directly
           response = await ApiService.getPeopleFeed();
-          setPeople(response.items || []);
+          setPeople(response || []);
           break;
         case "spots":
+          // FIX: Called singular `getSpotsFeed` and used the response array directly
           response = await ApiService.getSpotsFeed();
-          setSpots(response.items || []);
+          setSpots(response || []);
           break;
       }
     } catch (error) {
@@ -88,7 +90,6 @@ export default function SwipePage() {
 
     const currentItem = currentItems[0];
 
-    // Optimistically remove the card from the UI
     const updateState = (setter: React.Dispatch<React.SetStateAction<any[]>>) =>
       setter((prev) => prev.slice(1));
 
@@ -106,17 +107,18 @@ export default function SwipePage() {
 
     try {
       let response;
-      const swipePayload = { item_id: currentItem.id, action };
+      // FIX: Changed payload to match the two arguments expected by api.ts
+      const direction = action === "like" ? "right" : "left";
 
       switch (activeTab) {
         case "apartments":
-          response = await ApiService.swipeApartment(swipePayload);
+          response = await ApiService.swipeApartment(currentItem.id, direction);
           break;
         case "people":
-          response = await ApiService.swipePerson(swipePayload);
+          response = await ApiService.swipePerson(currentItem.id, direction);
           break;
         case "spots":
-          response = await ApiService.swipeSpot(swipePayload);
+          response = await ApiService.swipeSpot(currentItem.id, direction);
           break;
       }
 
@@ -125,13 +127,11 @@ export default function SwipePage() {
         setShowMatchModal(true);
       }
 
-      // Check if we need to fetch more items
       if (currentItems.length <= 3) {
         await loadItems(activeTab);
       }
     } catch (error) {
       console.error("Swipe failed:", error);
-      // Here you might want to add the card back if the API call fails
     } finally {
       setIsSwiping(false);
     }
@@ -176,8 +176,6 @@ export default function SwipePage() {
 
   return (
     <div className="relative min-h-screen pb-20">
-      {/* --- SEARCH BAR REMOVED --- */}
-
       {(activeTab === "apartments" || activeTab === "spots") && (
         <BackgroundMap
           items={mapItems}
