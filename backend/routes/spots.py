@@ -14,14 +14,9 @@ ml_engine = MLEngine()
 @spots_bp.route('/feed', methods=['GET'])
 @jwt_required()
 def get_spots_feed():
-    """
-    Generates a feed of local spots by fetching from APIs, inserting new ones 
-    into the database, and ranking the fresh results for the user.
-    """
     try:
         user_id = get_jwt_identity()
 
-        # 1. Get user data
         user_result = SupabaseService.get_data('users', {'id': user_id})
         if not user_result['success'] or not user_result['data']:
             return jsonify({"error": "User not found"}), 404
@@ -35,7 +30,6 @@ def get_spots_feed():
         all_spots = []
         data_source = "unknown"
 
-        # --- DATA SOURCING (From external APIs) ---
         if Config.GOOGLE_PLACES_API_KEY:
             print("Attempting to fetch data from Google Places API...")
             google_result = GooglePlacesAPI.search_nearby_by_interest(
@@ -54,8 +48,6 @@ def get_spots_feed():
                 all_spots.extend(yelp_result['spots'])
                 data_source = "yelp"
 
-        # --- DATABASE INSERTION LOGIC ---
-        # Only try to insert if we got real data from an API
         if all_spots:
             new_spots_to_insert = []
             print("Checking for existing spots in the database...")
@@ -82,12 +74,10 @@ def get_spots_feed():
         else:
             print("APIs returned no data. No data to insert.")
 
-        # --- FILTERING & RANKING ---
         db_spots = SupabaseService.get_data('spots')['data']
         swipes_data = SupabaseService.get_data('spot_swipes', {'user_id': user_id})
         swiped_ids = {swipe['spot_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
         
-        # --- FIX --- Filter the 'all_spots' list that was just fetched from the APIs.
         available_spots = [spot for spot in db_spots if spot['id'] not in swiped_ids]
         
         if not available_spots:
@@ -96,7 +86,7 @@ def get_spots_feed():
                 "message": "No new spots to show right now!", "data_source": data_source
             })
 
-        print(f"🧠 Ranking {len(available_spots)} spots with ML Engine...")
+        print(f"Ranking {len(available_spots)} spots with ML Engine...")
         user_vector = ml_engine.create_user_vector(user)
         recommendations = ml_engine.spot_recommendations(
             user_vector, 
@@ -129,7 +119,6 @@ def get_spots_feed():
 @spots_bp.route('/swipe', methods=['POST'])
 @jwt_required()
 def record_spot_swipe():
-    """Records a user's swipe action (like/pass) for a specific spot."""
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
@@ -140,7 +129,6 @@ def record_spot_swipe():
         if not spot_id or not direction:
             return jsonify({'success': False, 'error': 'Missing spot_id or direction'}), 400
         
-        # --- FIX --- Added a unique ID for the swipe record itself.
         swipe_data = {
             'id': str(uuid.uuid4()),
             'user_id': user_id,

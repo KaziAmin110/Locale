@@ -14,32 +14,27 @@ def get_people_feed():
     try:
         user_id = get_jwt_identity()
         
-        # Get user data
         user_data = SupabaseService.get_data('users', {'id': user_id})
         if not user_data['success'] or not user_data['data']:
             return jsonify({"error": "User not found"}), 404
         
         user = user_data['data'][0]
         
-        # Get user location - use default coordinates if not available
-        user_lat = user.get('lat', 30.2672)  # Default to Austin coordinates
+        user_lat = user.get('lat', 30.2672)
         user_lng = user.get('lng', -97.7431)
         user_location = [user_lat, user_lng]
         
-        # Get user's previous swipes to exclude them
         swipes_data = SupabaseService.get_data('people_swipes', {'swiper_id': user_id})
         swiped_ids = []
         if swipes_data['success']:
             swiped_ids = [swipe['swiped_id'] for swipe in swipes_data['data']]
         
-        # Get people from Supabase users table, excluding swiped ones and self
         people_data = SupabaseService.get_data('users', {})
         if not people_data['success']:
             return jsonify({"error": "Failed to fetch people"}), 500
         
         all_people = people_data['data']
         
-        # Filter people by unswiped (exclude self)
         available_people = [person for person in all_people 
                            if person['id'] not in swiped_ids 
                            and person['id'] != user_id]
@@ -47,13 +42,11 @@ def get_people_feed():
         if not available_people:
             return jsonify({"success": True, "people": []})
         
-        # Get ML recommendations
         user_vector = ml_engine.create_user_vector(user)
         recommendations = ml_engine.people_recommendations(user_vector, available_people, user_location)
         
-        # Return top people with scores
         result_people = []
-        for rec in recommendations[:10]:  # Top 10 for feed
+        for rec in recommendations[:10]:
             person = next((p for p in available_people if p['id'] == rec['person_id']), None)
             if person:
                 person['match_score'] = rec['score']
@@ -72,12 +65,10 @@ def get_people_feed():
 @people_bp.route('/swipe', methods=['POST'])
 @jwt_required()
 def record_people_swipe():
-    """Record people swipe"""
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
         
-        # Handle both frontend formats
         swiped_id = data.get('person_id') or data.get('item_id')
         direction = data.get('direction', 'right')
         is_like = direction == 'right'
@@ -85,7 +76,6 @@ def record_people_swipe():
         if not swiped_id or direction not in ['left', 'right']:
             return jsonify({"error": "Invalid swipe data"}), 400
         
-        # Record swipe
         swipe_data = {
             'id': str(uuid.uuid4()),
             'swiper_id': user_id,
@@ -97,7 +87,6 @@ def record_people_swipe():
         result = SupabaseService.insert_data('people_swipes', swipe_data)
         
         if result['success'] and is_like:
-            # Check for mutual match
             mutual_swipe = SupabaseService.get_data('people_swipes', {
                 'swiper_id': swiped_id,
                 'swiped_id': user_id,
@@ -106,7 +95,6 @@ def record_people_swipe():
             
             is_mutual = mutual_swipe['success'] and len(mutual_swipe['data']) > 0
             
-            # Create match entry
             match_data = {
                 'id': str(uuid.uuid4()),
                 'user1_id': user_id,
@@ -116,7 +104,6 @@ def record_people_swipe():
             SupabaseService.insert_data('people_matches', match_data)
             
             if is_mutual:
-                # Create conversation
                 conversation_data = {
                     'id': str(uuid.uuid4()),
                     'user1_id': user_id,
@@ -145,11 +132,9 @@ def record_people_swipe():
 @people_bp.route('/matches', methods=['GET'])
 @jwt_required()
 def get_people_matches():
-    """Get user's people matches"""
     try:
         user_id = get_jwt_identity()
         
-        # Get user's matches (both directions)
         matches_data1 = SupabaseService.get_data('people_matches', {'user1_id': user_id})
         matches_data2 = SupabaseService.get_data('people_matches', {'user2_id': user_id})
         
@@ -159,7 +144,6 @@ def get_people_matches():
         if matches_data2['success']:
             all_matches.extend(matches_data2['data'])
         
-        # Get person details for each match
         matched_people = []
         for match in all_matches:
             other_user_id = match['user2_id'] if match['user1_id'] == user_id else match['user1_id']
@@ -181,39 +165,32 @@ def get_people_matches():
 @people_bp.route('/filters', methods=['POST'])
 @jwt_required()
 def apply_people_filters():
-    """Apply filters to people feed"""
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
         
-        # Get user data
         user_data = SupabaseService.get_data('users', {'id': user_id})
         if not user_data['success']:
             return jsonify({"error": "User not found"}), 404
         
         user = user_data['data'][0]
         
-        # Apply filters to Supabase data
         people_data = SupabaseService.get_data('people', {})
         if not people_data['success']:
             return jsonify({"error": "Failed to fetch people"}), 500
         
         filtered_people = people_data['data']
         
-        # Age range filter
         if 'age_min' in data and 'age_max' in data:
             filtered_people = [person for person in filtered_people 
                              if data['age_min'] <= person['age'] <= data['age_max']]
         
-        # Interests filter
         if 'interests' in data and data['interests']:
             filtered_people = [person for person in filtered_people 
                              if any(interest in person.get('interests', []) 
                                    for interest in data['interests'])]
         
-        # Distance filter (simplified)
         if 'max_distance' in data:
-            # This would use actual distance calculation in production
             pass
         
         return jsonify({

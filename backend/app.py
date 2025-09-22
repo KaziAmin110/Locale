@@ -2,8 +2,6 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from config import Config
-
-# Import routes
 from routes.auth import auth_bp
 from routes.onboarding import onboarding_bp
 from routes.apartments import apartments_bp
@@ -17,11 +15,9 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     
-    # Initialize extensions
-    CORS(app, origins=["http://localhost:3000", "http://localhost:3001"])  # React dev server
+    CORS(app, origins=["http://localhost:3000", "http://localhost:3001"])
     jwt = JWTManager(app)
     
-    # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(onboarding_bp, url_prefix='/api/onboarding')
     app.register_blueprint(apartments_bp, url_prefix='/api/apartments')

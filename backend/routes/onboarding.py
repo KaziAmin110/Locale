@@ -7,7 +7,6 @@ onboarding_bp = Blueprint('onboarding', __name__)
 @onboarding_bp.route('', methods=['POST'])
 @jwt_required()
 def save_onboarding_data():
-    """Save all onboarding data at once"""
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
@@ -15,19 +14,16 @@ def save_onboarding_data():
         print(f"Onboarding data received: {data}")
         print(f"Photos data: {data.get('photos')} (type: {type(data.get('photos'))})")
         
-        # Validate required fields
         required_fields = ['name', 'age', 'location', 'budgetMin', 'budgetMax', 'interests']
         for field in required_fields:
             if field not in data or not data[field]:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
         
-        # Validate interests array has at least 3 items
         if len(data.get('interests', [])) < 3:
             return jsonify({"error": "Please select at least 3 interests"}), 400
 
         print("Validated onboarding data:", data)
 
-        # Prepare update data matching your database schema
         update_data = {
             'name': data.get('name'),
             'age': int(data.get('age')),
@@ -35,11 +31,10 @@ def save_onboarding_data():
             'budget_min': int(data.get('budgetMin')),
             'budget_max': int(data.get('budgetMax')),
             'interests': data.get('interests'),
-            'photos': data.get('photos', []),  # Add photos support
+            'photos': data.get('photos', []),
             'onboarding_complete': True
         }
         
-        # Update user record in database
         print(f"Updating user {user_id} with data: {update_data}")
         result = SupabaseService.update_data('users', update_data, {'id': user_id})
 

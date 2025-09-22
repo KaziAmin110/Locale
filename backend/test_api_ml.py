@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Test ML Recommendations through Flask API Endpoints
-This script tests the actual API endpoints to verify ML recommendations work
-"""
-
 import requests
 import json
 import time
@@ -11,17 +5,14 @@ import sys
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-# Configuration
 BASE_URL = "http://localhost:5001"
 TEST_USER_EMAIL = "user1@example.com"
 
 def wait_for_server():
-    """Wait for Flask server to start"""
-    print("⏳ Waiting for Flask server to start...")
-    for i in range(30):  # Wait up to 30 seconds
+    print("Waiting for Flask server to start...")
+    for i in range(30):
         try:
             response = requests.get(f"{BASE_URL}/api/health", timeout=2)
             if response.status_code == 200:
@@ -36,10 +27,8 @@ def wait_for_server():
     return False
 
 def get_auth_token():
-    """Get authentication token for testing"""
-    print("\n🔐 Getting authentication token...")
+    print("\nGetting authentication token...")
     
-    # Use the development flow with mock user info
     auth_data = {
         "user_info": {
             "email": TEST_USER_EMAIL,
@@ -66,8 +55,7 @@ def get_auth_token():
     return None
 
 def test_apartment_recommendations(token):
-    """Test apartment ML recommendations"""
-    print("\n🏠 Testing Apartment Recommendations...")
+    print("\nTesting Apartment Recommendations...")
     
     headers = {"Authorization": f"Bearer {token}"}
     
@@ -79,7 +67,6 @@ def test_apartment_recommendations(token):
                 apartments = data.get('apartments', [])
                 print(f"Got {len(apartments)} apartment recommendations")
                 
-                # Show top 3 recommendations with ML scores
                 for i, apt in enumerate(apartments[:3]):
                     score = apt.get('match_score', 0)
                     title = apt.get('title', 'Unknown')
@@ -97,8 +84,7 @@ def test_apartment_recommendations(token):
     return False
 
 def test_people_recommendations(token):
-    """Test people ML recommendations"""
-    print("\n👥 Testing People Recommendations...")
+    print("\nTesting People Recommendations...")
     
     headers = {"Authorization": f"Bearer {token}"}
     
@@ -110,7 +96,6 @@ def test_people_recommendations(token):
                 people = data.get('people', [])
                 print(f"Got {len(people)} people recommendations")
                 
-                # Show top 3 recommendations with ML scores
                 for i, person in enumerate(people[:3]):
                     score = person.get('match_score', 0)
                     name = person.get('name', 'Unknown')
@@ -129,7 +114,6 @@ def test_people_recommendations(token):
     return False
 
 def test_spot_recommendations(token):
-    """Test spot ML recommendations"""
     print("\nTesting Spot Recommendations...")
     
     headers = {"Authorization": f"Bearer {token}"}
@@ -142,7 +126,6 @@ def test_spot_recommendations(token):
                 spots = data.get('spots', [])
                 print(f"Got {len(spots)} spot recommendations")
                 
-                # Show top 3 recommendations with ML scores
                 for i, spot in enumerate(spots[:3]):
                     score = spot.get('match_score', 0)
                     name = spot.get('name', 'Unknown')
@@ -161,15 +144,13 @@ def test_spot_recommendations(token):
     return False
 
 def test_swipe_functionality(token):
-    """Test swipe functionality"""
-    print("\n👆 Testing Swipe Functionality...")
+    print("\nTesting Swipe Functionality...")
     
     headers = {"Authorization": f"Bearer {token}"}
     
-    # Test apartment swipe
     try:
         swipe_data = {
-            "apartment_id": "test-id",  # This will fail but test the endpoint
+            "apartment_id": "test-id",
             "direction": "right"
         }
         response = requests.post(f"{BASE_URL}/api/apartments/swipe", json=swipe_data, headers=headers)
@@ -177,7 +158,6 @@ def test_swipe_functionality(token):
     except Exception as e:
         print(f"Apartment swipe error: {str(e)}")
     
-    # Test people swipe
     try:
         swipe_data = {
             "person_id": "test-id",
@@ -188,7 +168,6 @@ def test_swipe_functionality(token):
     except Exception as e:
         print(f"People swipe error: {str(e)}")
     
-    # Test spot swipe
     try:
         swipe_data = {
             "spot_id": "test-id",
@@ -200,24 +179,20 @@ def test_swipe_functionality(token):
         print(f"Spot swipe error: {str(e)}")
 
 def main():
-    """Main test function"""
-    print("🧪 Testing ML Recommendations via Flask API")
+    print("Testing ML Recommendations via Flask API")
     print("=" * 50)
     
-    # Wait for server
     if not wait_for_server():
         print("\nPlease start Flask server first:")
         print("   python3 app.py")
         return
     
-    # Get auth token
     token = get_auth_token()
     if not token:
         print("\nCould not get authentication token")
         return
     
-    # Test ML recommendations
-    print("\n🤖 Testing ML Recommendation Endpoints...")
+    print("\nTesting ML Recommendation Endpoints...")
     
     success_count = 0
     
@@ -230,12 +205,10 @@ def main():
     if test_spot_recommendations(token):
         success_count += 1
     
-    # Test swipe functionality
     test_swipe_functionality(token)
     
-    # Summary
     print("\n" + "=" * 50)
-    print(f"📊 Test Results: {success_count}/3 ML endpoints working")
+    print(f"Test Results: {success_count}/3 ML endpoints working")
     
     if success_count == 3:
         print("All ML recommendations are working perfectly!")
@@ -246,8 +219,8 @@ def main():
     else:
         print("Some endpoints need attention")
     
-    print(f"\n🌐 API Base URL: {BASE_URL}")
-    print("📋 Available endpoints:")
+    print(f"\nAPI Base URL: {BASE_URL}")
+    print("   Available endpoints:")
     print("   GET  /api/apartments/feed")
     print("   GET  /api/people/feed") 
     print("   GET  /api/spots/feed")

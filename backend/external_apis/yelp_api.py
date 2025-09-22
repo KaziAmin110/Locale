@@ -9,7 +9,6 @@ class YelpAPI:
     
     @staticmethod
     def search_by_interest(location=None, lat=None, lng=None, user_interests=None, radius=8000):
-        """Search businesses using Yelp API by address or coordinates."""
         if user_interests is None:
             user_interests = []
             
@@ -31,7 +30,7 @@ class YelpAPI:
             params = {
                 'categories': ','.join(list(categories)[:5]),
                 'limit': 50,
-                'radius': min(radius, 40000), # Yelp max radius is 40km
+                'radius': min(radius, 40000),
                 'sort_by': 'best_match'
             }
 
@@ -49,11 +48,9 @@ class YelpAPI:
                 data = response.json()
                 spots = []
                 for business in data.get('businesses', []):
-                    # --- FIX --- Made data access safer with .get() to prevent errors on missing data
                     location_info = business.get('location', {})
                     coordinates = business.get('coordinates', {})
                     
-                    # Skip if essential information is missing
                     if not (business.get('id') and business.get('name') and coordinates.get('latitude')):
                         continue
 
@@ -73,7 +70,6 @@ class YelpAPI:
                 
                 return {"success": True, "spots": spots, "source": "yelp"}
             else:
-                # --- FIX --- Improved error message for easier debugging
                 error_details = response.json().get('error', {}).get('description', response.text)
                 print(f"Yelp API Error: {response.status_code} - {error_details}")
                 return {"success": False, "error": f"Yelp API error: {response.status_code} - {error_details}"}

@@ -1,13 +1,6 @@
-#!/usr/bin/env python3
-"""
-Quick Environment Setup Script
-Helps you configure the .env file properly
-"""
-
 import os
 
 def create_env_template():
-    """Create a proper .env template"""
     env_content = """# Database Configuration
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_KEY=your-anon-key-here
@@ -36,14 +29,13 @@ ENABLE_REAL_APIS=false
         f.write(env_content)
     
     print("Created .env template file")
-    print("\n📝 Please edit .env file with your actual values:")
+    print("\nPlease edit .env file with your actual values:")
     print("   1. SUPABASE_URL: Get from your Supabase project settings")
     print("   2. SUPABASE_KEY: Get from your Supabase project settings")
     print("   3. JWT_SECRET_KEY: Make this a long random string")
     print("   4. Other keys are optional for now")
 
 def check_current_env():
-    """Check current .env file"""
     if not os.path.exists('.env'):
         print("No .env file found")
         return False
@@ -66,7 +58,7 @@ def main():
         print("\nYour environment looks good!")
         print("You can now run: python3 fix_database.py")
     else:
-        print("\n📝 Setting up environment...")
+        print("\nSetting up environment...")
         create_env_template()
         print("\nPlease update .env file with real values before proceeding")
 

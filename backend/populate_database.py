@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Comprehensive Mock Data Insertion Script for Supabase
-Populates all tables with realistic mock data and simulates ML recommendations
-"""
-
 import os
 import sys
 import uuid
@@ -12,14 +6,12 @@ from services.photo_service import PhotoService
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
-# Add the backend directory to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from data.mock_data import MOCK_APARTMENTS, MOCK_PEOPLE, MOCK_SPOTS
 from services.supabase_client import SupabaseService
 
 def generate_mock_users():
-    """Generate realistic mock users with complete profiles"""
     users = []
     names = ['Alex Johnson', 'Jordan Smith', 'Casey Brown', 'Morgan Davis', 'Riley Wilson', 
              'Taylor Miller', 'Sam Garcia', 'Jamie Rodriguez', 'Blake Martinez', 'Quinn Anderson']
@@ -33,10 +25,9 @@ def generate_mock_users():
     
     interests_pool = ['coffee', 'hiking', 'tech', 'food', 'music', 'sports', 'art', 'books', 'travel', 'fitness', 'nightlife', 'shopping']
     
-    for i in range(20):  # Generate 20 users
+    for i in range(20):
         city_name, (base_lat, base_lng) = list(cities.items())[i % len(cities)]
         
-        # Generate realistic user data
         age = random.randint(22, 35)
         budget_min = random.randint(800, 1500)
         budget_max = budget_min + random.randint(500, 1500)
@@ -65,8 +56,6 @@ def generate_mock_users():
     return users
 
 def generate_mock_swipes_and_matches():
-    """Generate realistic swipe patterns and matches"""
-    # Get all users, apartments, people, and spots
     users_data = SupabaseService.get_data('users', {})
     apartments_data = SupabaseService.get_data('apartments', {})
     people_data = SupabaseService.get_data('people', {})
@@ -83,7 +72,6 @@ def generate_mock_swipes_and_matches():
     
     print(f"Generating swipes for {len(users)} users...")
     
-    # Generate apartment swipes
     apartment_swipes = []
     apartment_matches = []
     
@@ -91,12 +79,11 @@ def generate_mock_swipes_and_matches():
         user_city = user.get('city', '')
         user_apartments = [apt for apt in apartments if user_city.lower() in apt['address'].lower()]
         
-        # Each user swipes on 10-20 apartments
         num_swipes = random.randint(10, min(20, len(user_apartments)))
         swiped_apartments = random.sample(user_apartments, num_swipes)
         
         for apt in swiped_apartments:
-            is_like = random.random() < 0.3  # 30% like rate
+            is_like = random.random() < 0.3
             
             swipe = {
                 'id': str(uuid.uuid4()),
@@ -116,17 +103,15 @@ def generate_mock_swipes_and_matches():
                 }
                 apartment_matches.append(match)
     
-    # Generate people swipes
     people_swipes = []
     people_matches = []
     
     for user in users:
-        # Each user swipes on 15-30 people
         num_swipes = random.randint(15, min(30, len(people)))
         swiped_people = random.sample(people, num_swipes)
         
         for person in swiped_people:
-            is_like = random.random() < 0.25  # 25% like rate
+            is_like = random.random() < 0.25
             
             swipe = {
                 'id': str(uuid.uuid4()),
@@ -146,7 +131,6 @@ def generate_mock_swipes_and_matches():
                 }
                 people_matches.append(match)
     
-    # Generate spot swipes
     spot_swipes = []
     spot_matches = []
     
@@ -154,12 +138,11 @@ def generate_mock_swipes_and_matches():
         user_city = user.get('city', '')
         user_spots = [spot for spot in spots if user_city.lower() in spot['address'].lower()]
         
-        # Each user swipes on 20-40 spots
         num_swipes = random.randint(20, min(40, len(user_spots)))
         swiped_spots = random.sample(user_spots, num_swipes)
         
         for spot in swiped_spots:
-            is_like = random.random() < 0.4  # 40% like rate for spots
+            is_like = random.random() < 0.4
             
             swipe = {
                 'id': str(uuid.uuid4()),
@@ -179,7 +162,6 @@ def generate_mock_swipes_and_matches():
                 }
                 spot_matches.append(match)
     
-    # Insert all swipes and matches
     print("Inserting apartment swipes and matches...")
     insert_batch_data('apartment_swipes', apartment_swipes)
     insert_batch_data('apartment_matches', apartment_matches)
@@ -195,8 +177,6 @@ def generate_mock_swipes_and_matches():
     return True
 
 def generate_mock_conversations():
-    """Generate realistic conversations between users and matched people"""
-    # Get people matches
     matches_data = SupabaseService.get_data('people_matches', {})
     if not matches_data['success']:
         print(" Failed to fetch people matches")
@@ -209,7 +189,6 @@ def generate_mock_conversations():
     print(f" Generating conversations for {len(matches)} matches...")
     
     for match in matches:
-        # Create conversation
         conversation = {
             'id': str(uuid.uuid4()),
             'user1_id': match['user1_id'],
@@ -219,7 +198,6 @@ def generate_mock_conversations():
         }
         conversations.append(conversation)
         
-        # Generate 2-8 messages per conversation
         num_messages = random.randint(2, 8)
         message_templates = [
             "Hey! How's it going?",
@@ -244,7 +222,6 @@ def generate_mock_conversations():
             }
             messages.append(message)
     
-    # Insert conversations and messages
     print("Inserting conversations...")
     insert_batch_data('conversations', conversations)
     
@@ -254,7 +231,6 @@ def generate_mock_conversations():
     return True
 
 def insert_batch_data(table, data, batch_size=50):
-    """Insert data in batches to avoid timeout"""
     total_inserted = 0
     
     for i in range(0, len(data), batch_size):
@@ -271,7 +247,6 @@ def insert_batch_data(table, data, batch_size=50):
     return True
 
 def insert_core_data():
-    """Insert core data (apartments, people, spots, users)"""
     print("Inserting apartments...")
     if not insert_batch_data('apartments', MOCK_APARTMENTS):
         return False
@@ -292,7 +267,6 @@ def insert_core_data():
     return True
 
 def check_existing_data():
-    """Check existing data counts"""
     tables = ['users', 'apartments', 'people', 'spots', 'apartment_swipes', 'people_swipes', 'spot_swipes']
     existing_data = {}
     
@@ -308,14 +282,11 @@ def check_existing_data():
     return existing_data
 
 def main():
-    """Main function to populate database with comprehensive mock data"""
     print(" Starting comprehensive mock data insertion...")
     print("=" * 60)
     
-    # Load environment variables
     load_dotenv()
     
-    # Check environment variables
     required_vars = ['SUPABASE_URL', 'SUPABASE_KEY']
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     
@@ -324,7 +295,6 @@ def main():
         print("Please create a .env file with your Supabase credentials")
         return False
     
-    # Test connection
     print(" Testing Supabase connection...")
     result = SupabaseService.get_data('users', {})
     if not result['success']:
@@ -332,11 +302,9 @@ def main():
         return False
     print(" Supabase connection successful")
     
-    # Check existing data
     print("\n Checking existing data...")
     existing_data = check_existing_data()
     
-    # Ask user if they want to proceed
     if any(count > 0 for count in existing_data.values()):
         print("\n  Some tables already contain data.")
         response = input("Do you want to continue? This will add more data (y/N): ").strip().lower()
@@ -344,25 +312,21 @@ def main():
             print(" Operation cancelled")
             return False
     
-    # Insert core data
     print("\n Inserting core data...")
     if not insert_core_data():
         print(" Failed to insert core data")
         return False
     
-    # Generate and insert interaction data
     print("\nGenerating interaction data...")
     if not generate_mock_swipes_and_matches():
         print(" Failed to generate interaction data")
         return False
     
-    # Generate conversations
     print("\n Generating conversations...")
     if not generate_mock_conversations():
         print(" Failed to generate conversations")
         return False
     
-    # Final summary
     print("\n" + "=" * 60)
     print(" Comprehensive mock data insertion completed!")
     print("\n Data Summary:")

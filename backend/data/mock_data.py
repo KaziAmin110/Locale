@@ -2,28 +2,21 @@ import uuid
 from datetime import datetime
 
 def get_reliable_apartment_photos(index):
-    """Get reliable apartment photos using photo service"""
     from services.photo_service import PhotoService
     
-    # Get 3 random apartment photos
     return PhotoService.get_random_photos("apartment", 3)
 
 def get_reliable_person_photos(index):
-    """Get reliable person photos using photo service"""
     from services.photo_service import PhotoService
     
-    # Get 2 random photos from the photo service
     return PhotoService.get_random_photos("people", 2)
 
 def get_reliable_spot_photos(index):
-    """Get reliable spot photos using photo service"""
     from services.photo_service import PhotoService
     
-    # Get 2 random spot photos
     return PhotoService.get_random_photos("spot", 2)
 
 def generate_mock_apartments():
-    """Generate mock apartment data with reliable images"""
     apartments = []
     cities = {
         'Austin, TX': (30.2672, -97.7431),
@@ -66,7 +59,6 @@ def generate_mock_apartments():
     return apartments
 
 def generate_mock_people():
-    """Generate mock people data with reliable images"""
     people = []
     first_names = ['Alex', 'Jordan', 'Casey', 'Morgan', 'Riley', 'Taylor', 'Sam', 'Jamie', 'Avery', 'Blake']
     last_names = ['Johnson', 'Smith', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas']
@@ -114,7 +106,6 @@ def generate_mock_people():
     return people
 
 def generate_mock_spots():
-    """Generate mock local spots data with reliable images"""
     spots = []
     
     spot_data = {
@@ -178,7 +169,6 @@ def generate_mock_spots():
     
     return spots
 
-# Initialize mock data
 MOCK_APARTMENTS = generate_mock_apartments()
 MOCK_PEOPLE = generate_mock_people()
 MOCK_SPOTS = generate_mock_spots()

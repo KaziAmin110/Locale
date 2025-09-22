@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""
-Quick test script to verify ML recommendations are working
-"""
-
 import os
 import sys
 from dotenv import load_dotenv
@@ -13,29 +8,24 @@ from services.supabase_client import SupabaseService
 from services.ml_engine import MLEngine
 
 def test_ml_recommendations():
-    """Test ML recommendation system"""
-    print("🧪 Testing ML Recommendation System")
+    print("Testing ML Recommendation System")
     print("=" * 40)
     
-    # Load environment
     load_dotenv()
     
-    # Initialize ML engine
     ml_engine = MLEngine()
     
-    # Get a test user
     users_data = SupabaseService.get_data('users', {})
     if not users_data['success'] or not users_data['data']:
         print("No users found. Run populate_database.py first")
         return False
     
     test_user = users_data['data'][0]
-    print(f"👤 Testing with user: {test_user['name']}")
+    print(f"   Testing with user: {test_user['name']}")
     print(f"   City: {test_user.get('city', 'Unknown')}")
     print(f"   Interests: {test_user.get('interests', [])}")
     
-    # Test apartment recommendations
-    print("\n🏠 Testing apartment recommendations...")
+    print("\nTesting apartment recommendations...")
     apartments_data = SupabaseService.get_data('apartments', {})
     if apartments_data['success'] and apartments_data['data']:
         user_vector = ml_engine.create_user_vector(test_user)
@@ -43,7 +33,7 @@ def test_ml_recommendations():
         
         recommendations = ml_engine.apartment_recommendations(
             user_vector, 
-            apartments_data['data'][:10],  # Test with first 10
+            apartments_data['data'][:10],
             user_location
         )
         
@@ -51,13 +41,12 @@ def test_ml_recommendations():
         for i, rec in enumerate(recommendations[:3]):
             print(f"   {i+1}. Score: {rec['score']:.3f}, Distance: {rec['distance']:.2f}km")
     
-    # Test people recommendations
-    print("\n👥 Testing people recommendations...")
+    print("\nTesting people recommendations...")
     people_data = SupabaseService.get_data('people', {})
     if people_data['success'] and people_data['data']:
         recommendations = ml_engine.people_recommendations(
             user_vector,
-            people_data['data'][:10],  # Test with first 10
+            people_data['data'][:10],
             user_location
         )
         
@@ -65,13 +54,12 @@ def test_ml_recommendations():
         for i, rec in enumerate(recommendations[:3]):
             print(f"   {i+1}. Score: {rec['score']:.3f}, Interest Similarity: {rec['interest_similarity']:.3f}")
     
-    # Test spot recommendations
     print("\nTesting spot recommendations...")
     spots_data = SupabaseService.get_data('spots', {})
     if spots_data['success'] and spots_data['data']:
         recommendations = ml_engine.spot_recommendations(
             user_vector,
-            spots_data['data'][:10],  # Test with first 10
+            spots_data['data'][:10],
             user_location
         )
         
@@ -83,10 +71,8 @@ def test_ml_recommendations():
     return True
 
 def test_api_endpoints():
-    """Test API endpoints"""
-    print("\n🌐 Testing API endpoints...")
+    print("\nTesting API endpoints...")
     
-    # Test health endpoint
     try:
         import requests
         response = requests.get('http://localhost:5001/api/health', timeout=5)
@@ -100,18 +86,15 @@ def test_api_endpoints():
     return True
 
 def main():
-    """Main test function"""
-    print("🧪 CityMate System Test")
+    print("CityMate System Test")
     print("=" * 30)
     
-    # Test ML recommendations
     if test_ml_recommendations():
         print("\nML system is ready!")
     
-    # Test API endpoints
     test_api_endpoints()
     
-    print("\n📋 Summary:")
+    print("\nSummary:")
     print("Database populated with mock data")
     print("ML recommendation engine working")
     print("Ready for frontend integration")

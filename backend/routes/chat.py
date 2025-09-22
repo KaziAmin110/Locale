@@ -8,11 +8,9 @@ chat_bp = Blueprint('chat', __name__)
 @chat_bp.route('/conversations', methods=['GET'])
 @jwt_required()
 def get_conversations():
-    """Get user's conversations"""
     try:
         user_id = get_jwt_identity()
         
-        # Get conversations where user is participant
         conversations1 = SupabaseService.get_data('conversations', {'user1_id': user_id})
         conversations2 = SupabaseService.get_data('conversations', {'user2_id': user_id})
         
@@ -22,23 +20,19 @@ def get_conversations():
         if conversations2['success']:
             all_conversations.extend(conversations2['data'])
         
-        # Get other participant details for each conversation
         conversation_list = []
         for conv in all_conversations:
             other_user_id = conv['user2_id'] if conv['user1_id'] == user_id else conv['user1_id']
             
-            # Try to get user from users table first, then mock data
             other_user_data = SupabaseService.get_data('users', {'id': other_user_id})
             other_user = None
             
             if other_user_data['success'] and other_user_data['data']:
                 other_user = other_user_data['data'][0]
             else:
-                # Fallback to mock data
                 from data.mock_data import MOCK_PEOPLE
                 other_user = next((p for p in MOCK_PEOPLE if p['id'] == other_user_id), None)
             
-            # If no user found, create a fallback
             if not other_user:
                 if other_user_id.startswith('landlord-'):
                     other_user = {
@@ -55,8 +49,7 @@ def get_conversations():
                         'age': 25
                     }
             
-            # Get last message (simplified - would use actual query in production)
-            last_message = "Start your conversation!"  # Default
+            last_message = "Start your conversation!"
             
             conversation_data = {
                 'conversation_id': conv['id'],
@@ -72,7 +65,6 @@ def get_conversations():
             }
             conversation_list.append(conversation_data)
         
-        # Sort by last message time (handle None values)
         conversation_list.sort(key=lambda x: x['last_message_at'] or x['created_at'], reverse=True)
         
         return jsonify({
@@ -86,11 +78,9 @@ def get_conversations():
 @chat_bp.route('/<conversation_id>', methods=['GET'])
 @jwt_required()
 def get_messages(conversation_id):
-    """Get messages in a conversation"""
     try:
         user_id = get_jwt_identity()
         
-        # Verify user is part of this conversation
         conv_data = SupabaseService.get_data('conversations', {'id': conversation_id})
         if not conv_data['success'] or not conv_data['data']:
             return jsonify({"error": "Conversation not found"}), 404
@@ -99,18 +89,14 @@ def get_messages(conversation_id):
         if user_id not in [conversation['user1_id'], conversation['user2_id']]:
             return jsonify({"error": "Unauthorized"}), 403
         
-        # Get messages
         messages_data = SupabaseService.get_data('messages', {'conversation_id': conversation_id})
         messages = []
         if messages_data['success']:
             messages = messages_data['data']
-            # Sort by sent_at
             messages.sort(key=lambda x: x['sent_at'])
         
-        # Get other user details
         other_user_id = conversation['user2_id'] if conversation['user1_id'] == user_id else conversation['user1_id']
         
-        # Try to get user from users table first, then mock data
         other_user_data = SupabaseService.get_data('users', {'id': other_user_id})
         other_user = None
         
@@ -118,14 +104,12 @@ def get_messages(conversation_id):
             other_user = other_user_data['data'][0]
             print(f"Found user in database: {other_user.get('name', 'No name')}")
         else:
-            # Fallback to mock data
             from data.mock_data import MOCK_PEOPLE
             other_user = next((p for p in MOCK_PEOPLE if p['id'] == other_user_id), None)
             if other_user:
                 print(f"Found user in mock data: {other_user.get('name', 'No name')}")
         
         if not other_user:
-            # If still no user found, create a more descriptive fallback
             if other_user_id.startswith('landlord-'):
                 other_user = {
                     'id': other_user_id,
@@ -142,7 +126,6 @@ def get_messages(conversation_id):
                 }
             print(f"Using fallback user: {other_user['name']}")
         
-        # Format conversation data for frontend
         conversation_data = {
             'conversation_id': conversation['id'],
             'other_user': {
@@ -169,7 +152,6 @@ def get_messages(conversation_id):
 @chat_bp.route('/<conversation_id>', methods=['POST'])
 @jwt_required()
 def send_message(conversation_id):
-    """Send a message in a conversation"""
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
@@ -178,7 +160,6 @@ def send_message(conversation_id):
         if not content:
             return jsonify({"error": "Message content required"}), 400
         
-        # Verify user is part of this conversation
         conv_data = SupabaseService.get_data('conversations', {'id': conversation_id})
         if not conv_data['success'] or not conv_data['data']:
             return jsonify({"error": "Conversation not found"}), 404
@@ -187,7 +168,6 @@ def send_message(conversation_id):
         if user_id not in [conversation['user1_id'], conversation['user2_id']]:
             return jsonify({"error": "Unauthorized"}), 403
         
-        # Create message
         message_data = {
             'id': str(uuid.uuid4()),
             'conversation_id': conversation_id,
@@ -199,7 +179,6 @@ def send_message(conversation_id):
         result = SupabaseService.insert_data('messages', message_data)
         
         if result['success']:
-            # Update conversation last_message_at
             SupabaseService.update_data('conversations', 
                                       {'last_message_at': 'now()'}, 
                                       {'id': conversation_id})
@@ -217,7 +196,6 @@ def send_message(conversation_id):
 @chat_bp.route('/start', methods=['POST'])
 @jwt_required()
 def start_conversation():
-    """Start a new conversation"""
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
@@ -227,18 +205,13 @@ def start_conversation():
         if not other_user_id:
             return jsonify({"error": "Other user ID required"}), 400
         
-        # For apartment matches, we need to create a conversation with a "landlord"
-        # For now, we'll create a system landlord user for apartment conversations
         if match_type == 'apartment':
-            # Create a deterministic UUID for the landlord based on apartment ID
             import hashlib
             landlord_hash = hashlib.md5(f"landlord-{other_user_id}".encode()).hexdigest()
             landlord_id = f"{landlord_hash[:8]}-{landlord_hash[8:12]}-{landlord_hash[12:16]}-{landlord_hash[16:20]}-{landlord_hash[20:32]}"
             
-            # Check if landlord user exists, if not create one
             landlord_data = SupabaseService.get_data('users', {'id': landlord_id})
             if not landlord_data['success'] or not landlord_data['data']:
-                # Create a landlord user
                 landlord_user = {
                     'id': landlord_id,
                     'name': 'Property Manager',
@@ -251,7 +224,6 @@ def start_conversation():
             
             other_user_id = landlord_id
         
-        # Check if conversation already exists
         existing_conv1 = SupabaseService.get_data('conversations', {
             'user1_id': user_id,
             'user2_id': other_user_id
@@ -270,7 +242,6 @@ def start_conversation():
                 "message": "Conversation already exists"
             })
         
-        # Create new conversation
         conversation_data = {
             'id': str(uuid.uuid4()),
             'user1_id': user_id,

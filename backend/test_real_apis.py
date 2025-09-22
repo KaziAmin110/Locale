@@ -5,15 +5,12 @@ from external_apis.rentspree_api import RentSpreeAPI, ZillowAPI
 from external_apis.google_places_api import GooglePlacesAPI, YelpAPI
 
 def test_all_apis():
-    """Test all real APIs with sample data"""
     print(" Testing Real APIs...")
     
-    # Test coordinates (Austin, TX)
     test_lat, test_lng = 30.2672, -97.7431
     test_city, test_state = "Austin", "TX"
     test_interests = ["coffee", "food", "tech", "fitness"]
     
-    # Test 1: RentSpree API
     print("\n1. Testing RentSpree API...")
     if Config.RENTSPREE_API_KEY:
         result = RentSpreeAPI.search_apartments(test_city, test_state)
@@ -28,7 +25,6 @@ def test_all_apis():
     else:
         print(" RentSpree API key not configured")
     
-    # Test 2: Zillow API
     print("\n2. Testing Zillow API...")
     if Config.RAPIDAPI_KEY:
         result = ZillowAPI.search_rentals(test_city, test_state)
@@ -42,7 +38,6 @@ def test_all_apis():
     else:
         print(" Zillow API key not configured")
     
-    # Test 3: Google Places API
     print("\n3. Testing Google Places API...")
     if Config.GOOGLE_PLACES_API_KEY:
         result = GooglePlacesAPI.get_places_by_interests(test_lat, test_lng, test_interests)
@@ -57,7 +52,6 @@ def test_all_apis():
     else:
         print(" Google Places API key not configured")
     
-    # Test 4: Yelp API
     print("\n4. Testing Yelp API...")
     if Config.YELP_API_KEY:
         result = YelpAPI.search_businesses(test_lat, test_lng, test_interests)
@@ -74,11 +68,8 @@ def test_all_apis():
     print("\nAPI testing complete!")
 
 def test_backend_endpoints():
-    """Test backend endpoints with real data"""
     print("\n Testing Backend Endpoints...")
     
-    # You'll need a valid JWT token for this
-    # Get it by logging in through the frontend first
     token = input("Enter your JWT token (or press Enter to skip): ").strip()
     
     if not token:
@@ -88,7 +79,6 @@ def test_backend_endpoints():
     headers = {"Authorization": f"Bearer {token}"}
     base_url = "http://localhost:5000/api"
     
-    # Test apartments endpoint
     print("\n1. Testing /apartments/feed...")
     try:
         response = requests.get(f"{base_url}/apartments/feed", headers=headers)
@@ -101,7 +91,6 @@ def test_backend_endpoints():
     except Exception as e:
         print(f" Apartments endpoint error: {e}")
     
-    # Test spots endpoint
     print("\n2. Testing /spots/feed...")
     try:
         response = requests.get(f"{base_url}/spots/feed", headers=headers)
@@ -114,7 +103,6 @@ def test_backend_endpoints():
     except Exception as e:
         print(f" Spots endpoint error: {e}")
     
-    # Test people endpoint
     print("\n3. Testing /people/feed...")
     try:
         response = requests.get(f"{base_url}/people/feed", headers=headers)

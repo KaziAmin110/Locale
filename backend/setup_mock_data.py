@@ -3,7 +3,6 @@ from data.mock_data import MOCK_APARTMENTS, MOCK_PEOPLE, MOCK_SPOTS
 import uuid
 
 def create_sample_user():
-    """Create a sample user for testing"""
     sample_user = {
         'id': str(uuid.uuid4()),
         'email': 'rachel@example.com',
@@ -31,10 +30,8 @@ def create_sample_user():
         return None
 
 def populate_apartments():
-    """Populate apartments table with mock data"""
     print("Populating apartments...")
     
-    # Insert first 10 apartments for testing
     for i, apartment in enumerate(MOCK_APARTMENTS[:10]):
         result = SupabaseService.insert_data('apartments', apartment)
         if result['success']:
@@ -43,10 +40,8 @@ def populate_apartments():
             print(f" Failed to insert apartment {i+1}: {result['error']}")
 
 def populate_people():
-    """Populate people table with mock data"""
     print("Populating people...")
     
-    # Insert first 20 people for testing
     for i, person in enumerate(MOCK_PEOPLE[:20]):
         result = SupabaseService.insert_data('people', person)
         if result['success']:
@@ -55,10 +50,8 @@ def populate_people():
             print(f" Failed to insert person {i+1}: {result['error']}")
 
 def populate_spots():
-    """Populate spots table with mock data"""
     print("Populating spots...")
     
-    # Insert first 30 spots for testing
     for i, spot in enumerate(MOCK_SPOTS[:30]):
         result = SupabaseService.insert_data('spots', spot)
         if result['success']:
@@ -67,13 +60,10 @@ def populate_spots():
             print(f" Failed to insert spot {i+1}: {result['error']}")
 
 def setup_complete_database():
-    """Set up the complete database with sample data"""
     print(" Setting up CityMate database...")
     
-    # Create sample user
     user_id = create_sample_user()
     
-    # Populate all tables
     populate_apartments()
     populate_people()
     populate_spots()

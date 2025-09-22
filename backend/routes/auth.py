@@ -11,17 +11,14 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    """Register a new user"""
     try:
         data = request.get_json()
         
-        # Validate required fields
         required_fields = ['name', 'email', 'password']
         for field in required_fields:
             if field not in data:
                 return jsonify({'success': False, 'error': f'Missing field: {field}'}), 400
         
-        # Check if user already exists
         existing_result = SupabaseService.get_data('users', {'email': data['email']})
         if not existing_result['success']:
             return jsonify({'success': False, 'error': 'Database error'}), 500
@@ -29,7 +26,6 @@ def register():
         if existing_result['data']:
             return jsonify({'success': False, 'error': 'User with this email already exists'}), 400
         
-        # Create user data for database
         user_id = str(uuid.uuid4())
         user_data = {
             'id': user_id,
@@ -37,13 +33,11 @@ def register():
             'email': data['email'],
         }
         
-        # Save user to database
         result = SupabaseService.insert_data('users', user_data)
 
         if not result['success']:
             return jsonify({'success': False, 'error': 'Failed to create user'}), 500
         
-        # Create JWT token
         access_token = create_access_token(identity=user_id)
         
         return jsonify({
@@ -58,7 +52,6 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    """Login user"""
     try:
         data = request.get_json()
         
@@ -68,7 +61,6 @@ def login():
         if not email or not password:
             return jsonify({'success': False, 'error': 'Email and password required'}), 400
         
-        # Find user in database
         user_result = SupabaseService.get_data('users', {'email': email})
 
         if not user_result['success']:
@@ -79,8 +71,6 @@ def login():
         
         user = user_result['data'][0]
         
-        # For demo purposes, accept any password (in real app, verify password hash)
-        # Create JWT token
         access_token = create_access_token(identity=user['id'])
         
         return jsonify({
@@ -95,7 +85,6 @@ def login():
 
 @auth_bp.route('/test-db', methods=['GET'])
 def test_db():
-    """Test database connection"""
     try:
         result = SupabaseService.get_data('users', {})
         return jsonify({
@@ -111,7 +100,6 @@ def test_db():
 
 @auth_bp.route('/google-auth-url', methods=['GET'])
 def get_google_auth_url():
-    """Get Google OAuth URL"""
     try:
         redirect_uri = request.args.get('redirect_uri', 'http://localhost:3000/auth/callback')
         auth_url = GoogleAuthService.get_google_auth_url(redirect_uri)
@@ -127,7 +115,6 @@ def get_google_auth_url():
 
 @auth_bp.route('/google-callback', methods=['POST'])
 def google_callback():
-    """Handle Google OAuth callback"""
     try:
         data = request.get_json()
         code = data.get('code')
@@ -136,7 +123,6 @@ def google_callback():
         if not code:
             return jsonify({'success': False, 'error': 'Authorization code required'}), 400
         
-        # Exchange code for tokens
         token_result = GoogleAuthService.exchange_code_for_token(code, redirect_uri)
         
         if not token_result['success']:
@@ -144,7 +130,6 @@ def google_callback():
         
         access_token = token_result['access_token']
         
-        # Get user info
         user_info_result = GoogleAuthService.get_user_info_from_access_token(access_token)
         
         if not user_info_result['success']:
@@ -152,11 +137,9 @@ def google_callback():
         
         user_info = user_info_result['user_info']
         
-        # Check if user exists
         existing_result = SupabaseService.get_data('users', {'email': user_info['email']})
         
         if existing_result['success'] and existing_result['data']:
-            # User exists, create JWT token
             user = existing_result['data'][0]
             access_token = create_access_token(identity=user['id'])
             
@@ -168,14 +151,13 @@ def google_callback():
                 'user': user
             }), 200
         else:
-            # Create new user
             user_id = str(uuid.uuid4())
             user_data = {
                 'id': user_id,
                 'name': user_info['name'],
                 'email': user_info['email'],
-                'age': 25,  # Default age
-                'city': 'San Francisco, CA',  # Default location
+                'age': 25,
+                'city': 'San Francisco, CA',
                 'budget_min': 1000,
                 'budget_max': 3000,
                 'interests': ['Technology', 'Music', 'Travel'],
@@ -183,14 +165,12 @@ def google_callback():
                 'photos': [user_info['picture']] if user_info.get('picture') else []
             }
             
-            # Save user to database
             result = SupabaseService.insert_data('users', user_data)
             if not result['success']:
                 print(f"User creation failed: {result['error']}")
                 print(f"User data: {user_data}")
                 return jsonify({'success': False, 'error': f"Failed to create user: {result['error']}"}), 500
             
-            # Create JWT token
             access_token = create_access_token(identity=user_id)
             
             return jsonify({

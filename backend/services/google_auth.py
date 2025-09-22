@@ -5,9 +5,7 @@ from config import Config
 class GoogleAuthService:
     @staticmethod
     def verify_google_token(id_token):
-        """Verify Google ID token"""
         try:
-            # Verify with Google's tokeninfo endpoint
             response = requests.get(
                 f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
             )
@@ -15,7 +13,6 @@ class GoogleAuthService:
             if response.status_code == 200:
                 token_info = response.json()
                 
-                # Verify the token is for our app
                 if token_info.get('aud') != Config.GOOGLE_CLIENT_ID:
                     return {"success": False, "error": "Invalid token audience"}
                 
@@ -36,9 +33,7 @@ class GoogleAuthService:
     
     @staticmethod
     def get_user_info_from_access_token(access_token):
-        """Get user info from Google access token"""
         try:
-            # Get user info from Google API
             response = requests.get(
                 "https://www.googleapis.com/oauth2/v2/userinfo",
                 headers={"Authorization": f"Bearer {access_token}"}
@@ -63,7 +58,6 @@ class GoogleAuthService:
     
     @staticmethod
     def exchange_code_for_token(code, redirect_uri):
-        """Exchange authorization code for access token"""
         try:
             print(f"Exchanging code: {code[:20]}... for token")
             print(f"Redirect URI: {redirect_uri}")
@@ -98,7 +92,6 @@ class GoogleAuthService:
     
     @staticmethod
     def get_google_auth_url(redirect_uri):
-        """Generate Google OAuth URL"""
         base_url = "https://accounts.google.com/o/oauth2/v2/auth"
         params = {
             "client_id": Config.GOOGLE_CLIENT_ID,

@@ -11,10 +11,7 @@ import traceback
 apartments_bp = Blueprint('apartments', __name__)
 ml_engine = MLEngine()
 
-# --- HELPER FUNCTIONS ---
-
 def parse_price(price_str):
-    """Cleans a string to extract an integer price."""
     if not price_str or "contact" in price_str.lower():
         return None
     cleaned_price = re.sub(r'[$,+A-Za-z/]', '', price_str).strip()
@@ -24,7 +21,6 @@ def parse_price(price_str):
         return None
 
 def parse_integer_value(value):
-    """Removes commas and other characters to parse an integer from a string."""
     if value is None:
         return None
     cleaned_value = re.sub(r'[^\d]', '', str(value))
@@ -35,13 +31,10 @@ def parse_integer_value(value):
             return None
     return None
 
-# --- MAIN FEED ENDPOINT ---
-
 @apartments_bp.route('/feed', methods=['GET'])
 @jwt_required()
 def get_apartment_feed():
     try:
-        # 1. Get User Data
         user_id = get_jwt_identity()
         user_result = SupabaseService.get_data('users', {'id': user_id})
         if not user_result['success'] or not user_result['data']:
@@ -49,7 +42,6 @@ def get_apartment_feed():
         
         user = user_result['data'][0]
         
-        # Smart location handling
         user_city = user.get('city', 'Orlando')
         user_state = user.get('state', 'FL')
         location_query = f"{user_city}, {user_state}" if ',' not in user_city else user_city
@@ -61,7 +53,6 @@ def get_apartment_feed():
         
         data_source = "redfin_scraper"
         
-        # 2. Data Sourcing & Insertion (from Scraper)
         try:
             raw_scraped_data = scrape_redfin_rentals(location=location_query, max_listings=20)
             
@@ -118,7 +109,6 @@ def get_apartment_feed():
             print(f"Scraper threw an exception: {scraper_error}")
             traceback.print_exc()
 
-        # 3. Filtering & Ranking Logic
         all_db_apartments_result = SupabaseService.get_data('apartments')
         all_db_apartments = all_db_apartments_result['data'] if all_db_apartments_result.get('success') else []
 
@@ -127,7 +117,6 @@ def get_apartment_feed():
         
         available_apartments = [apt for apt in all_db_apartments if apt['id'] not in swiped_ids]
         
-        # 4. Fallback Data Generation (if needed)
         if not available_apartments and not all_db_apartments:
             print("No apartments found. Generating fallback data for a first-time user.")
             data_source = "fallback_generator"
@@ -139,7 +128,6 @@ def get_apartment_feed():
                 "data_source": data_source
             })
         
-        # 5. ML Ranking
         user_vector = ml_engine.create_user_vector(user)
         recommendations = ml_engine.apartment_recommendations(
             user_vector, available_apartments, [float(user_lat), float(user_lng)]
@@ -163,8 +151,6 @@ def get_apartment_feed():
         traceback.print_exc()
         return jsonify({"error": "An internal server error occurred"}), 500
 
-# --- SWIPE AND MATCH ENDPOINT ---
-
 @apartments_bp.route('/swipe', methods=['POST'])
 @jwt_required()
 def record_apartment_swipe():
@@ -179,7 +165,6 @@ def record_apartment_swipe():
         
         is_like = direction == 'right'
         
-        # Record the swipe action
         swipe_data = {
             'id': str(uuid.uuid4()), 'user_id': user_id, 
             'apartment_id': apartment_id, 'direction': direction
@@ -189,7 +174,6 @@ def record_apartment_swipe():
         if not result['success']:
             return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500
         
-        # If the user liked the apartment, create a match
         if is_like:
             match_data = {
                 'id': str(uuid.uuid4()), 'user_id': user_id, 'apartment_id': apartment_id
@@ -200,7 +184,6 @@ def record_apartment_swipe():
                 'message': 'Apartment liked! Added to your matches.'
             }), 200
         
-        # If it was a 'pass'
         return jsonify({'success': True, 'match': False, 'message': 'Swipe recorded'}), 200
 
     except Exception as e:
@@ -208,14 +191,10 @@ def record_apartment_swipe():
         traceback.print_exc()
         return jsonify({'success': False, 'error': 'An internal server error occurred'}), 500
 
-# --- FALLBACK DATA GENERATION FUNCTIONS ---
-
 def generate_and_save_apartments_for_city(city, state, user):
-    """Generate apartments and save them to the database."""
     print(f"Generating and saving apartments for {city}, {state}")
     apartments = generate_realistic_apartments_for_city(city, state, user)
     
-    # Prepare for bulk insert, removing match_score
     apartments_to_insert = [{k: v for k, v in apt.items() if k != 'match_score'} for apt in apartments]
     
     if apartments_to_insert:
@@ -226,7 +205,6 @@ def generate_and_save_apartments_for_city(city, state, user):
     return apartments
 
 def generate_realistic_apartments_for_city(city, state, user):
-    """Fallback function to generate apartment data if scraper and DB fail."""
     neighborhoods = {'orlando': ['Downtown', 'Lake Nona', 'Winter Park'], 'austin': ['Downtown', 'South Congress']}
     city_neighborhoods = neighborhoods.get(city.lower(), ['Downtown', 'Midtown'])
     
@@ -256,7 +234,7 @@ def generate_realistic_apartments_for_city(city, state, user):
             'photos': random.sample(apartment_photos, 2),
             'description': f"A beautiful apartment in {neighborhood}.",
             'amenities': ['Pool', 'Gym', 'Parking'],
-            'match_score': 0.0 # Will be calculated by ML engine
+            'match_score': 0.0
         }
         apartments.append(apartment)
     

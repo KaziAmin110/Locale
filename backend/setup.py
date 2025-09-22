@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Complete Database Setup Script
-This script will guide you through setting up Supabase and populating it with mock data
-"""
-
 import os
 import sys
 from dotenv import load_dotenv
@@ -26,14 +20,13 @@ JWT_SECRET_KEY=your_jwt_secret_key_here
         with open('.env', 'w') as f:
             f.write(env_content)
         print("Created .env template file")
-        print("📝 Please edit .env file with your Supabase credentials")
+        print("Please edit .env file with your Supabase credentials")
         return False
     else:
         print(".env file already exists")
         return True
 
 def check_env_variables():
-    """Check if environment variables are set"""
     load_dotenv()
     
     required_vars = ['SUPABASE_URL', 'SUPABASE_KEY']
@@ -52,7 +45,6 @@ def check_env_variables():
     return True
 
 def run_sql_schema():
-    """Display SQL schema for user to run in Supabase"""
     sql_schema = """
 -- Run this SQL in your Supabase SQL Editor:
 
@@ -208,17 +200,15 @@ ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 """
     
-    print("📋 SQL Schema:")
+    print("SQL Schema:")
     print(sql_schema)
     print("\nPlease copy and run this SQL in your Supabase SQL Editor")
     input("Press Enter when you've created the tables...")
 
 def main():
-    """Main setup function"""
     print("CityMate Database Setup")
     print("=" * 40)
     
-    # Step 1: Create .env file
     print("\n1. Creating environment file...")
     env_ready = create_env_file()
     
@@ -230,17 +220,14 @@ def main():
         print("4. Run this script again")
         return
     
-    # Step 2: Check environment variables
     print("\n2. Checking environment variables...")
     if not check_env_variables():
         print("\n📝 Please edit .env file with your Supabase credentials and run again")
         return
     
-    # Step 3: Display SQL schema
     print("\n3. Database schema setup...")
     run_sql_schema()
     
-    # Step 4: Populate database
     print("\n4. Populating database with mock data...")
     try:
         from populate_database import main as populate_main

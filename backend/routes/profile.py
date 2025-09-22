@@ -7,7 +7,6 @@ profile_bp = Blueprint('profile', __name__)
 @profile_bp.route('', methods=['GET'])
 @jwt_required()
 def get_profile():
-    """Get user profile"""
     try:
         user_id = get_jwt_identity()
         
@@ -27,12 +26,10 @@ def get_profile():
 @profile_bp.route('', methods=['PUT'])
 @jwt_required()
 def update_profile():
-    """Update user profile"""
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
         
-        # Allowed fields to update
         allowed_fields = ['name', 'age', 'bio', 'interests', 'budget_min', 'budget_max', 'city']
         update_data = {key: value for key, value in data.items() if key in allowed_fields}
         update_data['updated_at'] = 'now()'
@@ -52,7 +49,6 @@ def update_profile():
 @profile_bp.route('/photos', methods=['POST'])
 @jwt_required()
 def add_profile_photos():
-    """Add profile photos"""
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
@@ -61,7 +57,6 @@ def add_profile_photos():
         if not photo_urls:
             return jsonify({"error": "No photos provided"}), 400
         
-        # Get current user photos
         user_data = SupabaseService.get_data('users', {'id': user_id})
         if not user_data['success']:
             return jsonify({"error": "User not found"}), 404
@@ -69,7 +64,6 @@ def add_profile_photos():
         current_photos = user_data['data'][0].get('photos', [])
         updated_photos = current_photos + photo_urls
         
-        # Limit to 6 photos max
         updated_photos = updated_photos[:6]
         
         result = SupabaseService.update_data('users', 
@@ -91,12 +85,10 @@ def add_profile_photos():
 @profile_bp.route('/photos/<photo_index>', methods=['DELETE'])
 @jwt_required()
 def delete_profile_photo(photo_index):
-    """Delete a profile photo"""
     try:
         user_id = get_jwt_identity()
         photo_idx = int(photo_index)
         
-        # Get current user photos
         user_data = SupabaseService.get_data('users', {'id': user_id})
         if not user_data['success']:
             return jsonify({"error": "User not found"}), 404
@@ -106,7 +98,6 @@ def delete_profile_photo(photo_index):
         if photo_idx < 0 or photo_idx >= len(current_photos):
             return jsonify({"error": "Invalid photo index"}), 400
         
-        # Remove photo at index
         updated_photos = current_photos[:photo_idx] + current_photos[photo_idx+1:]
         
         result = SupabaseService.update_data('users', 

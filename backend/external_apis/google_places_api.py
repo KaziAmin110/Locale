@@ -6,10 +6,8 @@ from config import Config
 class GooglePlacesAPI:
     BASE_URL = "https://maps.googleapis.com/maps/api"
 
-    # --- NEW --- Helper method to convert an address to lat/lng
     @staticmethod
     def _geocode_address(address):
-        """Converts a string address into latitude and longitude."""
         try:
             url = f"{GooglePlacesAPI.BASE_URL}/geocode/json"
             params = {
@@ -17,7 +15,7 @@ class GooglePlacesAPI:
                 'key': Config.GOOGLE_PLACES_API_KEY
             }
             response = requests.get(url, params=params)
-            response.raise_for_status()  # Raise an exception for bad status codes
+            response.raise_for_status()
             data = response.json()
 
             if data['status'] == 'OK' and data['results']:
@@ -30,15 +28,12 @@ class GooglePlacesAPI:
             print(f"Error during geocoding request: {e}")
             return None
 
-    # --- MODIFIED --- Main method now handles address or lat/lng
     @staticmethod
     def search_nearby_by_interest(location=None, lat=None, lng=None, user_interests=None, radius=8000):
-        """Get places by address (geocoding) or direct lat/lng."""
         if user_interests is None:
             user_interests = []
             
         try:
-            # Step 1: Get coordinates
             coords = None
             if lat and lng:
                 coords = {'lat': lat, 'lng': lng}
@@ -48,7 +43,6 @@ class GooglePlacesAPI:
             if not coords:
                 return {"success": False, "error": "Could not determine location from provided address."}
 
-            # Step 2: Map interests to Google place types
             interest_mapping = {
                 'coffee': ['cafe', 'bakery'], 'food': ['restaurant', 'meal_takeaway'],
                 'fitness': ['gym', 'spa'], 'nightlife': ['bar', 'night_club'],
@@ -58,20 +52,18 @@ class GooglePlacesAPI:
             
             place_types = {t for interest in user_interests for t in interest_mapping.get(interest.lower(), [])}
             if not place_types:
-                place_types = {'restaurant', 'cafe', 'park'} # Default search
+                place_types = {'restaurant', 'cafe', 'park'}
 
-            # Step 3: Search for each place type
             all_places = set()
             unique_place_ids = set()
 
-            for place_type in list(place_types)[:5]:  # Limit API calls
+            for place_type in list(place_types)[:5]:
                 places = GooglePlacesAPI._search_by_type(coords['lat'], coords['lng'], place_type, radius)
                 for place in places:
                     if place['external_id'] not in unique_place_ids:
-                        all_places.add(tuple(place.items())) # Use tuple of items to make it hashable
+                        all_places.add(tuple(place.items()))
                         unique_place_ids.add(place['external_id'])
             
-            # Convert set of tuples back to list of dicts
             spots = [dict(p) for p in all_places]
 
             return {"success": True, "spots": spots, "source": "google_places"}
@@ -81,7 +73,6 @@ class GooglePlacesAPI:
 
     @staticmethod
     def _search_by_type(lat, lng, place_type, radius):
-        """(Unchanged) Search for a specific place type using coordinates."""
         try:
             url = f"{GooglePlacesAPI.BASE_URL}/place/nearbysearch/json"
             params = {
@@ -111,10 +102,9 @@ class GooglePlacesAPI:
     
     @staticmethod
     def _get_place_photos(photo_refs):
-        """(Unchanged) Convert Google photo references to URLs."""
         photos = []
         if not photo_refs: return photos
-        for photo_ref in photo_refs[:2]: # Max 2 photos
+        for photo_ref in photo_refs[:2]:
             photo_url = (f"{GooglePlacesAPI.BASE_URL}/place/photo"
                          f"?maxwidth=800&photoreference={photo_ref['photo_reference']}"
                          f"&key={Config.GOOGLE_PLACES_API_KEY}")

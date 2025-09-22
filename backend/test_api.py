@@ -1,22 +1,13 @@
-#!/usr/bin/env python3
-"""
-Simple API test script to verify your endpoints are working
-Run this to test your backend before testing the frontend
-"""
-
 import requests
 import json
 
-# Configuration
-BASE_URL = "http://localhost:5000"  # Adjust to your Flask server
+BASE_URL = "http://localhost:5000"
 TEST_EMAIL = "test@example.com"
 TEST_PASSWORD = "password123"
 
 def test_auth():
-    """Test authentication"""
-    print("🔐 Testing Authentication...")
+    print("Testing Authentication...")
     
-    # Test registration
     register_data = {
         "name": "Test User",
         "email": TEST_EMAIL,
@@ -34,7 +25,6 @@ def test_auth():
     else:
         print(f"Registration failed: {response.text}")
         
-        # Try login instead
         login_data = {
             "email": TEST_EMAIL,
             "password": TEST_PASSWORD
@@ -51,8 +41,7 @@ def test_auth():
             return None
 
 def test_apartments_feed(token):
-    """Test apartments feed"""
-    print("\n🏠 Testing Apartments Feed...")
+    print("\nTesting Apartments Feed...")
     
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get(f"{BASE_URL}/apartments/feed", headers=headers)
@@ -69,14 +58,13 @@ def test_apartments_feed(token):
             print(f"   First apartment: {first_apt.get('title', 'No title')}")
             print(f"   Photos: {len(first_apt.get('photos', []))} photos")
             print(f"   First photo: {first_apt.get('photos', ['No photos'])[0]}")
-            return apartments[0]['id']  # Return first apartment ID for swipe test
+            return apartments[0]['id']
     else:
         print(f"Apartments feed failed: {response.text}")
         return None
 
 def test_matches(token):
-    """Test matches endpoint"""
-    print("\n💕 Testing Matches...")
+    print("\nTesting Matches...")
     
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get(f"{BASE_URL}/matches", headers=headers)
@@ -96,7 +84,6 @@ def test_matches(token):
         print(f"Matches failed: {response.text}")
 
 def test_swipe(token, apartment_id):
-    """Test swiping"""
     if not apartment_id:
         print("\nSkipping swipe test - no apartment ID")
         return
@@ -123,7 +110,6 @@ def test_swipe(token, apartment_id):
         print(f"Swipe failed: {response.text}")
 
 def test_people_feed(token):
-    """Test people feed"""
     print("\nTesting People Feed...")
     
     headers = {"Authorization": f"Bearer {token}"}
@@ -144,7 +130,6 @@ def test_people_feed(token):
         print(f"People feed failed: {response.text}")
 
 def test_spots_feed(token):
-    """Test spots feed"""
     print("\nTesting Spots Feed...")
     
     headers = {"Authorization": f"Bearer {token}"}
@@ -165,25 +150,20 @@ def test_spots_feed(token):
         print(f"Spots feed failed: {response.text}")
 
 def main():
-    """Run all tests"""
     print("Starting API Tests...")
     print("=" * 50)
     
-    # Test authentication
     token = test_auth()
     if not token:
         print("Authentication failed - cannot continue tests")
         return
     
-    # Test all feeds
     apartment_id = test_apartments_feed(token)
     test_people_feed(token)
     test_spots_feed(token)
     
-    # Test swipe (creates match)
     test_swipe(token, apartment_id)
     
-    # Test matches (should show the match we just created)
     test_matches(token)
     
     print("\n" + "=" * 50)
