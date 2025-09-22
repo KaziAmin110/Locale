@@ -1,24 +1,15 @@
-import React from "react";
+import { motion } from "framer-motion";
 
-type InterestsFormProps = {
+// Props definition
+interface InterestsFormProps {
   selectedInterests: string[];
   handleInterestToggle: (interest: string) => void;
   setCurrentStep: (step: number) => void;
-};
+}
 
 const INTEREST_OPTIONS = [
-  { name: "Technology", emoji: "💻" },
-  { name: "Nature", emoji: "🌳" },
-  { name: "Hiking", emoji: "🥾" },
-  { name: "Art & Culture", emoji: "🎨" },
-  { name: "Music", emoji: "🎵" },
-  { name: "Foodie", emoji: "🍔" },
-  { name: "Sports", emoji: "⚽" },
-  { name: "Reading", emoji: "📚" },
-  { name: "Photography", emoji: "📷" },
-  { name: "Travel", emoji: "✈️" },
-  { name: "Gaming", emoji: "🎮" },
-  { name: "Fitness", emoji: "💪" },
+  "Technology", "Nature", "Hiking", "Art & Culture", "Music", "Foodie",
+  "Sports", "Reading", "Photography", "Travel", "Gaming", "Fitness",
 ];
 
 const InterestsForm = ({
@@ -28,54 +19,70 @@ const InterestsForm = ({
 }: InterestsFormProps) => {
   const isButtonDisabled = selectedInterests.length < 3;
 
-  return (
-    <div className="flex-1 flex flex-col justify-evenly w-full max-w-lg px-4 pt-8 pb-4">
-      <div className="text-center">
-        <p className="text-sm text-gray-800 font-semibold">
-          {isButtonDisabled
-            ? `Select at least ${3 - selectedInterests.length} more`
-            : "Perfect! Feel free to select more."}
-        </p>
-      </div>
+  const variants = {
+    hidden: (direction: number) => ({ opacity: 0, x: direction * 100 }),
+    visible: { opacity: 1, x: 0 },
+    exit: (direction: number) => ({ opacity: 0, x: direction * -100 }),
+  };
 
-      <div className="flex flex-wrap justify-center gap-3">
-        {INTEREST_OPTIONS.map((interest) => {
-          const isSelected = selectedInterests.includes(interest.name);
-          return (
-            <button
-              key={interest.name}
-              onClick={() => handleInterestToggle(interest.name)}
-              className={`flex items-center gap-2 rounded-xl border-2 px-4 py-3 font-medium transition-all
+  return (
+    <motion.div
+      custom={1} // Forward direction
+      variants={variants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+      className="flex flex-col w-full h-full items-center justify-between"
+    >
+      <div className="w-full max-w-xl">
+        <div className="text-center mb-6">
+          <p className="font-semibold text-slate-300">
+            {isButtonDisabled
+              ? `Select at least ${3 - selectedInterests.length} more interest${
+                  selectedInterests.length === 2 ? "" : "s"
+                }.`
+              : "Great choices! Feel free to add more."}
+          </p>
+        </div>
+        <div className="flex flex-wrap justify-center gap-3">
+          {INTEREST_OPTIONS.map((interest) => {
+            const isSelected = selectedInterests.includes(interest);
+            return (
+              <button
+                key={interest}
+                onClick={() => handleInterestToggle(interest)}
+                className={`px-5 py-3 rounded-lg border-2 font-semibold transition-all duration-200 transform hover:scale-105
                 ${
                   isSelected
-                    ? "border-red-500 bg-red-500 text-white shadow-md"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                    ? "border-red-500 bg-red-500/20 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.4)]"
+                    : "border-white/20 bg-white/10 text-slate-200 hover:border-white/30 hover:bg-white/20"
                 }
               `}
-            >
-              <span>{interest.emoji}</span>
-              <span>{interest.name}</span>
-            </button>
-          );
-        })}
+              >
+                {interest}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="flex gap-3">
+      <div className="w-full max-w-lg flex justify-between">
         <button
           onClick={() => setCurrentStep(3)}
-          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-xl font-medium transition-colors"
+          className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105 active:scale-100"
         >
           Back
         </button>
         <button
           onClick={() => setCurrentStep(5)}
           disabled={isButtonDisabled}
-          className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-10 py-4 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-lg font-bold text-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/40 active:scale-100"
         >
-          Continue
+          Proceed
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
