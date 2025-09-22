@@ -57,7 +57,7 @@ export default function Home() {
               className="!text-white text-5xl md:text-7xl font-extrabold leading-tight mb-4" 
               style={{textShadow: '0 5px 20px rgba(0,0,0,0.5)'}}
             >
-              Find Your Dream Home
+              Quick. Fast. Reliable.
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -65,7 +65,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
               className="text-lg md:text-xl max-w-3xl mb-8 text-slate-200"
             >
-              Discover exclusive properties, connect with top agents, and find the perfect place to call home with our intelligent, personalized platform.
+              Discover exclusive properties, connect with top agents, and find the perfect place for you.
             </motion.p>
             
             <motion.div 
@@ -106,7 +106,6 @@ export default function Home() {
         </main>
       </div>
 
-      {/* --- Features Section --- */}
       <section className="bg-slate-900 py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <motion.div 
@@ -118,10 +117,10 @@ export default function Home() {
           >
             <motion.h2 variants={featureVariants} className="text-base font-semibold leading-7 text-red-400">Discover a better way</motion.h2>
             <motion.p variants={featureVariants} className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Everything you need to find the perfect home
+              Everything you need to find the perfect apartment and roommates.
             </motion.p>
             <motion.p variants={featureVariants} className="mt-6 text-lg leading-8 text-slate-400">
-              Our platform is designed to be your co-pilot in the real estate market, providing you with the tools and insights to make confident decisions.
+              Our platform is designed to help you navigate through your first rental experience. With out selection of apartments, spots, and people, you are sure to find your perfect match here with us.
             </motion.p>
           </motion.div>
           <motion.div 
@@ -133,7 +132,7 @@ export default function Home() {
           >
             <dl className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
               {[
-                { icon: UserCheck, title: 'Personalized Matching', text: "Our AI engine connects you with homes and agents that match your unique lifestyle." },
+                { icon: UserCheck, title: 'Personalized Matching', text: "Our engine connects you with apartments and roommates that match your unique lifestyle." },
                 { icon: BarChart, title: 'In-Depth Market Insights', text: "Access real-time market data, trend analysis, and neighborhood scores to stay ahead." },
                 { icon: ShieldCheck, title: 'Verified & Exclusive Listings', text: "Explore verified listings and access off-market properties you won't find anywhere else." },
                 { icon: Award, title: 'Top-Tier Agent Network', text: "Partner with the top 1% of agents in your city for unparalleled service and expertise." }
@@ -187,7 +186,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- How It Works Section --- */}
       <section className="bg-slate-900 py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl lg:text-center mb-16">
@@ -222,14 +220,14 @@ export default function Home() {
       <section className="py-24 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-extrabold text-white mb-4">Loved by Homebuyers</h2>
+            <h2 className="text-4xl font-extrabold text-white mb-4">Loved by Our customers.</h2>
             <p className="text-lg text-slate-400 max-w-2xl mx-auto">Don't just take our word for it. Here's what our clients have to say.</p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
              {[
-               { name: "Saicharan Ramineni", avatar: "https://i.pravatar.cc/48?u=1", quote: `"CityMate's platform made finding our dream home incredibly easy. The personalized matches were spot on!"` },
-               { name: "Kazi Amin", avatar: "https://i.pravatar.cc/48?u=2", quote: `"The market insights were invaluable. We felt so confident in our purchase. Highly recommend to anyone."` },
-               { name: "Kauan Lima", avatar: "https://i.pravatar.cc/48?u=3", quote: `"Our agent, found through CityMate, was exceptional. The entire process was smooth and stress-free."` }
+               { name: "Saicharan Ramineni", avatar: "https://i.pravatar.cc/48?u=1", quote: `"CityMate's platform made finding a place to live incredibly easy. The personalized matches were spot on!"` },
+               { name: "Kazi Amin", avatar: "https://i.pravatar.cc/48?u=2", quote: `"The market insights were invaluable. I was able to easily move and complete an internship abroad with the help of Citymate!"` },
+               { name: "Kauan Lima", avatar: "https://i.pravatar.cc/48?u=3", quote: `"The process was as easy as finding a place and buying. My roommate and I are engaged now!"` }
              ].map((testimonial, index) => (
               <motion.div
                 key={index}
