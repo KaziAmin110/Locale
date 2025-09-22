@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
 
-// ---------- Types ----------
 export type MapItem = {
   id: string;
   title?: string;
@@ -12,7 +11,6 @@ export type MapItem = {
 
 type LatLng = { lat: number; lng: number };
 
-// ---------- Bright "roadmap" style (clean & light) ----------
 const BRIGHT_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: "poi", stylers: [{ visibility: "off" }] },
   { featureType: "transit", stylers: [{ visibility: "off" }] },
@@ -24,7 +22,6 @@ const BRIGHT_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#6b7280" }] },
 ];
 
-// ---------- Small utils ----------
 function cacheGet(addr: string): LatLng | null {
   try {
     const raw = localStorage.getItem("geo:" + addr);
@@ -53,9 +50,7 @@ export default function BackgroundMap({
   focusZoom = 16,
   minZoom = 11,
   maxZoom = 17,
-  // Positive x shifts the viewport to the right, revealing more of the left (where your card is)
   focusOffsetPx = { x: 240, y: 0 },
-  // Leave space on the RIGHT for the centered card
   fitPadding = { top: 60, right: 280, bottom: 60, left: 60 },
 }: {
   items: MapItem[];
@@ -77,17 +72,14 @@ export default function BackgroundMap({
     { id: string; title?: string; address: string; latlng: LatLng }[]
   >([]);
 
-  // Map type toggle state — use string literal so we don't touch google.* before it loads
   const [mapType, setMapType] = useState<google.maps.MapTypeId>(
     "roadmap" as google.maps.MapTypeId
   );
 
-  // Reset the "fit only once" gate when the area changes
   useEffect(() => {
     didFitRef.current = false;
   }, [fitKey]);
 
-  // Load Maps JS & init the map
   useEffect(() => {
     let cancelled = false;
 
@@ -126,9 +118,8 @@ export default function BackgroundMap({
       markersRef.current = {};
       mapRef.current = null;
     };
-  }, []); // once
+  }, []);
 
-  // React to map type changes (apply/remove styles appropriately)
   useEffect(() => {
     const m = mapRef.current;
     if (!m) return;
@@ -136,14 +127,12 @@ export default function BackgroundMap({
     m.setOptions({ styles: mapType === "roadmap" ? BRIGHT_STYLES : undefined });
   }, [mapType]);
 
-  // Geocode all addresses (with localStorage cache)
   useEffect(() => {
     let cancelled = false;
 
     async function waitForGoogle() {
       return new Promise<void>((res) => {
         const tick = () => {
-          // @ts-ignore
           if (window.google && window.google.maps) res();
           else setTimeout(tick, 30);
         };
@@ -158,7 +147,7 @@ export default function BackgroundMap({
       const geocoder = new google.maps.Geocoder();
       const out: { id: string; title?: string; address: string; latlng: LatLng }[] = [];
 
-      const list = items.slice(0, 75); // soft cap for quota
+      const list = items.slice(0, 75);
 
       for (const it of list) {
         const addr = it.address?.trim();
@@ -177,7 +166,7 @@ export default function BackgroundMap({
             const latlng = { lat: loc.lat(), lng: loc.lng() };
             cacheSet(addr, latlng);
             out.push({ ...it, latlng });
-            await new Promise((r) => setTimeout(r, 110)); // gentle throttle
+            await new Promise((r) => setTimeout(r, 110));
           } else {
             console.warn("[BackgroundMap] No geocode result for:", addr);
           }
@@ -198,12 +187,10 @@ export default function BackgroundMap({
     };
   }, [items]);
 
-  // Create/update markers and fit bounds once
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Remove stale markers
     const valid = new Set(resolved.map((r) => r.id));
     Object.keys(markersRef.current).forEach((id) => {
       if (!valid.has(id) && id !== "__test__") {
@@ -212,7 +199,6 @@ export default function BackgroundMap({
       }
     });
 
-    // Add / update markers (default red pin)
     resolved.forEach((r) => {
       if (!markersRef.current[r.id]) {
         markersRef.current[r.id] = new google.maps.Marker({
@@ -225,7 +211,6 @@ export default function BackgroundMap({
       }
     });
 
-    // Test pin if nothing yet
     if (!resolved.length && !markersRef.current["__test__"]) {
       markersRef.current["__test__"] = new google.maps.Marker({
         position: { lat: 28.5383, lng: -81.3792 },
@@ -237,7 +222,6 @@ export default function BackgroundMap({
       delete markersRef.current["__test__"];
     }
 
-    // Fit bounds once per "area"
     if (!didFitRef.current && resolved.length > 0) {
       const bounds = new google.maps.LatLngBounds();
       resolved.forEach((r) => bounds.extend(r.latlng as any));
@@ -255,21 +239,19 @@ export default function BackgroundMap({
     }
   }, [resolved, fitKey, minZoom, maxZoom, fitPadding]);
 
-  // Focus active marker with retry + stable sequence (zoom -> panTo -> panBy)
   useEffect(() => {
     if (!mapRef.current) return;
-    const m = mapRef.current; // stable, non-null
+    const m = mapRef.current;
 
     let cancelled = false;
     const targetId = activeId ?? "";
 
-    // Ensure visibility & z-order
     Object.entries(markersRef.current).forEach(([id, marker]) => {
       if (id === "__test__") return;
       marker.setVisible(true);
       if (id === targetId) {
         marker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
-        marker.setIcon(undefined as any); // default red pin
+        marker.setIcon(undefined as any);
       } else {
         marker.setZIndex(undefined as any);
         marker.setIcon(undefined as any);
@@ -311,16 +293,11 @@ export default function BackgroundMap({
 
   return (
     <div className="fixed inset-0 z-0">
-      {/* Map canvas */}
       <div ref={mapEl} className="absolute inset-0" />
-
-      {/* Dim overlay (set dim={0} to disable) */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{ background: `rgba(0,0,0,${dim})` }}
       />
-
-      {/* Map/Satellite toggle */}
       <div className="absolute top-4 right-4 z-10 flex gap-2 pointer-events-auto">
         <button
           onClick={() => setMapType("roadmap" as google.maps.MapTypeId)}
