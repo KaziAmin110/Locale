@@ -16,7 +16,7 @@ def save_onboarding_data():
         print(f"Photos data: {data.get('photos')} (type: {type(data.get('photos'))})")
         
         # Validate required fields
-        required_fields = ['name', 'age', 'location', 'budgetMin', 'budgetMax', 'interests', 'lookingFor']
+        required_fields = ['name', 'age', 'location', 'budgetMin', 'budgetMax', 'interests']
         for field in required_fields:
             if field not in data or not data[field]:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
@@ -36,14 +36,14 @@ def save_onboarding_data():
             'budget_max': int(data.get('budgetMax')),
             'interests': data.get('interests'),
             'photos': data.get('photos', []),  # Add photos support
-            'onboarding_complete': True,
-            'updated_at': 'now()'
+            'onboarding_complete': True
         }
         
         # Update user record in database
+        print(f"Updating user {user_id} with data: {update_data}")
         result = SupabaseService.update_data('users', update_data, {'id': user_id})
 
-        print(result)
+        print(f"Supabase result: {result}")
         
         if result['success']:
             return jsonify({
@@ -52,7 +52,8 @@ def save_onboarding_data():
                 "data": update_data
             })
         else:
-            return jsonify({"error": "Failed to save onboarding data"}), 500
+            print(f"Supabase error details: {result}")
+            return jsonify({"error": f"Failed to save onboarding data: {result.get('error', 'Unknown error')}"}), 500
     
     except ValueError as e:
         return jsonify({"error": "Invalid data format. Please check your input."}), 400

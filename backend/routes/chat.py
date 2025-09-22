@@ -38,23 +38,39 @@ def get_conversations():
                 from data.mock_data import MOCK_PEOPLE
                 other_user = next((p for p in MOCK_PEOPLE if p['id'] == other_user_id), None)
             
-            if other_user:
-                # Get last message (simplified - would use actual query in production)
-                last_message = "Start your conversation!"  # Default
-                
-                conversation_data = {
-                    'conversation_id': conv['id'],
-                    'other_user': {
-                        'id': other_user['id'],
-                        'name': other_user['name'],
-                        'image': other_user.get('photos', [''])[0] if other_user.get('photos') else '',
-                        'age': other_user.get('age', 25)
-                    },
-                    'last_message': last_message,
-                    'last_message_at': conv.get('last_message_at', conv['created_at']),
-                    'created_at': conv['created_at']
-                }
-                conversation_list.append(conversation_data)
+            # If no user found, create a fallback
+            if not other_user:
+                if other_user_id.startswith('landlord-'):
+                    other_user = {
+                        'id': other_user_id,
+                        'name': 'Property Manager',
+                        'photos': ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'],
+                        'age': 35
+                    }
+                else:
+                    other_user = {
+                        'id': other_user_id,
+                        'name': 'Unknown User',
+                        'photos': [],
+                        'age': 25
+                    }
+            
+            # Get last message (simplified - would use actual query in production)
+            last_message = "Start your conversation!"  # Default
+            
+            conversation_data = {
+                'conversation_id': conv['id'],
+                'other_user': {
+                    'id': other_user['id'],
+                    'name': other_user['name'],
+                    'image': other_user.get('photos', [''])[0] if other_user.get('photos') else '',
+                    'age': other_user.get('age', 25)
+                },
+                'last_message': last_message,
+                'last_message_at': conv.get('last_message_at', conv['created_at']),
+                'created_at': conv['created_at']
+            }
+            conversation_list.append(conversation_data)
         
         # Sort by last message time (handle None values)
         conversation_list.sort(key=lambda x: x['last_message_at'] or x['created_at'], reverse=True)
@@ -100,18 +116,31 @@ def get_messages(conversation_id):
         
         if other_user_data['success'] and other_user_data['data']:
             other_user = other_user_data['data'][0]
+            print(f"Found user in database: {other_user.get('name', 'No name')}")
         else:
             # Fallback to mock data
             from data.mock_data import MOCK_PEOPLE
             other_user = next((p for p in MOCK_PEOPLE if p['id'] == other_user_id), None)
+            if other_user:
+                print(f"Found user in mock data: {other_user.get('name', 'No name')}")
         
         if not other_user:
-            other_user = {
-                'id': other_user_id,
-                'name': 'Unknown User',
-                'photos': [],
-                'age': 25
-            }
+            # If still no user found, create a more descriptive fallback
+            if other_user_id.startswith('landlord-'):
+                other_user = {
+                    'id': other_user_id,
+                    'name': 'Property Manager',
+                    'photos': ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'],
+                    'age': 35
+                }
+            else:
+                other_user = {
+                    'id': other_user_id,
+                    'name': 'Unknown User',
+                    'photos': [],
+                    'age': 25
+                }
+            print(f"Using fallback user: {other_user['name']}")
         
         # Format conversation data for frontend
         conversation_data = {
