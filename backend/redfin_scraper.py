@@ -123,7 +123,7 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
         
     except Exception as e:
         # Catching generic exception to see any errors during API integration
-        print(f"❌ An error occurred: {e}")
+        print(f"An error occurred: {e}")
     finally:
         driver.quit()
     
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     MAX_PROPERTIES_TO_SCRAPE = 30
     OUTPUT_FILENAME = "redfin_listings.json"
 
-    print(f"🚀 Starting headless scraper for: {SEARCH_LOCATION}")
+    print(f"Starting headless scraper for: {SEARCH_LOCATION}")
 
     scraped_data = scrape_redfin_rentals(
         location=SEARCH_LOCATION, 
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     if scraped_data:
         with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
             json.dump(scraped_data, f, ensure_ascii=False, indent=4)
-        print(f"\n✅ Data successfully saved to '{OUTPUT_FILENAME}'")
+        print(f"\nData successfully saved to '{OUTPUT_FILENAME}'")
         print(f"--- Successfully parsed {len(scraped_data)} listings. ---")
     else:
-        print("\n⚠️ No data was scraped. The script might need adjustments.")
+        print("\nNo data was scraped. The script might need adjustments.")

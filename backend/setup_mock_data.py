@@ -78,7 +78,7 @@ def setup_complete_database():
     populate_people()
     populate_spots()
     
-    print("\n🎉 Database setup complete!")
+    print("\nDatabase setup complete!")
     print(f"Sample user ID: {user_id}")
     print("You can now test the API endpoints.")
 

@@ -81,7 +81,7 @@ def generate_mock_swipes_and_matches():
     people = people_data['data']
     spots = spots_data['data']
     
-    print(f"📊 Generating swipes for {len(users)} users...")
+    print(f"Generating swipes for {len(users)} users...")
     
     # Generate apartment swipes
     apartment_swipes = []
@@ -180,15 +180,15 @@ def generate_mock_swipes_and_matches():
                 spot_matches.append(match)
     
     # Insert all swipes and matches
-    print("💾 Inserting apartment swipes and matches...")
+    print("Inserting apartment swipes and matches...")
     insert_batch_data('apartment_swipes', apartment_swipes)
     insert_batch_data('apartment_matches', apartment_matches)
     
-    print("💾 Inserting people swipes and matches...")
+    print("Inserting people swipes and matches...")
     insert_batch_data('people_swipes', people_swipes)
     insert_batch_data('people_matches', people_matches)
     
-    print("💾 Inserting spot swipes and matches...")
+    print("Inserting spot swipes and matches...")
     insert_batch_data('spot_swipes', spot_swipes)
     insert_batch_data('spot_matches', spot_matches)
     
@@ -245,10 +245,10 @@ def generate_mock_conversations():
             messages.append(message)
     
     # Insert conversations and messages
-    print("💾 Inserting conversations...")
+    print("Inserting conversations...")
     insert_batch_data('conversations', conversations)
     
-    print("💾 Inserting messages...")
+    print("Inserting messages...")
     insert_batch_data('messages', messages)
     
     return True
@@ -272,11 +272,11 @@ def insert_batch_data(table, data, batch_size=50):
 
 def insert_core_data():
     """Insert core data (apartments, people, spots, users)"""
-    print("🏠 Inserting apartments...")
+    print("Inserting apartments...")
     if not insert_batch_data('apartments', MOCK_APARTMENTS):
         return False
     
-    print("👥 Inserting people...")
+    print("Inserting people...")
     if not insert_batch_data('people', MOCK_PEOPLE):
         return False
     
@@ -284,7 +284,7 @@ def insert_core_data():
     if not insert_batch_data('spots', MOCK_SPOTS):
         return False
     
-    print("👤 Inserting users...")
+    print("Inserting users...")
     users = generate_mock_users()
     if not insert_batch_data('users', users):
         return False
@@ -351,7 +351,7 @@ def main():
         return False
     
     # Generate and insert interaction data
-    print("\n🔄 Generating interaction data...")
+    print("\nGenerating interaction data...")
     if not generate_mock_swipes_and_matches():
         print(" Failed to generate interaction data")
         return False

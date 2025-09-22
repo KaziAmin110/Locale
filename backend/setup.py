@@ -25,11 +25,11 @@ JWT_SECRET_KEY=your_jwt_secret_key_here
     if not os.path.exists('.env'):
         with open('.env', 'w') as f:
             f.write(env_content)
-        print("✅ Created .env template file")
+        print("Created .env template file")
         print("📝 Please edit .env file with your Supabase credentials")
         return False
     else:
-        print("✅ .env file already exists")
+        print(".env file already exists")
         return True
 
 def check_env_variables():
@@ -45,10 +45,10 @@ def check_env_variables():
             missing_vars.append(var)
     
     if missing_vars:
-        print(f"❌ Please set these variables in .env: {', '.join(missing_vars)}")
+        print(f"Please set these variables in .env: {', '.join(missing_vars)}")
         return False
     
-    print("✅ Environment variables configured")
+    print("Environment variables configured")
     return True
 
 def run_sql_schema():
@@ -210,16 +210,16 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
     
     print("📋 SQL Schema:")
     print(sql_schema)
-    print("\n⚠️  Please copy and run this SQL in your Supabase SQL Editor")
+    print("\nPlease copy and run this SQL in your Supabase SQL Editor")
     input("Press Enter when you've created the tables...")
 
 def main():
     """Main setup function"""
-    print("🚀 CityMate Database Setup")
+    print("CityMate Database Setup")
     print("=" * 40)
     
     # Step 1: Create .env file
-    print("\n1️⃣ Creating environment file...")
+    print("\n1. Creating environment file...")
     env_ready = create_env_file()
     
     if not env_ready:
@@ -231,34 +231,34 @@ def main():
         return
     
     # Step 2: Check environment variables
-    print("\n2️⃣ Checking environment variables...")
+    print("\n2. Checking environment variables...")
     if not check_env_variables():
         print("\n📝 Please edit .env file with your Supabase credentials and run again")
         return
     
     # Step 3: Display SQL schema
-    print("\n3️⃣ Database schema setup...")
+    print("\n3. Database schema setup...")
     run_sql_schema()
     
     # Step 4: Populate database
-    print("\n4️⃣ Populating database with mock data...")
+    print("\n4. Populating database with mock data...")
     try:
         from populate_database import main as populate_main
         if populate_main():
-            print("\n🎉 Setup complete!")
-            print("\n✅ Your database is ready with:")
+            print("\nSetup complete!")
+            print("\nYour database is ready with:")
             print("  • 20 realistic users")
             print("  • 50 apartments")
             print("  • 100 people profiles")
             print("  • 200 local spots")
             print("  • Realistic swipe patterns")
             print("  • Sample conversations")
-            print("\n🚀 You can now start your Flask app!")
+            print("\nYou can now start your Flask app!")
             print("   python3 app.py")
         else:
-            print("❌ Database population failed")
+            print("Database population failed")
     except ImportError:
-        print("❌ Could not import populate_database.py")
+        print("Could not import populate_database.py")
         print("Make sure the file exists and run: python3 populate_database.py")
 
 if __name__ == "__main__":

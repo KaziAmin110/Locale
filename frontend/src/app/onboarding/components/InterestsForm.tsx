@@ -7,18 +7,18 @@ type InterestsFormProps = {
 };
 
 const INTEREST_OPTIONS = [
-  { name: "Technology", emoji: "💻" },
+  { name: "Technology", emoji: "tech" },
   { name: "Nature", emoji: "🌳" },
   { name: "Hiking", emoji: "🥾" },
-  { name: "Art & Culture", emoji: "🎨" },
-  { name: "Music", emoji: "🎵" },
+  { name: "Art & Culture", emoji: "art" },
+  { name: "Music", emoji: "music" },
   { name: "Foodie", emoji: "🍔" },
   { name: "Sports", emoji: "⚽" },
-  { name: "Reading", emoji: "📚" },
-  { name: "Photography", emoji: "📷" },
-  { name: "Travel", emoji: "✈️" },
-  { name: "Gaming", emoji: "🎮" },
-  { name: "Fitness", emoji: "💪" },
+  { name: "Reading", emoji: "book" },
+  { name: "Photography", emoji: "camera" },
+  { name: "Travel", emoji: "travel" },
+  { name: "Gaming", emoji: "game" },
+  { name: "Fitness", emoji: "fitness" },
 ];
 
 const InterestsForm = ({

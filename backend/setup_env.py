@@ -35,7 +35,7 @@ ENABLE_REAL_APIS=false
     with open('.env', 'w') as f:
         f.write(env_content)
     
-    print("✅ Created .env template file")
+    print("Created .env template file")
     print("\n📝 Please edit .env file with your actual values:")
     print("   1. SUPABASE_URL: Get from your Supabase project settings")
     print("   2. SUPABASE_KEY: Get from your Supabase project settings")
@@ -45,30 +45,30 @@ ENABLE_REAL_APIS=false
 def check_current_env():
     """Check current .env file"""
     if not os.path.exists('.env'):
-        print("❌ No .env file found")
+        print("No .env file found")
         return False
     
     with open('.env', 'r') as f:
         content = f.read()
     
     if 'your-supabase-url' in content or 'your_supabase_url' in content:
-        print("❌ .env file still has placeholder values")
+        print(".env file still has placeholder values")
         return False
     
-    print("✅ .env file exists and appears to be configured")
+    print(".env file exists and appears to be configured")
     return True
 
 def main():
-    print("🔧 Environment Setup Helper")
+    print("Environment Setup Helper")
     print("=" * 30)
     
     if check_current_env():
-        print("\n✅ Your environment looks good!")
+        print("\nYour environment looks good!")
         print("You can now run: python3 fix_database.py")
     else:
         print("\n📝 Setting up environment...")
         create_env_template()
-        print("\n⚠️  Please update .env file with real values before proceeding")
+        print("\nPlease update .env file with real values before proceeding")
 
 if __name__ == "__main__":
     main()

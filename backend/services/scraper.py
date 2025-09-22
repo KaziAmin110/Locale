@@ -21,7 +21,7 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
     Returns:
         list: A list of dictionaries with scraped property data.
     """
-    print(f"🚀 Starting Redfin scraper for: {location}")
+    print(f"Starting Redfin scraper for: {location}")
 
     chrome_options = Options()
     chrome_options.add_argument("--headless=new") 
@@ -111,7 +111,7 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
         return listings_data
 
     except Exception as e:
-        print(f"❌ Scraper error: {e}")
+        print(f"Scraper error: {e}")
         return [] # Return an empty list on failure
     finally:
         driver.quit()

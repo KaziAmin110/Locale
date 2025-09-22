@@ -71,7 +71,7 @@ def test_all_apis():
     else:
         print(" Yelp API key not configured")
     
-    print("\n🎉 API testing complete!")
+    print("\nAPI testing complete!")
 
 def test_backend_endpoints():
     """Test backend endpoints with real data"""

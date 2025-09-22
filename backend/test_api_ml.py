@@ -25,14 +25,14 @@ def wait_for_server():
         try:
             response = requests.get(f"{BASE_URL}/api/health", timeout=2)
             if response.status_code == 200:
-                print("✅ Flask server is running!")
+                print("Flask server is running!")
                 return True
         except:
             pass
         time.sleep(1)
         print(f"   Attempt {i+1}/30...")
     
-    print("❌ Flask server not responding")
+    print("Flask server not responding")
     return False
 
 def get_auth_token():
@@ -54,14 +54,14 @@ def get_auth_token():
             data = response.json()
             if data.get('success'):
                 token = data.get('access_token')
-                print("✅ Authentication successful")
+                print("Authentication successful")
                 return token
             else:
-                print(f"❌ Auth failed: {data.get('error')}")
+                print(f"Auth failed: {data.get('error')}")
         else:
-            print(f"❌ Auth request failed: {response.status_code}")
+            print(f"Auth request failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ Auth error: {str(e)}")
+        print(f"Auth error: {str(e)}")
     
     return None
 
@@ -77,7 +77,7 @@ def test_apartment_recommendations(token):
             data = response.json()
             if data.get('success'):
                 apartments = data.get('apartments', [])
-                print(f"✅ Got {len(apartments)} apartment recommendations")
+                print(f"Got {len(apartments)} apartment recommendations")
                 
                 # Show top 3 recommendations with ML scores
                 for i, apt in enumerate(apartments[:3]):
@@ -88,11 +88,11 @@ def test_apartment_recommendations(token):
                 
                 return True
             else:
-                print(f"❌ API error: {data.get('error')}")
+                print(f"API error: {data.get('error')}")
         else:
-            print(f"❌ Request failed: {response.status_code}")
+            print(f"Request failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        print(f"Error: {str(e)}")
     
     return False
 
@@ -108,7 +108,7 @@ def test_people_recommendations(token):
             data = response.json()
             if data.get('success'):
                 people = data.get('people', [])
-                print(f"✅ Got {len(people)} people recommendations")
+                print(f"Got {len(people)} people recommendations")
                 
                 # Show top 3 recommendations with ML scores
                 for i, person in enumerate(people[:3]):
@@ -120,17 +120,17 @@ def test_people_recommendations(token):
                 
                 return True
             else:
-                print(f"❌ API error: {data.get('error')}")
+                print(f"API error: {data.get('error')}")
         else:
-            print(f"❌ Request failed: {response.status_code}")
+            print(f"Request failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        print(f"Error: {str(e)}")
     
     return False
 
 def test_spot_recommendations(token):
     """Test spot ML recommendations"""
-    print("\n📍 Testing Spot Recommendations...")
+    print("\nTesting Spot Recommendations...")
     
     headers = {"Authorization": f"Bearer {token}"}
     
@@ -140,7 +140,7 @@ def test_spot_recommendations(token):
             data = response.json()
             if data.get('success'):
                 spots = data.get('spots', [])
-                print(f"✅ Got {len(spots)} spot recommendations")
+                print(f"Got {len(spots)} spot recommendations")
                 
                 # Show top 3 recommendations with ML scores
                 for i, spot in enumerate(spots[:3]):
@@ -148,15 +148,15 @@ def test_spot_recommendations(token):
                     name = spot.get('name', 'Unknown')
                     category = spot.get('category', 'Unknown')
                     rating = spot.get('rating', 0)
-                    print(f"   {i+1}. {name} ({category}) - ⭐{rating} (Score: {score:.3f})")
+                    print(f"   {i+1}. {name} ({category}) - Rating: {rating} (Score: {score:.3f})")
                 
                 return True
             else:
-                print(f"❌ API error: {data.get('error')}")
+                print(f"API error: {data.get('error')}")
         else:
-            print(f"❌ Request failed: {response.status_code}")
+            print(f"Request failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        print(f"Error: {str(e)}")
     
     return False
 
@@ -173,9 +173,9 @@ def test_swipe_functionality(token):
             "direction": "right"
         }
         response = requests.post(f"{BASE_URL}/api/apartments/swipe", json=swipe_data, headers=headers)
-        print(f"✅ Apartment swipe endpoint responding (status: {response.status_code})")
+        print(f"Apartment swipe endpoint responding (status: {response.status_code})")
     except Exception as e:
-        print(f"❌ Apartment swipe error: {str(e)}")
+        print(f"Apartment swipe error: {str(e)}")
     
     # Test people swipe
     try:
@@ -184,9 +184,9 @@ def test_swipe_functionality(token):
             "direction": "right"
         }
         response = requests.post(f"{BASE_URL}/api/people/swipe", json=swipe_data, headers=headers)
-        print(f"✅ People swipe endpoint responding (status: {response.status_code})")
+        print(f"People swipe endpoint responding (status: {response.status_code})")
     except Exception as e:
-        print(f"❌ People swipe error: {str(e)}")
+        print(f"People swipe error: {str(e)}")
     
     # Test spot swipe
     try:
@@ -195,9 +195,9 @@ def test_swipe_functionality(token):
             "direction": "right"
         }
         response = requests.post(f"{BASE_URL}/api/spots/swipe", json=swipe_data, headers=headers)
-        print(f"✅ Spot swipe endpoint responding (status: {response.status_code})")
+        print(f"Spot swipe endpoint responding (status: {response.status_code})")
     except Exception as e:
-        print(f"❌ Spot swipe error: {str(e)}")
+        print(f"Spot swipe error: {str(e)}")
 
 def main():
     """Main test function"""
@@ -206,14 +206,14 @@ def main():
     
     # Wait for server
     if not wait_for_server():
-        print("\n❌ Please start Flask server first:")
+        print("\nPlease start Flask server first:")
         print("   python3 app.py")
         return
     
     # Get auth token
     token = get_auth_token()
     if not token:
-        print("\n❌ Could not get authentication token")
+        print("\nCould not get authentication token")
         return
     
     # Test ML recommendations
@@ -238,13 +238,13 @@ def main():
     print(f"📊 Test Results: {success_count}/3 ML endpoints working")
     
     if success_count == 3:
-        print("🎉 All ML recommendations are working perfectly!")
-        print("\n✅ Your system is ready for:")
+        print("All ML recommendations are working perfectly!")
+        print("\nYour system is ready for:")
         print("   • Frontend integration")
         print("   • Demo presentation")
         print("   • Real data integration tomorrow")
     else:
-        print("⚠️  Some endpoints need attention")
+        print("Some endpoints need attention")
     
     print(f"\n🌐 API Base URL: {BASE_URL}")
     print("📋 Available endpoints:")

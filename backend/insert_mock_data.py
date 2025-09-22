@@ -26,13 +26,13 @@ def check_env_variables():
             missing_vars.append(var)
     
     if missing_vars:
-        print(f"❌ Missing environment variables: {', '.join(missing_vars)}")
+        print(f"Missing environment variables: {', '.join(missing_vars)}")
         print("Please create a .env file with:")
         for var in missing_vars:
             print(f"  {var}=your_value_here")
         return False
     
-    print("✅ Environment variables found")
+    print("Environment variables found")
     return True
 
 def test_supabase_connection():
@@ -41,13 +41,13 @@ def test_supabase_connection():
         # Try to get data from users table to test connection
         result = SupabaseService.get_data('users', {})
         if result['success']:
-            print("✅ Supabase connection successful")
+            print("Supabase connection successful")
             return True
         else:
-            print(f"❌ Supabase connection failed: {result['error']}")
+            print(f"Supabase connection failed: {result['error']}")
             return False
     except Exception as e:
-        print(f"❌ Supabase connection error: {str(e)}")
+        print(f"Supabase connection error: {str(e)}")
         return False
 
 def insert_apartments():
@@ -64,12 +64,12 @@ def insert_apartments():
         
         if result['success']:
             total_inserted += len(batch)
-            print(f"  ✅ Inserted batch {i//batch_size + 1}: {len(batch)} apartments")
+            print(f"  Inserted batch {i//batch_size + 1}: {len(batch)} apartments")
         else:
-            print(f"  ❌ Failed to insert batch {i//batch_size + 1}: {result['error']}")
+            print(f"  Failed to insert batch {i//batch_size + 1}: {result['error']}")
             return False
     
-    print(f"✅ Successfully inserted {total_inserted} apartments")
+    print(f"Successfully inserted {total_inserted} apartments")
     return True
 
 def insert_people():
@@ -86,17 +86,17 @@ def insert_people():
         
         if result['success']:
             total_inserted += len(batch)
-            print(f"  ✅ Inserted batch {i//batch_size + 1}: {len(batch)} people")
+            print(f"  Inserted batch {i//batch_size + 1}: {len(batch)} people")
         else:
-            print(f"  ❌ Failed to insert batch {i//batch_size + 1}: {result['error']}")
+            print(f"  Failed to insert batch {i//batch_size + 1}: {result['error']}")
             return False
     
-    print(f"✅ Successfully inserted {total_inserted} people")
+    print(f"Successfully inserted {total_inserted} people")
     return True
 
 def insert_spots():
     """Insert mock spots into Supabase"""
-    print("\n📍 Inserting spots...")
+    print("\nInserting spots...")
     
     # Insert spots in batches
     batch_size = 25
@@ -108,17 +108,17 @@ def insert_spots():
         
         if result['success']:
             total_inserted += len(batch)
-            print(f"  ✅ Inserted batch {i//batch_size + 1}: {len(batch)} spots")
+            print(f"  Inserted batch {i//batch_size + 1}: {len(batch)} spots")
         else:
-            print(f"  ❌ Failed to insert batch {i//batch_size + 1}: {result['error']}")
+            print(f"  Failed to insert batch {i//batch_size + 1}: {result['error']}")
             return False
     
-    print(f"✅ Successfully inserted {total_inserted} spots")
+    print(f"Successfully inserted {total_inserted} spots")
     return True
 
 def check_existing_data():
     """Check if data already exists in tables"""
-    print("\n🔍 Checking existing data...")
+    print("\nChecking existing data...")
     
     tables = ['apartments', 'people', 'spots']
     existing_data = {}
@@ -130,14 +130,14 @@ def check_existing_data():
             existing_data[table] = count
             print(f"  📊 {table}: {count} records")
         else:
-            print(f"  ❌ Error checking {table}: {result['error']}")
+            print(f"  Error checking {table}: {result['error']}")
             existing_data[table] = 0
     
     return existing_data
 
 def main():
     """Main function to run the data insertion process"""
-    print("🚀 Starting mock data insertion process...")
+    print("Starting mock data insertion process...")
     print("=" * 50)
     
     # Step 1: Check environment variables
@@ -153,10 +153,10 @@ def main():
     
     # Step 4: Ask user if they want to proceed
     if any(count > 0 for count in existing_data.values()):
-        print("\n⚠️  Some tables already contain data.")
+        print("\nSome tables already contain data.")
         response = input("Do you want to continue? This will add more data (y/N): ").strip().lower()
         if response != 'y':
-            print("❌ Operation cancelled")
+            print("Operation cancelled")
             return False
     
     # Step 5: Insert data
@@ -165,29 +165,29 @@ def main():
     if existing_data.get('apartments', 0) == 0:
         success &= insert_apartments()
     else:
-        print(f"⏭️  Skipping apartments (already has {existing_data['apartments']} records)")
+        print(f"Skipping apartments (already has {existing_data['apartments']} records)")
     
     if existing_data.get('people', 0) == 0:
         success &= insert_people()
     else:
-        print(f"⏭️  Skipping people (already has {existing_data['people']} records)")
+        print(f"Skipping people (already has {existing_data['people']} records)")
     
     if existing_data.get('spots', 0) == 0:
         success &= insert_spots()
     else:
-        print(f"⏭️  Skipping spots (already has {existing_data['spots']} records)")
+        print(f"Skipping spots (already has {existing_data['spots']} records)")
     
     # Step 6: Final summary
     print("\n" + "=" * 50)
     if success:
-        print("🎉 Mock data insertion completed successfully!")
+        print("Mock data insertion completed successfully!")
         print("\n📋 Summary:")
         print(f"  🏠 Apartments: {len(MOCK_APARTMENTS)} records")
         print(f"  👥 People: {len(MOCK_PEOPLE)} records")
-        print(f"  📍 Spots: {len(MOCK_SPOTS)} records")
-        print("\n✅ Your Supabase database is now populated with mock data!")
+        print(f"  Spots: {len(MOCK_SPOTS)} records")
+        print("\nYour Supabase database is now populated with mock data!")
     else:
-        print("❌ Some errors occurred during data insertion.")
+        print("Some errors occurred during data insertion.")
         print("Please check the error messages above and try again.")
     
     return success

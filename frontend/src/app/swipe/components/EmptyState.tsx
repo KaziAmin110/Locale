@@ -12,28 +12,28 @@ export default function EmptyState({ activeTab, onRefresh }: EmptyStateProps) {
     switch (activeTab) {
       case "apartments":
         return {
-          icon: "🏠",
+          icon: "home",
           title: "No More Apartments!",
           subtitle:
             "You've seen all available apartments in your area. Check back later for new listings!",
         };
       case "people":
         return {
-          icon: "👥",
+          icon: "people",
           title: "No More People!",
           subtitle:
             "You've seen everyone nearby. Try expanding your preferences to see more people.",
         };
       case "spots":
         return {
-          icon: "📍",
+          icon: "location",
           title: "No More Spots!",
           subtitle:
             "You've explored all the spots in your area. New places are added all the time!",
         };
       default:
         return {
-          icon: "🏁",
+          icon: "flag",
           title: `No More ${activeTab}!`,
           subtitle: "Check back later for new recommendations.",
         };

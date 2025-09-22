@@ -54,7 +54,7 @@ def get_apartment_feed():
         user_state = user.get('state', 'FL')
         location_query = f"{user_city}, {user_state}" if ',' not in user_city else user_city
         
-        print(f"📍 Prepared location query for scraper: '{location_query}'")
+        print(f"Prepared location query for scraper: '{location_query}'")
         
         user_lat = user.get('lat') or 28.5383
         user_lng = user.get('lng') or -81.3792
@@ -65,7 +65,7 @@ def get_apartment_feed():
         try:
             raw_scraped_data = scrape_redfin_rentals(location=location_query, max_listings=20)
             
-            print("🔍 Checking for existing apartments in the database...")
+            print("Checking for existing apartments in the database...")
             existing_apartments_result = SupabaseService.get_data('apartments')
             existing_addresses = {
                 apt['address'] for apt in existing_apartments_result['data']
@@ -107,15 +107,15 @@ def get_apartment_feed():
                 existing_addresses.add(address)
             
             if new_apartments_to_insert:
-                print(f"✍️ Inserting {len(new_apartments_to_insert)} new apartments into the database...")
+                print(f"Inserting {len(new_apartments_to_insert)} new apartments into the database...")
                 insertion_result = SupabaseService.insert_data('apartments', new_apartments_to_insert)
                 if not insertion_result['success']:
-                    print(f"🔥 Database insertion failed: {insertion_result.get('error')}")
+                    print(f"Database insertion failed: {insertion_result.get('error')}")
             else:
-                print("✅ No new apartments to insert from this scrape.")
+                print("No new apartments to insert from this scrape.")
 
         except Exception as scraper_error:
-            print(f"⚠️ Scraper threw an exception: {scraper_error}")
+            print(f"Scraper threw an exception: {scraper_error}")
             traceback.print_exc()
 
         # 3. Filtering & Ranking Logic
@@ -129,7 +129,7 @@ def get_apartment_feed():
         
         # 4. Fallback Data Generation (if needed)
         if not available_apartments and not all_db_apartments:
-            print("⚠️ No apartments found. Generating fallback data for a first-time user.")
+            print("No apartments found. Generating fallback data for a first-time user.")
             data_source = "fallback_generator"
             available_apartments = generate_and_save_apartments_for_city(user_city, user_state, user)
 
@@ -159,7 +159,7 @@ def get_apartment_feed():
         })
         
     except Exception as e:
-        print(f"❌ Apartment feed error: {str(e)}")
+        print(f"Apartment feed error: {str(e)}")
         traceback.print_exc()
         return jsonify({"error": "An internal server error occurred"}), 500
 

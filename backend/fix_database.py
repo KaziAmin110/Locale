@@ -22,7 +22,7 @@ def check_env_setup():
     """Check if environment is properly configured"""
     load_dotenv()
     
-    print("🔍 Checking environment configuration...")
+    print("Checking environment configuration...")
     
     # Check critical variables
     critical_vars = {
@@ -34,18 +34,18 @@ def check_env_setup():
     issues = []
     for var, value in critical_vars.items():
         if not value or value.startswith('your_'):
-            issues.append(f"❌ {var} not configured")
+            issues.append(f"{var} not configured")
         else:
-            print(f"✅ {var} configured")
+            print(f"{var} configured")
     
     if issues:
         print("\n🚨 Environment Issues Found:")
         for issue in issues:
             print(f"  {issue}")
-        print("\n📝 Please update your .env file with real values")
+        print("\nPlease update your .env file with real values")
         return False
     
-    print("✅ Environment configuration looks good!")
+    print("Environment configuration looks good!")
     return True
 
 def generate_realistic_users():
@@ -100,7 +100,7 @@ def generate_realistic_users():
 
 def generate_realistic_swipes_and_matches():
     """Generate realistic swipe patterns and matches"""
-    print("🔄 Generating realistic swipe patterns...")
+    print("Generating realistic swipe patterns...")
     
     # Get all data
     users_data = SupabaseService.get_data('users', {})
@@ -109,7 +109,7 @@ def generate_realistic_swipes_and_matches():
     spots_data = SupabaseService.get_data('spots', {})
     
     if not all([users_data['success'], apartments_data['success'], people_data['success'], spots_data['success']]):
-        print("❌ Failed to fetch data for swipe generation")
+        print("Failed to fetch data for swipe generation")
         return False
     
     users = users_data['data']
@@ -214,15 +214,15 @@ def generate_realistic_swipes_and_matches():
                 spot_matches.append(match)
     
     # Insert all swipes and matches
-    print("💾 Inserting apartment swipes and matches...")
+    print("Inserting apartment swipes and matches...")
     insert_batch_data('apartment_swipes', apartment_swipes)
     insert_batch_data('apartment_matches', apartment_matches)
     
-    print("💾 Inserting people swipes and matches...")
+    print("Inserting people swipes and matches...")
     insert_batch_data('people_swipes', people_swipes)
     insert_batch_data('people_matches', people_matches)
     
-    print("💾 Inserting spot swipes and matches...")
+    print("Inserting spot swipes and matches...")
     insert_batch_data('spot_swipes', spot_swipes)
     insert_batch_data('spot_matches', spot_matches)
     
@@ -230,12 +230,12 @@ def generate_realistic_swipes_and_matches():
 
 def generate_realistic_conversations():
     """Generate realistic conversations between matched users"""
-    print("💬 Generating realistic conversations...")
+    print("Generating realistic conversations...")
     
     # Get people matches
     matches_data = SupabaseService.get_data('people_matches', {})
     if not matches_data['success']:
-        print("❌ Failed to fetch people matches")
+        print("Failed to fetch people matches")
         return False
     
     matches = matches_data['data']
@@ -286,10 +286,10 @@ def generate_realistic_conversations():
             messages.append(message)
     
     # Insert conversations and messages
-    print("💾 Inserting conversations...")
+    print("Inserting conversations...")
     insert_batch_data('conversations', conversations)
     
-    print("💾 Inserting messages...")
+    print("Inserting messages...")
     insert_batch_data('messages', messages)
     
     return True
@@ -297,7 +297,7 @@ def generate_realistic_conversations():
 def insert_batch_data(table, data, batch_size=50):
     """Insert data in batches to avoid timeout"""
     if not data:
-        print(f"  ⚠️  No data to insert for {table}")
+            print(f"  No data to insert for {table}")
         return True
         
     total_inserted = 0
@@ -309,10 +309,10 @@ def insert_batch_data(table, data, batch_size=50):
         if result['success']:
             total_inserted += len(batch)
         else:
-            print(f"  ❌ Failed to insert batch {i//batch_size + 1}: {result['error']}")
+            print(f"  Failed to insert batch {i//batch_size + 1}: {result['error']}")
             return False
     
-    print(f"  ✅ Inserted {total_inserted} records into {table}")
+    print(f"  Inserted {total_inserted} records into {table}")
     return True
 
 def clear_existing_data():
@@ -330,30 +330,30 @@ def clear_existing_data():
             result = SupabaseService.get_data(table, {})
             if result['success'] and result['data']:
                 # Delete all records (this is a simplified approach)
-                print(f"  🗑️  Clearing {len(result['data'])} records from {table}")
+                print(f"  Clearing {len(result['data'])} records from {table}")
         except:
             pass
 
 def populate_core_data():
     """Insert core data (apartments, people, spots, users)"""
-    print("📦 Inserting core data...")
+    print("Inserting core data...")
     
     # Clear existing data first
     clear_existing_data()
     
-    print("🏠 Inserting apartments...")
+    print("Inserting apartments...")
     if not insert_batch_data('apartments', MOCK_APARTMENTS):
         return False
     
-    print("👥 Inserting people...")
+    print("Inserting people...")
     if not insert_batch_data('people', MOCK_PEOPLE):
         return False
     
-    print("📍 Inserting spots...")
+    print("Inserting spots...")
     if not insert_batch_data('spots', MOCK_SPOTS):
         return False
     
-    print("👤 Inserting users...")
+    print("Inserting users...")
     users = generate_realistic_users()
     if not insert_batch_data('users', users):
         return False
@@ -362,7 +362,7 @@ def populate_core_data():
 
 def check_database_status():
     """Check current database status"""
-    print("\n📊 Current Database Status:")
+    print("\nCurrent Database Status:")
     
     tables = ['users', 'apartments', 'people', 'spots', 'apartment_swipes', 'people_swipes', 'spot_swipes', 
               'apartment_matches', 'people_matches', 'spot_matches', 'conversations', 'messages']
@@ -374,83 +374,83 @@ def check_database_status():
             if result['success']:
                 count = len(result['data'])
                 total_records += count
-                status = "✅" if count > 0 else "❌"
+                status = "OK" if count > 0 else "FAIL"
                 print(f"  {status} {table}: {count} records")
             else:
-                print(f"  ❌ {table}: Error - {result['error']}")
+                print(f"  {table}: Error - {result['error']}")
         except Exception as e:
-            print(f"  ❌ {table}: Exception - {str(e)}")
+            print(f"  {table}: Exception - {str(e)}")
     
-    print(f"\n📈 Total records: {total_records}")
+    print(f"\nTotal records: {total_records}")
     return total_records
 
 def main():
     """Main function to fix all issues and populate database"""
-    print("🚀 Complete Database Fix & Population")
+    print("Complete Database Fix & Population")
     print("=" * 50)
     
     # Check environment
     if not check_env_setup():
-        print("\n❌ Please fix environment configuration first")
+        print("\nPlease fix environment configuration first")
         return False
     
     # Test Supabase connection
-    print("\n🔍 Testing Supabase connection...")
+    print("\nTesting Supabase connection...")
     result = SupabaseService.get_data('users', {})
     if not result['success']:
-        print(f"❌ Supabase connection failed: {result['error']}")
+        print(f"Supabase connection failed: {result['error']}")
         print("Please check your SUPABASE_URL and SUPABASE_KEY")
         return False
-    print("✅ Supabase connection successful")
+    print("Supabase connection successful")
     
     # Check current status
-    print("\n📊 Checking current database status...")
+    print("\nChecking current database status...")
     current_records = check_database_status()
     
     # Ask user if they want to proceed
     if current_records > 0:
-        print(f"\n⚠️  Database already has {current_records} records.")
+        print(f"\nDatabase already has {current_records} records.")
         response = input("Do you want to clear and repopulate? (y/N): ").strip().lower()
         if response != 'y':
-            print("❌ Operation cancelled")
+            print("Operation cancelled")
             return False
     
     # Populate core data
-    print("\n📦 Populating core data...")
+    print("\nPopulating core data...")
     if not populate_core_data():
-        print("❌ Failed to populate core data")
+        print("Failed to populate core data")
         return False
     
     # Generate interaction data
-    print("\n🔄 Generating interaction data...")
+    print("\nGenerating interaction data...")
     if not generate_realistic_swipes_and_matches():
-        print("❌ Failed to generate interaction data")
+        print("Failed to generate interaction data")
         return False
     
     # Generate conversations
-    print("\n💬 Generating conversations...")
+    print("\nGenerating conversations...")
     if not generate_realistic_conversations():
-        print("❌ Failed to generate conversations")
+        print("Failed to generate conversations")
         return False
     
     # Final status check
-    print("\n📊 Final Database Status:")
+    print("\nFinal Database Status:")
     final_records = check_database_status()
     
     # Summary
     print("\n" + "=" * 50)
-    print("🎉 Database population completed successfully!")
-    print(f"\n📋 Final Summary:")
-    print(f"  👤 Users: 20 realistic profiles")
-    print(f"  🏠 Apartments: {len(MOCK_APARTMENTS)} listings")
-    print(f"  👥 People: {len(MOCK_PEOPLE)} profiles")
-    print(f"  📍 Spots: {len(MOCK_SPOTS)} local venues")
+    print("Database population completed successfully!")
+    print(f"\nFinal Summary:")
+    print(f"  Users: 20 realistic profiles")
+    print(f"  Apartments: {len(MOCK_APARTMENTS)} listings")
+    print(f"  People: {len(MOCK_PEOPLE)} profiles")
+    print(f"  Spots: {len(MOCK_SPOTS)} local venues")
     print(f"  💾 Swipes: Realistic interaction patterns")
     print(f"  💬 Conversations: Sample chat data")
     print(f"  📈 Total Records: {final_records}")
     
-    print("\n✅ Your database is now fully populated and ready!")
-    print("\n🔧 Next steps:")
+    print("\nYour database is now fully populated and ready!")
+    print("\nNext steps:")
     print("  1. Test the API endpoints")
     print("  2. Verify ML recommendations are working")
     print("  3. Start your Flask app: python3 app.py")

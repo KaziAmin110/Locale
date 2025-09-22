@@ -1,9 +1,9 @@
 # Photo Setup Guide
 
 ## Current Status
-✅ **Photos are now working with reliable Unsplash URLs**
-✅ **Centralized photo service created**
-✅ **All photo generation updated to use PhotoService**
+**Photos are now working with reliable Unsplash URLs**
+**Centralized photo service created**
+**All photo generation updated to use PhotoService**
 
 ## How to Use Your Own Cloudinary Photos
 

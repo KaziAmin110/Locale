@@ -29,10 +29,10 @@ def test_auth():
     if response.status_code == 200:
         data = response.json()
         token = data.get('token')
-        print(f"✅ Registration successful, token: {token[:20]}...")
+        print(f"Registration successful, token: {token[:20]}...")
         return token
     else:
-        print(f"❌ Registration failed: {response.text}")
+        print(f"Registration failed: {response.text}")
         
         # Try login instead
         login_data = {
@@ -44,10 +44,10 @@ def test_auth():
         if response.status_code == 200:
             data = response.json()
             token = data.get('access_token')
-            print(f"✅ Login successful, token: {token[:20]}...")
+            print(f"Login successful, token: {token[:20]}...")
             return token
         else:
-            print(f"❌ Login failed: {response.text}")
+            print(f"Login failed: {response.text}")
             return None
 
 def test_apartments_feed(token):
@@ -62,7 +62,7 @@ def test_apartments_feed(token):
     if response.status_code == 200:
         data = response.json()
         apartments = data.get('apartments', [])
-        print(f"✅ Got {len(apartments)} apartments")
+        print(f"Got {len(apartments)} apartments")
         
         if apartments:
             first_apt = apartments[0]
@@ -71,7 +71,7 @@ def test_apartments_feed(token):
             print(f"   First photo: {first_apt.get('photos', ['No photos'])[0]}")
             return apartments[0]['id']  # Return first apartment ID for swipe test
     else:
-        print(f"❌ Apartments feed failed: {response.text}")
+        print(f"Apartments feed failed: {response.text}")
         return None
 
 def test_matches(token):
@@ -86,14 +86,14 @@ def test_matches(token):
     if response.status_code == 200:
         data = response.json()
         matches = data.get('matches', [])
-        print(f"✅ Got {len(matches)} matches")
+        print(f"Got {len(matches)} matches")
         
         if matches:
             for i, match in enumerate(matches[:3]):
                 print(f"   Match {i+1}: {match.get('name')} ({match.get('type')})")
                 print(f"   Photo: {match.get('photo', 'No photo')}")
     else:
-        print(f"❌ Matches failed: {response.text}")
+        print(f"Matches failed: {response.text}")
 
 def test_swipe(token, apartment_id):
     """Test swiping"""
