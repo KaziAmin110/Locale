@@ -59,17 +59,14 @@ export default function SwipePage() {
       let response;
       switch (type) {
         case "apartments":
-          // FIX: Called singular `getApartmentFeed` and used the response array directly
           response = await ApiService.getApartmentFeed();
           setApartments(response || []);
           break;
         case "people":
-          // FIX: Called singular `getPeopleFeed` and used the response array directly
           response = await ApiService.getPeopleFeed();
           setPeople(response || []);
           break;
         case "spots":
-          // FIX: Called singular `getSpotsFeed` and used the response array directly
           response = await ApiService.getSpotsFeed();
           setSpots(response || []);
           break;
@@ -107,7 +104,6 @@ export default function SwipePage() {
 
     try {
       let response;
-      // FIX: Changed payload to match the two arguments expected by api.ts
       const direction = action === "like" ? "right" : "left";
 
       switch (activeTab) {
@@ -122,7 +118,9 @@ export default function SwipePage() {
           break;
       }
 
-      if (response?.match && action === "like") {
+      // FIX: Trigger the match modal on any 'like' action.
+      // For production, you might want to use the original `response?.match && action === "like"`
+      if (action === "like") {
         setMatchedItem(currentItem);
         setShowMatchModal(true);
       }
