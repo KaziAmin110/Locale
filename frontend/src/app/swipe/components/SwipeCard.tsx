@@ -123,13 +123,12 @@ export default function SwipeCard({
   const [isMapView, setIsMapView] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  // --- FIX --- Add ref to prevent multiple backend calls
   const hasSwipedRef = useRef(false);
 
   useEffect(() => {
     setIsMapView(false);
     setCurrentImageIndex(0);
-    // Reset swipe flag when item changes
+
     hasSwipedRef.current = false;
   }, [item.id]);
 

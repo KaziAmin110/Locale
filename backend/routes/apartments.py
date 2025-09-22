@@ -39,6 +39,7 @@ def parse_integer_value(value):
 @jwt_required()
 def get_apartment_feed():
     try:
+        # 1. Get User Data
         user_id = get_jwt_identity()
         user_result = SupabaseService.get_data('users', {'id': user_id})
         if not user_result['success'] or not user_result['data']:
@@ -49,15 +50,13 @@ def get_apartment_feed():
         user_lat = user.get('lat') or 27.3365
         user_lng = user.get('lng') or -82.5307
         
-        all_apartments = []
         data_source = "redfin_scraper"
         
-        # --- PRIMARY DATA SOURCE: SCRAPER ---
+        # 2. --- DATA SOURCING & INSERTION ---
         try:
             raw_scraped_data = scrape_redfin_rentals(location=user_city_state, max_listings=20)
             
-            new_apartments_to_insert = []
-            
+            # Get existing apartment addresses to avoid duplicates
             print("🔍 Checking for existing apartments in the database...")
             existing_apartments_result = SupabaseService.get_data('apartments')
             existing_addresses = {
@@ -65,15 +64,15 @@ def get_apartment_feed():
             } if existing_apartments_result.get('success') else set()
             print(f"Found {len(existing_addresses)} existing addresses.")
 
+            new_apartments_to_insert = []
             for item in raw_scraped_data:
                 price = parse_price(item.get('price'))
-                if price is None:
+                address = item.get('address')
+
+                # Skip if essential data is missing or if it already exists
+                if not price or not address or address in existing_addresses:
                     continue
 
-                address = item.get('address')
-                if not address:
-                    continue
-                
                 bedrooms = parse_integer_value(item.get('bedrooms'))
                 bathrooms = parse_integer_value(item.get('bathrooms'))
                 sqft_val = parse_integer_value(item.get('sqft'))
@@ -92,11 +91,8 @@ def get_apartment_feed():
                     'description': "A spacious apartment available for rent.",
                     'amenities': [],
                 }
-                all_apartments.append(apartment_data)
-
-                if address not in existing_addresses:
-                    new_apartments_to_insert.append(apartment_data)
-                    existing_addresses.add(address)
+                new_apartments_to_insert.append(apartment_data)
+                existing_addresses.add(address) # Add to set to prevent re-adding in this loop
             
             if new_apartments_to_insert:
                 print(f"✍️ Inserting {len(new_apartments_to_insert)} new apartments into the database...")
@@ -104,19 +100,29 @@ def get_apartment_feed():
                 if not insertion_result['success']:
                     print(f"🔥 Database insertion failed: {insertion_result.get('error')}")
             else:
-                print("✅ No new apartments to insert.")
+                print("✅ No new apartments to insert from this scrape.")
 
         except Exception as scraper_error:
             print(f"⚠️ Scraper threw an exception: {scraper_error}")
             traceback.print_exc()
-            all_apartments = []
 
-        # --- FILTERING & RANKING ---
+        # 3. --- FILTERING & RANKING (Corrected Logic) ---
+        # Fetch ALL apartments from the database to create the feed from
+        print("🔄 Fetching all apartments from DB for ranking...")
+        all_db_apartments_result = SupabaseService.get_data('apartments')
+        if not all_db_apartments_result.get('success'):
+            return jsonify({"error": "Could not retrieve apartments from database"}), 500
+        all_db_apartments = all_db_apartments_result['data']
+        print(f"👍 Fetched {len(all_db_apartments)} total apartments from the database.")
+
+        # Get IDs of apartments the user has already swiped on
         swipes_data = SupabaseService.get_data('apartment_swipes', {'user_id': user_id})
         swiped_ids = {swipe['apartment_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
+        print(f"User has swiped on {len(swiped_ids)} apartments.")
         
-        # --- FIX --- Filter the 'all_apartments' list from the scraper, not the entire database.
-        available_apartments = [apt for apt in all_apartments if apt['id'] not in swiped_ids]
+        # Filter the comprehensive list from the database
+        available_apartments = [apt for apt in all_db_apartments if apt['id'] not in swiped_ids]
+        print(f"Found {len(available_apartments)} available apartments for the user's feed.")
         
         if not available_apartments:
             return jsonify({
@@ -126,6 +132,8 @@ def get_apartment_feed():
                 "data_source": data_source
             })
         
+        # Rank the available apartments using the ML engine
+        print(f"🧠 Ranking {len(available_apartments)} apartments with ML Engine...")
         user_vector = ml_engine.create_user_vector(user)
         recommendations = ml_engine.apartment_recommendations(
             user_vector, 
@@ -133,9 +141,11 @@ def get_apartment_feed():
             [float(user_lat), float(user_lng)]
         )
         
+        # Prepare the final list of apartments for the response
         result_apartments = []
-        for rec in recommendations[:10]:
-            apartment = next((apt for apt in available_apartments if apt['id'] == rec['apartment_id']), None)
+        apartment_lookup = {apt['id']: apt for apt in available_apartments}
+        for rec in recommendations[:10]: # Limit to top 10 recommendations
+            apartment = apartment_lookup.get(rec['apartment_id'])
             if apartment:
                 apartment['match_score'] = rec['score']
                 result_apartments.append(apartment)
@@ -161,12 +171,18 @@ def record_apartment_swipe():
         data = request.get_json()
         apartment_id = data.get('apartment_id')
         direction = data.get('direction')
-        is_like = direction == 'right'
 
         if not apartment_id or not direction:
-            return jsonify({'success': False, 'error': 'Missing apartment_id or action'}), 400
+            return jsonify({'success': False, 'error': 'Missing apartment_id or direction'}), 400
         
-        swipe_data = {'id': str(uuid.uuid4()), 'user_id': user_id, 'apartment_id': apartment_id, 'is_like': is_like}
+        is_like = direction == 'right'
+        
+        swipe_data = {
+            'id': str(uuid.uuid4()), 
+            'user_id': user_id, 
+            'apartment_id': apartment_id, 
+            'is_like': is_like
+        }
         result = SupabaseService.insert_data('apartment_swipes', swipe_data)
         
         if not result['success']:

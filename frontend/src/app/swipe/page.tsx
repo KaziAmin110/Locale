@@ -182,7 +182,6 @@ export default function SwipePage() {
           <SwipeControls
             onPass={() => handleSwipe("pass")}
             onLike={() => handleSwipe("like")}
-            // --- FIX --- Disable buttons while a swipe is in progress.
             disabled={isSwiping}
           />
         )}
