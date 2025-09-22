@@ -1,40 +1,25 @@
-import { AnimatePresence, motion } from 'framer-motion';
-
-// Props definition
-interface QuestionDisplayProps {
-  currentStep: number;
-}
-
-const QuestionDisplay = ({ currentStep }: QuestionDisplayProps) => {
-    // Questions rewritten to be aspirational and human-centric
+const QuestionDisplay = ({ currentStep }: { currentStep: number }) => {
     const questions = [
-      "To begin, tell us a little about yourself.",
-      "Show us who you are with a few photos.",
-      "Where are you starting your chapter?",
-      "What interests define you?",
-      "What kind of connection is for you?",
-      "Lastly, let's find places that fit your budget.",
+      "Let's get to know you. What are the basics?",
+      "Upload some photos to show who you are",
+      "What location are you moving to?",
+      "What do you love to do? Select a few interests.",
+      "What are you looking for?",
+      "Let's find your perfect place. What's your monthly budget?",
     ];
   
     const question = questions[currentStep - 1] || questions[0];
     
     return (
-      <div className="text-center h-16 flex items-center justify-center">
-        <AnimatePresence mode="wait">
-          <motion.h1 
-            key={currentStep}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="text-3xl md:text-4xl font-extrabold tracking-tight text-white"
-            style={{ textShadow: '0 2px 15px rgba(0,0,0,0.5)' }}
-          >
-            {question}
-          </motion.h1>
-        </AnimatePresence>
+      <div className="flex items-center gap-4 max-w-lg">
+        <div className="relative w-full">
+          <div className="w-full rounded-2xl border-2 border-red-500/20 bg-red-500/5 p-6">
+            <p className="text-lg font-semibold text-gray-900">{question}</p>
+          </div>
+          <div className="absolute left-[-8px] top-1/2 h-4 w-4 -translate-y-1/2 rotate-45 border-b-2 border-l-2 border-red-500/20 bg-red-500/5" />
+        </div>
       </div>
     );
   };
   
-export default QuestionDisplay;
+  export default QuestionDisplay;

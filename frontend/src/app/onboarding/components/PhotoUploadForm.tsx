@@ -1,37 +1,44 @@
 import React, { useState, useRef } from "react";
-import { Camera, X, Plus, Loader2 } from "lucide-react";
+import { Camera, X, Plus } from "lucide-react";
+import LoadingSpinner from "../../components/LoadingSpinner";
 import Image from "next/image";
-import { motion } from "framer-motion";
 
-// Define the component's props
 interface PhotoUploadFormProps {
   photos: string[];
-  updateFormData: (field: "photos", value: string[]) => void;
+  updateFormData: (field: string, value: any) => void;
   setCurrentStep: (step: number) => void;
 }
 
-const PhotoUploadForm = ({ photos, updateFormData, setCurrentStep }: PhotoUploadFormProps) => {
+const PhotoUploadForm = ({
+  photos,
+  updateFormData,
+  setCurrentStep,
+}: PhotoUploadFormProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []).slice(0, 6 - photos.length);
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
     setIsUploading(true);
-    // In production, you'd upload to a cloud service. We simulate for effect.
-    await new Promise(res => setTimeout(res, 1000));
-
     try {
+      // Convert files to base64 for demo purposes
+      // In production, you'd upload to a cloud service like Cloudinary or AWS S3
       const newPhotos = await Promise.all(
-        files.map((file) => new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string);
-          reader.readAsDataURL(file);
-        }))
+        files.map((file) => {
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(file);
+          });
+        })
       );
-      
-      updateFormData("photos", [...photos, ...newPhotos]);
+
+      const updatedPhotos = [...photos, ...newPhotos];
+      updateFormData("photos", updatedPhotos);
     } catch (error) {
       console.error("Photo upload failed:", error);
     } finally {
@@ -39,47 +46,45 @@ const PhotoUploadForm = ({ photos, updateFormData, setCurrentStep }: PhotoUpload
     }
   };
 
-  const removePhoto = (indexToRemove: number) => {
-    updateFormData("photos", photos.filter((_, index) => index !== indexToRemove));
+  const removePhoto = (index: number) => {
+    const newPhotos = photos.filter((_, i) => i !== index);
+    updateFormData("photos", newPhotos);
+  };
+
+  const openFileSelector = () => {
+    fileInputRef.current?.click();
   };
 
   const canContinue = photos.length >= 1;
 
-  // Animation variants for a powerful entrance/exit
-  const variants = {
-    hidden: (direction: number) => ({ opacity: 0, x: direction * 100 }),
-    visible: { opacity: 1, x: 0 },
-    exit: (direction: number) => ({ opacity: 0, x: direction * -100 }),
-  };
-
   return (
-    <motion.div
-      custom={1} // Forward direction
-      variants={variants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-      className="flex flex-col w-full h-full items-center justify-between"
-    >
-      <div className="w-full max-w-lg space-y-6 mt-4">
+    <div className="flex flex-col flex-1 w-full max-w-lg px-4 pt-8 pb-4 justify-evenly">
+      <div className="space-y-6">
+        <div className="space-y-2 text-center">
+          <h3 className="text-lg font-semibold text-gray-800">
+            Add Your Photos
+          </h3>
+          <p className="text-sm text-gray-600">
+            Add at least 1 photo so people can get to know you better
+          </p>
+        </div>
+
         {/* Photo Grid */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-3">
           {photos.map((photo, index) => (
-            <div key={index} className="relative aspect-square group">
+            <div key={index} className="relative aspect-square">
               <Image
                 src={photo}
                 alt={`Photo ${index + 1}`}
+                sizes="(max-width: 600px) 100vw, 33vw"
                 fill
-                sizes="(max-width: 768px) 33vw, 150px"
-                className="object-cover rounded-lg border-2 border-white/20"
+                className="object-cover rounded-lg"
               />
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"/>
               <button
                 onClick={() => removePhoto(index)}
-                className="absolute flex items-center justify-center w-8 h-8 text-white transition-all duration-300 bg-red-600 rounded-full -top-3 -right-3 hover:bg-red-500 hover:scale-110 scale-0 group-hover:scale-100"
+                className="absolute flex items-center justify-center w-6 h-6 text-white transition-colors bg-red-500 rounded-full -top-2 -right-2 hover:bg-red-600"
               >
-                <X size={18} />
+                <X size={14} />
               </button>
             </div>
           ))}
@@ -87,56 +92,65 @@ const PhotoUploadForm = ({ photos, updateFormData, setCurrentStep }: PhotoUpload
           {/* Add Photo Button */}
           {photos.length < 6 && (
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={openFileSelector}
               disabled={isUploading}
-              className="flex flex-col items-center justify-center transition-all duration-300 border-2 border-dashed rounded-lg aspect-square border-white/30 hover:border-red-400 hover:bg-white/10 text-slate-400 hover:text-red-300 disabled:opacity-50"
+              className="flex flex-col items-center justify-center transition-colors border-2 border-gray-300 border-dashed rounded-lg aspect-square hover:border-red-400 hover:bg-red-50 disabled:opacity-50"
             >
               {isUploading ? (
-                <Loader2 size={32} className="animate-spin text-red-400" />
+                <LoadingSpinner />
               ) : (
                 <>
-                  <Plus size={32} />
-                  <span className="mt-1 text-xs font-semibold tracking-wider uppercase">Upload</span>
+                  <Plus size={24} className="mb-1 text-gray-400" />
+                  <span className="text-xs text-gray-500">Add Photo</span>
                 </>
               )}
             </button>
           )}
         </div>
 
-        {/* Visual Data Protocol Box */}
-        <div className="p-4 border border-white/20 rounded-lg bg-white/10">
-          <div className="flex items-start space-x-3">
-            <Camera size={20} className="text-red-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-slate-300">
-              <p className="font-bold text-white">Visual Data Protocol:</p>
-              <ul className="mt-1 space-y-1 list-disc list-inside text-slate-400">
-                <li>Utilize high-resolution images with clear lighting.</li>
-                <li>Ensure primary subject (face) is clearly visible.</li>
-                <li>Include visuals that define your personality matrix.</li>
+        {/* Camera Tip */}
+        <div className="p-3 border border-blue-200 rounded-lg bg-blue-50">
+          <div className="flex items-start space-x-2">
+            <Camera size={16} className="text-blue-500 mt-0.5" />
+            <div className="text-xs text-blue-700">
+              <p className="font-medium">Tips for great photos:</p>
+              <ul className="mt-1 space-y-1">
+                <li>• Use good lighting</li>
+                <li>• Show your face clearly</li>
+                <li>• Include photos that show your personality</li>
               </ul>
             </div>
           </div>
         </div>
       </div>
 
-      <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileSelect} className="hidden"/>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
-      <div className="w-full max-w-lg flex justify-between">
+      {/* Navigation buttons */}
+      <div className="flex gap-3">
         <button
           onClick={() => setCurrentStep(1)}
-          className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105 active:scale-100"
+          className="flex-1 p-3 font-medium text-gray-700 transition-colors bg-gray-200 hover:bg-gray-300 rounded-xl"
         >
           Back
         </button>
         <button
           onClick={() => setCurrentStep(3)}
           disabled={!canContinue}
-          className="px-10 py-4 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-lg font-bold text-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/40 active:scale-100"
+          className="flex-1 p-3 font-medium text-white transition-colors bg-red-500 hover:bg-red-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Proceed
+          Continue
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

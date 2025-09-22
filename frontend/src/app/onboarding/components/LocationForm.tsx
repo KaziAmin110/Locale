@@ -7,280 +7,283 @@ import PlacesAutocomplete, {
   geocodeByAddress,
   getLatLng,
 } from "react-places-autocomplete";
-import { motion } from "framer-motion";
 
-// Custom dark theme styles for the Google Map to match our UI
-// This style is a variant of "Aubergine"
-const mapStyles = [
-  { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-  {
-    featureType: "administrative.locality",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }],
-  },
-  {
-    featureType: "poi",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }],
-  },
-  {
-    featureType: "poi.park",
-    elementType: "geometry",
-    stylers: [{ color: "#263c3f" }],
-  },
-  {
-    featureType: "poi.park",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#6b9a76" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#38414e" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#212a37" }],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#9ca5b3" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry",
-    stylers: [{ color: "#746855" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#1f2835" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#f3d19c" }],
-  },
-  {
-    featureType: "transit",
-    elementType: "geometry",
-    stylers: [{ color: "#2f3948" }],
-  },
-  {
-    featureType: "transit.station",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#17263c" }],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#515c6d" }],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#17263c" }],
-  },
-];
-
-const libraries: ("places" | "geometry")[] = ["places", "geometry"];
+// The Google Maps API library to load.
+const libraries: "places"[] = ["places"];
 
 type LocationFormProps = {
   updateFormData: (
     field: "location" | "lat" | "lng",
-    value: string | number | null
+    value: string | number
   ) => void;
   setCurrentStep: (step: number) => void;
 };
 
-const LocationForm = ({ updateFormData, setCurrentStep }: LocationFormProps) => {
+const LocationForm = ({
+  updateFormData,
+  setCurrentStep,
+}: LocationFormProps) => {
   const [address, setAddress] = useState("");
   const [isLocating, setIsLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapCenter, setMapCenter] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+
+  // Load the Google Maps script
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey,
     libraries,
   });
 
+  const mapContainerStyle = {
+    width: "100%",
+    height: "250px",
+    borderRadius: "0.75rem",
+  };
+
+  /**
+   * Handles selecting a location from the autocomplete suggestions.
+   */
   const handleSelect = async (selectedAddress: string) => {
-    // ... (Your original logic remains the same)
     setAddress(selectedAddress);
     setError(null);
     try {
       const results = await geocodeByAddress(selectedAddress);
       const latLng = await getLatLng(results[0]);
+
       updateFormData("location", results[0].formatted_address);
       updateFormData("lat", latLng.lat);
       updateFormData("lng", latLng.lng);
       setMapCenter(latLng);
     } catch (error) {
       console.error("Error selecting address:", error);
+      setError("Could not get location details. Please try again.");
     }
   };
-  
-  const handleGetCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported by this browser.");
-      return;
-    }
 
+  /**
+   * Reverse geocodes coordinates to a human-readable address.
+   */
+  const getAddressFromLatLng = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${googleMapsApiKey}`
+      );
+      const data = await response.json();
+      if (data.status === "OK" && data.results[0]) {
+        const formattedAddress = data.results[0].formatted_address;
+        setAddress(formattedAddress);
+        updateFormData("location", formattedAddress);
+        updateFormData("lat", lat);
+        updateFormData("lng", lng);
+        setMapCenter({ lat, lng });
+      } else {
+        throw new Error("No address found for these coordinates.");
+      }
+    } catch (err) {
+      console.error("Error reverse geocoding:", err);
+      setError("Failed to determine address from your location.");
+    }
+  };
+
+  /**
+   * Fallback method to get approximate location via IP address using Google's Geolocation API.
+   */
+  const getLocationByIp = async () => {
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/geolocation/v1/geolocate?key=${googleMapsApiKey}`,
+        { method: "POST" }
+      );
+      const data = await response.json();
+      if (data.location) {
+        await getAddressFromLatLng(data.location.lat, data.location.lng);
+      } else {
+        throw new Error("IP-based geolocation failed.");
+      }
+    } catch (err) {
+      console.error("IP Geolocation Error:", err);
+      setError(
+        "Could not determine your location automatically. Please type it manually."
+      );
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  /**
+   * Fetches the user's current geolocation and reverse-geocodes it to an address.
+   */
+  const handleGetCurrentLocation = () => {
     setIsLocating(true);
     setError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        try {
-          // Use reverse geocoding to get the address
-          const geocoder = new window.google.maps.Geocoder();
-          const latlng = { lat: latitude, lng: longitude };
-          
-          geocoder.geocode({ location: latlng }, (results, status) => {
-            if (status === 'OK' && results && results[0]) {
-              const address = results[0].formatted_address;
-              setAddress(address);
-              updateFormData("location", address);
-              updateFormData("lat", latitude);
-              updateFormData("lng", longitude);
-              setMapCenter({ lat: latitude, lng: longitude });
-              setIsLocating(false);
-            } else {
-              setError("Could not find address for your location.");
-              setIsLocating(false);
-            }
-          });
-        } catch (error) {
-          console.error("Error getting current location:", error);
-          setError("Error getting your current location.");
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          await getAddressFromLatLng(
+            position.coords.latitude,
+            position.coords.longitude
+          );
           setIsLocating(false);
-        }
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        let errorMessage = "Error getting your location.";
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Location access denied. Please enable location permissions.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable.";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Location request timed out.";
-            break;
-        }
-        
-        setError(errorMessage);
-        setIsLocating(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000
-      }
-    );
-  };
-
-  const variants = {
-    hidden: (direction: number) => ({ opacity: 0, x: direction * 100 }),
-    visible: { opacity: 1, x: 0 },
-    exit: (direction: number) => ({ opacity: 0, x: direction * -100 }),
+        },
+        (geoError) => {
+          console.warn("Geolocation Error:", geoError.message);
+          // If permission is denied, show a specific message. Otherwise, try the IP fallback.
+          if (geoError.code === geoError.PERMISSION_DENIED) {
+            setError(
+              "Location access was denied. Please enable it in your browser settings."
+            );
+            setIsLocating(false);
+          } else {
+            setError(
+              "Browser location failed. Trying to find location by network..."
+            );
+            getLocationByIp(); // Fallback to IP Geolocation
+          }
+        },
+        // Options to improve accuracy and prevent timeouts
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      setError(
+        "Geolocation is not supported by your browser. Trying fallback..."
+      );
+      getLocationByIp(); // Fallback to IP Geolocation
+    }
   };
 
   if (!isLoaded) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
-        <Loader2 className="animate-spin text-red-500" size={32}/>
-        <span>Initializing Global Map...</span>
+      <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-600">
+        <Loader2 className="animate-spin" />
+        <span>Loading Maps...</span>
       </div>
     );
   }
 
   return (
-    <motion.div
-      custom={1}
-      variants={variants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-      className="flex flex-col w-full h-full items-center justify-between"
-    >
-      <div className="w-full max-w-lg space-y-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <label htmlFor="location" className="text-lg font-semibold tracking-wide text-slate-300">
-            Target Location
-          </label>
-          <button
-            type="button"
-            onClick={handleGetCurrentLocation}
-            disabled={isLocating}
-            className="w-full sm:w-auto flex items-center justify-center px-4 py-2 text-sm font-semibold text-white transition-all duration-300 bg-red-600 rounded-lg hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
-          >
-            {isLocating ? (
-              <><Loader2 className="mr-2 animate-spin" size={16} /> Acquiring Signal...</>
-            ) : (
-              <><MapPin className="mr-2" size={16} /> Use Current Coordinates</>
-            )}
-          </button>
-        </div>
-
-        <PlacesAutocomplete value={address} onChange={setAddress} onSelect={handleSelect}>
-          {({ getInputProps, suggestions, getSuggestionItemProps }) => (
-            <div className="relative">
-              <input {...getInputProps({
-                placeholder: "Designate city, state, or address...",
-                className: "w-full px-4 py-3 bg-slate-800/50 border-2 border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/50 transition-all duration-300",
-              })} />
-              {suggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-2 overflow-y-auto bg-slate-800 border border-slate-700 shadow-lg max-h-60 rounded-lg">
-                  {suggestions.map((suggestion) => (
-                    <div {...getSuggestionItemProps(suggestion, {
-                      className: `cursor-pointer p-4 ${suggestion.active ? 'bg-red-500/10 text-red-300' : 'text-slate-300 hover:bg-slate-700'}`
-                    })}>
-                      <span className="font-medium">{suggestion.formattedSuggestion.mainText}</span>
-                      <span className="ml-2 text-sm text-slate-500">{suggestion.formattedSuggestion.secondaryText}</span>
-                    </div>
-                  ))}
-                </div>
+    <div className="flex flex-col justify-between flex-1 w-full max-w-lg px-4 pt-4 pb-4">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col items-center justify-between gap-4 mb-2 md:flex-row">
+            <label
+              htmlFor="location"
+              className="text-lg font-semibold text-gray-800"
+            >
+              Where are you looking?
+            </label>
+            <button
+              type="button"
+              onClick={handleGetCurrentLocation}
+              disabled={isLocating}
+              className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-red-500 md:w-auto hover:bg-red-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLocating ? (
+                <>
+                  <Loader2 className="mr-2 animate-spin" size={16} />
+                  Getting Location...
+                </>
+              ) : (
+                <>
+                  <MapPin className="mr-2" size={16} />
+                  Use Current Location
+                </>
               )}
+            </button>
+          </div>
+
+          <PlacesAutocomplete
+            value={address}
+            onChange={setAddress}
+            onSelect={handleSelect}
+          >
+            {({
+              getInputProps,
+              suggestions,
+              getSuggestionItemProps,
+              loading,
+            }) => (
+              <div className="relative">
+                <input
+                  {...getInputProps({
+                    placeholder: "Enter a city, state, or address",
+                    className:
+                      "w-full px-4 py-3 transition-colors border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent",
+                  })}
+                />
+                {suggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 overflow-y-auto bg-white border border-gray-200 shadow-lg max-h-60 rounded-xl">
+                    {loading && (
+                      <div className="p-4 text-sm text-gray-500">
+                        Loading...
+                      </div>
+                    )}
+                    {suggestions.map((suggestion) => {
+                      const className = suggestion.active
+                        ? "bg-red-100 cursor-pointer p-4"
+                        : "bg-white cursor-pointer p-4";
+
+                      const { key, ...suggestionProps } = getSuggestionItemProps(
+                        suggestion,
+                        {
+                          className,
+                        }
+                      );
+
+                      return (
+                        <div key={suggestion.placeId} {...suggestionProps}>
+                          <span className="font-medium">
+                            {suggestion.formattedSuggestion.mainText}
+                          </span>
+                          <span className="ml-2 text-sm text-gray-500">
+                            {suggestion.formattedSuggestion.secondaryText}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </PlacesAutocomplete>
+
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+
+          {mapCenter && (
+            <div className="mt-4">
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={mapCenter}
+                zoom={14}
+              >
+                <MarkerF position={mapCenter} />
+              </GoogleMap>
             </div>
           )}
-        </PlacesAutocomplete>
-
-        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
-
-        <div className="mt-4 h-56 w-full rounded-lg overflow-hidden border-2 border-slate-700">
-          <GoogleMap
-            mapContainerStyle={{ width: "100%", height: "100%" }}
-            center={mapCenter || { lat: 39.8283, lng: -98.5795 }} // Default to center of US
-            zoom={mapCenter ? 14 : 4}
-            options={{ styles: mapStyles, disableDefaultUI: true, zoomControl: true }}
-          >
-            {mapCenter && <MarkerF position={mapCenter} />}
-          </GoogleMap>
         </div>
       </div>
 
-      <div className="w-full max-w-lg flex justify-between">
-        <button onClick={() => setCurrentStep(2)} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105 active:scale-100">Back</button>
-        <button onClick={() => setCurrentStep(4)} disabled={!address.trim()} className="px-10 py-4 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-lg font-bold text-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/40 active:scale-100">Proceed</button>
+      <div className="flex gap-3 mt-8">
+        <button
+          onClick={() => setCurrentStep(2)}
+          className="flex-1 p-3 font-medium text-gray-700 transition-colors bg-gray-200 hover:bg-gray-300 rounded-xl"
+        >
+          Back
+        </button>
+        <button
+          onClick={() => setCurrentStep(4)}
+          disabled={!address.trim()}
+          className="flex-1 p-3 font-medium text-white transition-colors bg-red-500 hover:bg-red-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Continue
+        </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

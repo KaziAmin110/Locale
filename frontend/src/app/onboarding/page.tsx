@@ -1,6 +1,5 @@
 "use client";
-import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import ProgressBar from "./components/ProgressBar";
 import QuestionDisplay from "./components/QuestionDisplay";
 import UserInfoForm from "./components/UserInfoForm";
@@ -25,7 +24,6 @@ export type FormData = {
 
 const OnboardingPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [direction, setDirection] = useState(1); // 1 for forward, -1 for backward
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -40,19 +38,37 @@ const OnboardingPage = () => {
     lookingFor: "",
   });
 
-  const changeStep = (newStep: number) => {
-    setDirection(newStep > currentStep ? 1 : -1);
-    setCurrentStep(newStep);
+  const updateFormData = (
+    field: string,
+    value: any
+  ) => {
+    console.log('updateFormData called:', field, value, typeof value);
+    if (field === "budget" && Array.isArray(value) && value.length === 2) {
+      setFormData((prev) => ({
+      ...prev,
+        budgetMin: Number(value[0]),
+        budgetMax: Number(value[1]),
+      }));
+    } else if (field === "photos" && Array.isArray(value)) {
+      setFormData((prev) => ({
+      ...prev,
+        photos: value as string[],
+      }));
+    } else if (typeof field === "string" && typeof value !== "object") {
+      console.log('Updating field:', field, 'with value:', value);
+      setFormData((prev) => ({
+              ...prev,
+        [field]: value,
+      }));
+    } else {
+      console.log('No condition matched for:', field, value, typeof value);
+    }
   };
 
-  const updateFormData = (field: string, value: any) => {
-    setFormData((prev) => {
-      if (field === "budget" && Array.isArray(value) && value.length === 2) {
-        return { ...prev, budgetMin: Number(value[0]), budgetMax: Number(value[1]) };
-      }
-      return { ...prev, [field]: value };
-    });
-  };
+  // Debug: Log formData changes
+  useEffect(() => {
+    console.log("FormData updated:", formData);
+  }, [formData]);
 
   const handleInterestToggle = (interest: string) => {
     setFormData((prev) => {
@@ -62,50 +78,66 @@ const OnboardingPage = () => {
       return { ...prev, interests: newInterests };
     });
   };
-  
-  const formComponents = [
-    <UserInfoForm key={1} name={formData.name} age={formData.age} updateFormData={updateFormData} setCurrentStep={changeStep} />,
-    <PhotoUploadForm key={2} photos={formData.photos} updateFormData={updateFormData} setCurrentStep={changeStep} />,
-    <LocationForm key={3} updateFormData={updateFormData} setCurrentStep={changeStep} />,
-    <InterestsForm key={4} selectedInterests={formData.interests} handleInterestToggle={handleInterestToggle} setCurrentStep={changeStep} />,
-    <LookingForForm key={5} lookingFor={formData.lookingFor} updateFormData={updateFormData} setCurrentStep={changeStep} />,
-    <BudgetForm key={6} budgetMin={formData.budgetMin} budgetMax={formData.budgetMax} updateFormData={updateFormData} setCurrentStep={changeStep} formData={formData} />,
-  ];
 
   return (
-    <div className="min-h-screen w-full bg-gray-900 text-white relative overflow-hidden">
-      {/* Animated Gradient Background */}
-      <div className="absolute inset-0 z-0">
-        <motion.div
-          animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-          transition={{ duration: 20, ease: "linear", repeat: Infinity }}
-          className="w-full h-full bg-gradient-to-r from-rose-500 via-red-500 to-pink-600 opacity-30"
-          style={{ backgroundSize: "400% 400%" }}
+    <div className="min-h-screen bg-white">
+      <div className="flex flex-col items-center w-full min-h-screen p-4">
+        <ProgressBar
+          currentStep={currentStep}
+          setCurrentStep={setCurrentStep}
         />
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+        <div className="w-full max-w-lg mt-8">
+          <QuestionDisplay currentStep={currentStep} />
+        </div>
+
+        <div className="flex flex-col items-center justify-center flex-1 w-full">
+          {currentStep === 1 && (
+            <UserInfoForm
+              name={formData.name}
+              age={formData.age}
+              updateFormData={updateFormData}
+              setCurrentStep={setCurrentStep}
+            />
+          )}
+          {currentStep === 2 && (
+            <PhotoUploadForm
+              photos={formData.photos}
+              updateFormData={updateFormData}
+              setCurrentStep={setCurrentStep}
+            />
+          )}
+          {currentStep === 3 && (
+            <LocationForm
+              updateFormData={updateFormData}
+              setCurrentStep={setCurrentStep}
+            />
+          )}
+          {currentStep === 4 && (
+            <InterestsForm
+              selectedInterests={formData.interests}
+              handleInterestToggle={handleInterestToggle}
+              setCurrentStep={setCurrentStep}
+            />
+          )}
+          {currentStep === 5 && (
+            <LookingForForm
+              lookingFor={formData.lookingFor}
+              updateFormData={updateFormData}
+              setCurrentStep={setCurrentStep}
+            />
+          )}
+          {currentStep === 6 && (
+            <BudgetForm
+              budgetMin={formData.budgetMin}
+              budgetMax={formData.budgetMax}
+              updateFormData={updateFormData}
+              setCurrentStep={setCurrentStep}
+              formData={formData}
+            />
+          )}
+        </div>
       </div>
-
-      <main className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen p-4">
-        {/* Glassmorphism Container */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-3xl h-[750px] flex flex-col justify-between rounded-2xl border border-white/10 p-6 sm:p-8"
-          style={{ background: 'rgba(255, 255, 255, 0.05)' }}
-        >
-          <div>
-            <ProgressBar currentStep={currentStep} />
-            <QuestionDisplay currentStep={currentStep} />
-          </div>
-
-          <div className="flex-1 flex items-center justify-center overflow-hidden">
-            <AnimatePresence mode="wait" custom={direction}>
-              {formComponents[currentStep - 1]}
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      </main>
     </div>
   );
 };

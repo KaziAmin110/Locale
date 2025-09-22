@@ -1,19 +1,17 @@
 import React, { useState } from "react";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
-import { Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import LoadingSpinner from "../../components/LoadingSpinner";
 import { ApiService } from "../../../lib/api";
-import { FormData } from "../page";
 
-// Props definition
 interface BudgetFormProps {
   budgetMin: number;
   budgetMax: number;
   updateFormData: (field: string, value: any) => void;
   setCurrentStep: (step: number) => void;
-  formData: FormData;
+  formData: any;
 }
+
 
 const BudgetForm = ({
   budgetMin,
@@ -35,42 +33,29 @@ const BudgetForm = ({
     setIsSubmitting(true);
     setError(null);
     try {
-      console.log("Submitting Onboarding Data:", formData);
-      await new Promise(res => setTimeout(res, 1500)); // Simulate API call
+      const result = await ApiService.submitOnboarding(formData);
       console.log('Onboarding completed successfully');
       
+      // Redirect to swipe page after completion
       window.location.href = "/swipe";
     } catch (err: any) {
       console.error('Onboarding submission error:', err);
-      setError(err.message || 'A critical error occurred. Please try again.');
+      setError(err.message || 'Failed to complete onboarding');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const variants = {
-    hidden: (direction: number) => ({ opacity: 0, x: direction * 100 }),
-    visible: { opacity: 1, x: 0 },
-    exit: (direction: number) => ({ opacity: 0, x: direction * -100 }),
-  };
-
   return (
-    <motion.div
-      custom={1} // Forward direction
-      variants={variants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-      className="flex flex-col w-full h-full items-center justify-between"
-    >
-      <div className="w-full max-w-lg text-center mt-8">
-        <p className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-rose-400 to-red-400 py-2">
-          ${budgetMin.toLocaleString()} &mdash; ${budgetMax.toLocaleString()}
-        </p>
-        <p className="text-slate-400 mt-2 font-semibold tracking-wider">MONTHLY BUDGET</p>
-        
-        <div className="my-12 px-2">
+    <div className="flex-1 flex flex-col justify-evenly w-full max-w-lg px-4 pt-8 pb-4">
+      <div className="space-y-10">
+        <div className="space-y-4">
+          <label className="text-lg font-semibold text-gray-800">
+            Monthly Budget
+          </label>
+          <p className="text-2xl font-bold text-red-500">
+            ${budgetMin.toLocaleString()} - ${budgetMax.toLocaleString()}
+          </p>
           <Slider
             range
             min={500}
@@ -78,55 +63,42 @@ const BudgetForm = ({
             step={100}
             value={[budgetMin, budgetMax]}
             onChange={handleBudgetChange}
-            trackStyle={{ backgroundColor: "#ef4444", height: 6 }}
-            handleStyle={[
-              {
-                borderColor: "#ef4444",
-                backgroundColor: "#f8fafc",
-                height: 24,
-                width: 24,
-                marginTop: -9,
-                boxShadow: "0 0 10px #ef4444",
-                opacity: 1,
-              },
-              {
-                borderColor: "#ef4444",
-                backgroundColor: "#f8fafc",
-                height: 24,
-                width: 24,
-                marginTop: -9,
-                boxShadow: "0 0 10px #ef4444",
-                opacity: 1,
-              },
-            ]}
-            railStyle={{ backgroundColor: "rgba(255, 255, 255, 0.3)", height: 6 }}
+            trackStyle={{ backgroundColor: "#ef4444", height: 8 }}
+            handleStyle={{
+              borderColor: "#ef4444",
+              backgroundColor: "white",
+              borderWidth: 2,
+              height: 20,
+              width: 20,
+              marginTop: -6,
+            }}
+            railStyle={{ backgroundColor: "#d1d5db", height: 8 }}
           />
         </div>
+        
       </div>
-
-      {error && <p className="text-red-500 text-center text-sm -mt-4">{error}</p>}
       
-      <div className="w-full max-w-lg flex justify-between items-center">
+      {error && (
+        <p className="text-red-500 text-center text-sm mt-4">{error}</p>
+      )}
+      
+      <div className="flex gap-3">
         <button
           onClick={() => setCurrentStep(5)}
           disabled={isSubmitting}
-          className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105 active:scale-100 disabled:opacity-50"
+          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-xl font-medium transition-colors disabled:opacity-50"
         >
           Back
         </button>
         <button
           onClick={handleOnboardingUpload}
           disabled={isSubmitting}
-          className="px-10 py-4 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-lg font-bold text-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/40 active:scale-100 flex items-center justify-center min-w-[220px]"
+          className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            "Complete & Launch"
-          )}
+          {isSubmitting ? <LoadingSpinner /> : "Complete Setup"}
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

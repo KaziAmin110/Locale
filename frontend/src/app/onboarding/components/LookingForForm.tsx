@@ -1,29 +1,15 @@
-import { motion } from "framer-motion";
+import React from "react";
 
-// Props definition
 interface LookingForFormProps {
   lookingFor: string;
-  updateFormData: (field: "lookingFor", value: string) => void;
+  updateFormData: (field: string, value: any) => void;
   setCurrentStep: (step: number) => void;
 }
 
-// Social and aspirational text
 const LOOKING_FOR_OPTIONS = [
-  {
-    label: "Find a Roommate",
-    value: "roommate",
-    description: "Discover the perfect person to share your home and city adventures with.",
-  },
-  {
-    label: "Discover a Home",
-    value: "apartment",
-    description: "Uncover a space that's all yours—your sanctuary in the city.",
-  },
-  {
-    label: "The Full Journey",
-    value: "both",
-    description: "Find a new home and a great person to share it with, all at once.",
-  },
+  { label: "Roommate", value: "roommate", description: "Looking for someone to share an apartment with" },
+  { label: "Apartment", value: "apartment", description: "Looking for a place to live" },
+  { label: "Both", value: "both", description: "Looking for both a roommate and an apartment" },
 ];
 
 const LookingForForm = ({
@@ -31,57 +17,75 @@ const LookingForForm = ({
   updateFormData,
   setCurrentStep,
 }: LookingForFormProps) => {
-  const variants = {
-    hidden: (direction: number) => ({ opacity: 0, x: direction * 100 }),
-    visible: { opacity: 1, x: 0 },
-    exit: (direction: number) => ({ opacity: 0, x: direction * -100 }),
+  const handleOptionSelect = (value: string) => {
+    console.log('LookingFor option selected:', value);
+    updateFormData("lookingFor", value);
+  };
+
+  const handleContinue = () => {
+    console.log('Continue clicked, lookingFor:', lookingFor);
+    if (lookingFor) {
+      setCurrentStep(6); // Go to budget form (step 6)
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep(4); // Go back to interests form
   };
 
   return (
-    <motion.div
-      custom={1} // Forward direction
-      variants={variants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-      className="flex flex-col w-full h-full items-center justify-between"
-    >
-      <div className="w-full max-w-lg space-y-4">
-        {LOOKING_FOR_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            onClick={() => updateFormData("lookingFor", option.value)}
-            className={`w-full p-6 rounded-xl border-2 transition-all duration-300 text-left transform hover:scale-[1.02] ${
-              lookingFor === option.value
-                ? "border-red-500 bg-red-500/10 shadow-[0_0_15px_rgba(239,68,68,0.3)]"
-                : "border-white/20 bg-white/10 hover:border-white/30 hover:bg-white/20"
-            }`}
-          >
-            <div className="font-bold text-xl text-white mb-1">
-              {option.label}
-            </div>
-            <div className="text-slate-400">{option.description}</div>
-          </button>
-        ))}
+    <div className="flex-1 flex flex-col justify-evenly w-full max-w-lg px-4 pt-8 pb-4">
+      <div className="space-y-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            What are you looking for?
+          </h2>
+          <p className="text-gray-600">
+            Help us match you with the right people and places
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Current selection: {lookingFor || "None"}
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {LOOKING_FOR_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => handleOptionSelect(option.value)}
+              className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                lookingFor === option.value
+                  ? "border-red-500 bg-red-50"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <div className="font-semibold text-gray-800 mb-1">
+                {option.label}
+              </div>
+              <div className="text-sm text-gray-600">
+                {option.description}
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="w-full max-w-lg flex justify-between">
+      <div className="flex gap-3">
         <button
-          onClick={() => setCurrentStep(4)}
-          className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105 active:scale-100"
+          onClick={handleBack}
+          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-xl font-medium transition-colors"
         >
           Back
         </button>
         <button
-          onClick={() => setCurrentStep(6)}
+          onClick={handleContinue}
           disabled={!lookingFor}
-          className="px-10 py-4 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-lg font-bold text-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/40 active:scale-100"
+          className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Proceed
+          Continue
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
