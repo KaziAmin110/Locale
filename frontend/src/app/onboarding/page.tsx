@@ -42,26 +42,32 @@ const OnboardingPage = () => {
     field: string,
     value: any
   ) => {
-    console.log('updateFormData called:', field, value, typeof value);
+    console.log('🔧 updateFormData called:', field, value, typeof value);
     if (field === "budget" && Array.isArray(value) && value.length === 2) {
+      console.log('💰 Updating budget:', value);
       setFormData((prev) => ({
-      ...prev,
+        ...prev,
         budgetMin: Number(value[0]),
         budgetMax: Number(value[1]),
       }));
     } else if (field === "photos" && Array.isArray(value)) {
+      console.log('📸 Updating photos:', value);
       setFormData((prev) => ({
-      ...prev,
+        ...prev,
         photos: value as string[],
       }));
     } else if (typeof field === "string" && typeof value !== "object") {
-      console.log('Updating field:', field, 'with value:', value);
-      setFormData((prev) => ({
-              ...prev,
-        [field]: value,
-      }));
+      console.log('✅ Updating field:', field, 'with value:', value);
+      setFormData((prev) => {
+        const newData = {
+          ...prev,
+          [field]: value,
+        };
+        console.log('📝 New form data:', newData);
+        return newData;
+      });
     } else {
-      console.log('No condition matched for:', field, value, typeof value);
+      console.log('❌ No condition matched for:', field, value, typeof value);
     }
   };
 

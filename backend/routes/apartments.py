@@ -182,7 +182,7 @@ def record_apartment_swipe():
         # Record the swipe action
         swipe_data = {
             'id': str(uuid.uuid4()), 'user_id': user_id, 
-            'apartment_id': apartment_id, 'is_like': is_like
+            'apartment_id': apartment_id, 'direction': direction
         }
         result = SupabaseService.insert_data('apartment_swipes', swipe_data)
         
