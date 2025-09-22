@@ -11,16 +11,31 @@ export type MapItem = {
 
 type LatLng = { lat: number; lng: number };
 
-
 const BRIGHT_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: "poi", stylers: [{ visibility: "off" }] },
   { featureType: "transit", stylers: [{ visibility: "off" }] },
   { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
   { elementType: "geometry", stylers: [{ saturation: 0 }, { lightness: 20 }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#2797ddff" }, { lightness: -40 }] },
-  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#f6f8fb" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }, { lightness: 40 }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#6b7280" }] },
+  {
+    featureType: "water",
+    elementType: "geometry",
+    stylers: [{ color: "#2797ddff" }, { lightness: -40 }],
+  },
+  {
+    featureType: "landscape",
+    elementType: "geometry",
+    stylers: [{ color: "#f6f8fb" }],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry",
+    stylers: [{ color: "#ffffff" }, { lightness: 40 }],
+  },
+  {
+    featureType: "road",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#6b7280" }],
+  },
 ];
 
 function cacheGet(addr: string): LatLng | null {
@@ -77,6 +92,9 @@ export default function BackgroundMap({
     "roadmap" as google.maps.MapTypeId
   );
 
+  // 1. Add state to track API readiness
+  const [isApiReady, setIsApiReady] = useState(false);
+
   useEffect(() => {
     didFitRef.current = false;
   }, [fitKey]);
@@ -89,8 +107,7 @@ export default function BackgroundMap({
       console.error("[BackgroundMap] Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
     }
 
-    const loader = new Loader({ apiKey, libraries: [] });
-
+    const loader = new Loader({ apiKey, libraries: ["geocoding"] });
     loader
       .load()
       .then(() => {
@@ -108,6 +125,9 @@ export default function BackgroundMap({
           draggable: false,
           keyboardShortcuts: false,
         });
+
+        // 2. Signal that the map is ready
+        setIsApiReady(true);
       })
       .catch((e) => {
         console.error("[BackgroundMap] Failed to load Google Maps:", e);
@@ -128,25 +148,24 @@ export default function BackgroundMap({
     m.setOptions({ styles: mapType === "roadmap" ? BRIGHT_STYLES : undefined });
   }, [mapType]);
 
+  // 3. Wait for the map to be ready before geocoding
   useEffect(() => {
-    let cancelled = false;
-
-    async function waitForGoogle() {
-      return new Promise<void>((res) => {
-        const tick = () => {
-          if (window.google && window.google.maps) res();
-          else setTimeout(tick, 30);
-        };
-        tick();
-      });
+    if (!isApiReady) {
+      return; // Don't run if the API isn't ready
     }
 
+    let cancelled = false;
+
     async function geocodeAll() {
-      await waitForGoogle();
       if (cancelled) return;
 
       const geocoder = new google.maps.Geocoder();
-      const out: { id: string; title?: string; address: string; latlng: LatLng }[] = [];
+      const out: {
+        id: string;
+        title?: string;
+        address: string;
+        latlng: LatLng;
+      }[] = [];
 
       const list = items.slice(0, 75);
 
@@ -172,7 +191,11 @@ export default function BackgroundMap({
             console.warn("[BackgroundMap] No geocode result for:", addr);
           }
         } catch (err: any) {
-          console.error("[BackgroundMap] Geocode failed for:", addr, err?.message || err);
+          console.error(
+            "[BackgroundMap] Geocode failed for:",
+            addr,
+            err?.message || err
+          );
         }
 
         if (cancelled) return;
@@ -186,7 +209,7 @@ export default function BackgroundMap({
     return () => {
       cancelled = true;
     };
-  }, [items]);
+  }, [items, isApiReady]); // Add isApiReady to the dependency array
 
   useEffect(() => {
     const map = mapRef.current;
@@ -259,7 +282,10 @@ export default function BackgroundMap({
       }
     });
 
-    async function focusActiveWithRetry(map: google.maps.Map, deadlineMs = 1400) {
+    async function focusActiveWithRetry(
+      map: google.maps.Map,
+      deadlineMs = 1400
+    ) {
       const start = performance.now();
 
       while (!cancelled && performance.now() - start < deadlineMs) {
@@ -299,11 +325,15 @@ export default function BackgroundMap({
         className="absolute inset-0 pointer-events-none"
         style={{ background: `rgba(0,0,0,${dim})` }}
       />
-      <div className="absolute top-4 right-4 z-10 flex gap-2 pointer-events-auto">
+      <div className="absolute z-10 flex gap-2 pointer-events-auto top-4 right-4">
         <button
           onClick={() => setMapType("roadmap" as google.maps.MapTypeId)}
           className={`px-3 py-1 rounded-lg text-sm font-medium shadow
-            ${mapType === "roadmap" ? "bg-pink-500 text-white" : "bg-white text-gray-800"}`}
+            ${
+              mapType === "roadmap"
+                ? "bg-pink-500 text-white"
+                : "bg-white text-gray-800"
+            }`}
           aria-pressed={mapType === "roadmap"}
         >
           Map
@@ -311,7 +341,11 @@ export default function BackgroundMap({
         <button
           onClick={() => setMapType("satellite" as google.maps.MapTypeId)}
           className={`px-3 py-1 rounded-lg text-sm font-medium shadow
-            ${mapType === "satellite" ? "bg-pink-500 text-white" : "bg-white text-gray-800"}`}
+            ${
+              mapType === "satellite"
+                ? "bg-pink-500 text-white"
+                : "bg-white text-gray-800"
+            }`}
           aria-pressed={mapType === "satellite"}
         >
           Satellite
