@@ -46,17 +46,30 @@ def get_apartment_feed():
             return jsonify({"error": "User not found"}), 404
         
         user = user_result['data'][0]
-        user_city_state = user.get('city', 'University Park, FL')
-        user_lat = user.get('lat') or 27.3365
-        user_lng = user.get('lng') or -82.5307
+        
+        # --- FIX: Smarter Location Query Logic ---
+        # This handles cases where 'city' might contain a full address.
+        user_city = user.get('city', 'Orlando')
+        user_state = user.get('state', 'FL')
+
+        # If the city field already contains a comma, we assume it's a full
+        # address and should be used as-is. Otherwise, we build the query.
+        if ',' in user_city:
+            location_query = user_city
+        else:
+            location_query = f"{user_city}, {user_state}"
+        
+        print(f"📍 Prepared location query for scraper: '{location_query}'")
+        
+        user_lat = user.get('lat') or 28.5383
+        user_lng = user.get('lng') or -81.3792
         
         data_source = "redfin_scraper"
         
         # 2. --- DATA SOURCING & INSERTION ---
         try:
-            raw_scraped_data = scrape_redfin_rentals(location=user_city_state, max_listings=20)
+            raw_scraped_data = scrape_redfin_rentals(location=location_query, max_listings=20)
             
-            # Get existing apartment addresses to avoid duplicates
             print("🔍 Checking for existing apartments in the database...")
             existing_apartments_result = SupabaseService.get_data('apartments')
             existing_addresses = {
@@ -69,7 +82,6 @@ def get_apartment_feed():
                 price = parse_price(item.get('price'))
                 address = item.get('address')
 
-                # Skip if essential data is missing or if it already exists
                 if not price or not address or address in existing_addresses:
                     continue
 
@@ -77,9 +89,14 @@ def get_apartment_feed():
                 bathrooms = parse_integer_value(item.get('bathrooms'))
                 sqft_val = parse_integer_value(item.get('sqft'))
                 
+                try:
+                    address_city = address.split(',')[1].strip()
+                except IndexError:
+                    address_city = user_city.split(',')[0] # Get city name even from full address
+
                 apartment_data = {
                     'id': str(uuid.uuid4()),
-                    'title': f"{bedrooms or 'Studio'}, {bathrooms or 1} bath in {address.split(',')[1].strip()}",
+                    'title': f"{bedrooms or 'Studio'}, {bathrooms or 1} bath in {address_city}",
                     'address': address,
                     'price': price,
                     'bedrooms': bedrooms if bedrooms is not None else 0,
@@ -92,7 +109,7 @@ def get_apartment_feed():
                     'amenities': [],
                 }
                 new_apartments_to_insert.append(apartment_data)
-                existing_addresses.add(address) # Add to set to prevent re-adding in this loop
+                existing_addresses.add(address)
             
             if new_apartments_to_insert:
                 print(f"✍️ Inserting {len(new_apartments_to_insert)} new apartments into the database...")
@@ -106,8 +123,7 @@ def get_apartment_feed():
             print(f"⚠️ Scraper threw an exception: {scraper_error}")
             traceback.print_exc()
 
-        # 3. --- FILTERING & RANKING (Corrected Logic) ---
-        # Fetch ALL apartments from the database to create the feed from
+        # 3. --- FILTERING & RANKING ---
         print("🔄 Fetching all apartments from DB for ranking...")
         all_db_apartments_result = SupabaseService.get_data('apartments')
         if not all_db_apartments_result.get('success'):
@@ -115,12 +131,10 @@ def get_apartment_feed():
         all_db_apartments = all_db_apartments_result['data']
         print(f"👍 Fetched {len(all_db_apartments)} total apartments from the database.")
 
-        # Get IDs of apartments the user has already swiped on
         swipes_data = SupabaseService.get_data('apartment_swipes', {'user_id': user_id})
         swiped_ids = {swipe['apartment_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
         print(f"User has swiped on {len(swiped_ids)} apartments.")
         
-        # Filter the comprehensive list from the database
         available_apartments = [apt for apt in all_db_apartments if apt['id'] not in swiped_ids]
         print(f"Found {len(available_apartments)} available apartments for the user's feed.")
         
@@ -132,7 +146,6 @@ def get_apartment_feed():
                 "data_source": data_source
             })
         
-        # Rank the available apartments using the ML engine
         print(f"🧠 Ranking {len(available_apartments)} apartments with ML Engine...")
         user_vector = ml_engine.create_user_vector(user)
         recommendations = ml_engine.apartment_recommendations(
@@ -141,10 +154,9 @@ def get_apartment_feed():
             [float(user_lat), float(user_lng)]
         )
         
-        # Prepare the final list of apartments for the response
         result_apartments = []
         apartment_lookup = {apt['id']: apt for apt in available_apartments}
-        for rec in recommendations[:10]: # Limit to top 10 recommendations
+        for rec in recommendations[:10]:
             apartment = apartment_lookup.get(rec['apartment_id'])
             if apartment:
                 apartment['match_score'] = rec['score']
@@ -155,7 +167,7 @@ def get_apartment_feed():
             "apartments": result_apartments,
             "total_available": len(available_apartments),
             "data_source": data_source,
-            "location_searched": user_city_state
+            "location_searched": location_query
         })
         
     except Exception as e:
