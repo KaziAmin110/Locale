@@ -6,12 +6,15 @@ from services.scraper import scrape_redfin_rentals
 import uuid
 import re
 import random
+import traceback
 
 apartments_bp = Blueprint('apartments', __name__)
 ml_engine = MLEngine()
 
 # --- HELPER FUNCTIONS ---
+
 def parse_price(price_str):
+    """Cleans a string to extract an integer price."""
     if not price_str or "contact" in price_str.lower():
         return None
     cleaned_price = re.sub(r'[$,+A-Za-z/]', '', price_str).strip()
@@ -20,161 +23,147 @@ def parse_price(price_str):
     except (ValueError, IndexError):
         return None
 
-def parse_stat(stat_str):
-    # This function seems unused, but keeping it in case it's needed elsewhere.
-    if not stat_str:
+def parse_integer_value(value):
+    """Removes commas and other characters to parse an integer from a string."""
+    if value is None:
         return None
-    match = re.search(r'[\d.]+', stat_str)
-    if match:
+    cleaned_value = re.sub(r'[^\d]', '', str(value))
+    if cleaned_value:
         try:
-            return float(match.group(0))
+            return int(cleaned_value)
         except ValueError:
             return None
     return None
+
+# --- MAIN FEED ENDPOINT ---
 
 @apartments_bp.route('/feed', methods=['GET'])
 @jwt_required()
 def get_apartment_feed():
     try:
+        # 1. Get User Data
         user_id = get_jwt_identity()
         user_result = SupabaseService.get_data('users', {'id': user_id})
         if not user_result['success'] or not user_result['data']:
             return jsonify({"error": "User not found"}), 404
         
         user = user_result['data'][0]
-        user_city_state = user.get('city', 'Austin, TX')
-        user_lat = user.get('lat') or 30.2672
-        user_lng = user.get('lng') or -97.7431
-
-        all_apartments = []
+        
+        # Smart location handling
+        user_city = user.get('city', 'Orlando')
+        user_state = user.get('state', 'FL')
+        location_query = f"{user_city}, {user_state}" if ',' not in user_city else user_city
+        
+        print(f"📍 Prepared location query for scraper: '{location_query}'")
+        
+        user_lat = user.get('lat') or 28.5383
+        user_lng = user.get('lng') or -81.3792
+        
         data_source = "redfin_scraper"
         
-        # --- PRIMARY DATA SOURCE: SCRAPER ---
+        # 2. Data Sourcing & Insertion (from Scraper)
         try:
-            raw_scraped_data = scrape_redfin_rentals(location=user_city_state, max_listings=20)
+            raw_scraped_data = scrape_redfin_rentals(location=location_query, max_listings=20)
             
-            # --- NEW: DATABASE INSERTION LOGIC ---
-            new_apartments_to_insert = []
-            
-            # 1. Fetch existing apartment addresses to prevent duplicates
             print("🔍 Checking for existing apartments in the database...")
             existing_apartments_result = SupabaseService.get_data('apartments')
             existing_addresses = {
                 apt['address'] for apt in existing_apartments_result['data']
-            } if existing_apartments_result['success'] else set()
+            } if existing_apartments_result.get('success') else set()
             print(f"Found {len(existing_addresses)} existing addresses.")
 
-            # Process scraped data
+            new_apartments_to_insert = []
             for item in raw_scraped_data:
                 price = parse_price(item.get('price'))
-                if price is None:
-                    continue
-
                 address = item.get('address')
-                if not address:
+
+                if not price or not address or address in existing_addresses:
                     continue
 
-                bedrooms = item.get('bedrooms')
-                bathrooms = item.get('bathrooms')
-                sqft_val = item.get('sqft')
+                bedrooms = parse_integer_value(item.get('bedrooms'))
+                bathrooms = parse_integer_value(item.get('bathrooms'))
+                sqft_val = parse_integer_value(item.get('sqft'))
                 
-                # Format the apartment data
+                try:
+                    address_city = address.split(',')[1].strip()
+                except IndexError:
+                    address_city = user_city.split(',')[0]
+
                 apartment_data = {
-                    'title': f"{bedrooms or 'Studio'}, {bathrooms} in {address.split(',')[1].strip()}",
+                    'id': str(uuid.uuid4()),
+                    'title': f"{bedrooms or 'Studio'}, {bathrooms or 1} bath in {address_city}",
                     'address': address,
                     'price': price,
                     'bedrooms': bedrooms if bedrooms is not None else 0,
                     'bathrooms': bathrooms if bathrooms is not None else 1,
-                    'square_feet': sqft_val if sqft_val is not None else None,
+                    'square_feet': sqft_val,
                     'lat': float(user_lat) + random.uniform(-0.05, 0.05),
                     'lng': float(user_lng) + random.uniform(-0.05, 0.05),
                     'photos': [item.get('image')] if item.get('image') else [],
                     'description': "A spacious apartment available for rent.",
                     'amenities': [],
                 }
-                all_apartments.append(apartment_data)
-
-                # 2. Check if the apartment is new before adding it to the insert list
-                if address not in existing_addresses:
-                    new_apartments_to_insert.append(apartment_data)
-                    existing_addresses.add(address) # Add to set to prevent duplicate inserts from the same scrape
+                new_apartments_to_insert.append(apartment_data)
+                existing_addresses.add(address)
             
-            # 3. Insert new apartments into the database if any were found
             if new_apartments_to_insert:
+                print(f"✍️ Inserting {len(new_apartments_to_insert)} new apartments into the database...")
                 insertion_result = SupabaseService.insert_data('apartments', new_apartments_to_insert)
                 if not insertion_result['success']:
                     print(f"🔥 Database insertion failed: {insertion_result.get('error')}")
             else:
-                print("✅ No new apartments to insert.")
+                print("✅ No new apartments to insert from this scrape.")
 
         except Exception as scraper_error:
             print(f"⚠️ Scraper threw an exception: {scraper_error}")
-            all_apartments = []
+            traceback.print_exc()
 
-        # --- FALLBACK DATA SOURCE: DATABASE APARTMENTS ---
-        if not all_apartments:
-            print("✅ Scraper returned no results. Falling back to database apartments.")
-            data_source = "database_fallback"
-            
-            # Get apartments from database instead of generating new ones
-            db_apartments = SupabaseService.get_data('apartments', {})
-            if db_apartments['success'] and db_apartments['data']:
-                all_apartments = db_apartments['data']
-                print(f"✅ Using {len(all_apartments)} apartments from database")
-            else:
-                # Last resort: generate apartments but save them to database
-                print("⚠️ No database apartments found. Generating new ones.")
-                city, state = 'Austin', 'TX'
-                if ',' in user_city_state:
-                    parts = [p.strip() for p in user_city_state.split(',')]
-                    if len(parts) >= 2:
-                        city = parts[-2]
-                        state_zip = parts[-1].split(' ')
-                        state = state_zip[0]
-                all_apartments = generate_and_save_apartments_for_city(city, state, user)
+        # 3. Filtering & Ranking Logic
+        all_db_apartments_result = SupabaseService.get_data('apartments')
+        all_db_apartments = all_db_apartments_result['data'] if all_db_apartments_result.get('success') else []
 
-        print(f"✅ Data source used: '{data_source}'. Total apartments: {len(all_apartments)}.")
-
-        # --- Filter out swiped items and apply ML ---
-        apartment_data = SupabaseService.get_data('apartments')['data']
         swipes_data = SupabaseService.get_data('apartment_swipes', {'user_id': user_id})
-
-        swiped_ids = {swipe['apartment_id'] for swipe in swipes_data['data']} if swipes_data['success'] else set()
-        available_apartments = [apt for apt in apartment_data if apt['id'] not in swiped_ids]
+        swiped_ids = {swipe['apartment_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
+        
+        available_apartments = [apt for apt in all_db_apartments if apt['id'] not in swiped_ids]
+        
+        # 4. Fallback Data Generation (if needed)
+        if not available_apartments and not all_db_apartments:
+            print("⚠️ No apartments found. Generating fallback data for a first-time user.")
+            data_source = "fallback_generator"
+            available_apartments = generate_and_save_apartments_for_city(user_city, user_state, user)
 
         if not available_apartments:
             return jsonify({
-                "success": True, 
-                "apartments": [],
-                "message": "No more apartments available",
+                "success": True, "apartments": [], "message": "No more apartments available",
                 "data_source": data_source
             })
         
+        # 5. ML Ranking
         user_vector = ml_engine.create_user_vector(user)
         recommendations = ml_engine.apartment_recommendations(
-            user_vector, 
-            available_apartments, 
-            [float(user_lat), float(user_lng)]
+            user_vector, available_apartments, [float(user_lat), float(user_lng)]
         )
         
         result_apartments = []
+        apartment_lookup = {apt['id']: apt for apt in available_apartments}
         for rec in recommendations[:10]:
-            apartment = next((apt for apt in available_apartments if apt['id'] == rec['apartment_id']), None)
+            apartment = apartment_lookup.get(rec['apartment_id'])
             if apartment:
                 apartment['match_score'] = rec['score']
                 result_apartments.append(apartment)
         
         return jsonify({
-            "success": True,
-            "apartments": result_apartments,
-            "total_available": len(available_apartments),
-            "data_source": data_source,
-            "location_searched": user_city_state
+            "success": True, "apartments": result_apartments, "total_available": len(available_apartments),
+            "data_source": data_source, "location_searched": location_query
         })
         
     except Exception as e:
         print(f"❌ Apartment feed error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        traceback.print_exc()
+        return jsonify({"error": "An internal server error occurred"}), 500
+
+# --- SWIPE AND MATCH ENDPOINT ---
 
 @apartments_bp.route('/swipe', methods=['POST'])
 @jwt_required()
@@ -182,70 +171,67 @@ def record_apartment_swipe():
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
+        apartment_id = data.get('apartment_id')
+        direction = data.get('direction')
+
+        if not apartment_id or not direction:
+            return jsonify({'success': False, 'error': 'Missing apartment_id or direction'}), 400
         
-        print(f"DEBUG: Swipe request from user {user_id}")
-        print(f"DEBUG: Request data: {data}")
+        is_like = direction == 'right'
         
-        # Handle both frontend formats
-        apartment_id = data.get('apartment_id') or data.get('item_id')
-        direction = data.get('direction', 'right')
-        action = 'like' if direction == 'right' else 'pass'
-        
-        if not apartment_id:
-            print("DEBUG: Missing apartment_id")
-            return jsonify({'success': False, 'error': 'Missing apartment_id'}), 400
-        
-        # Record swipe
+        # Record the swipe action
         swipe_data = {
-            'id': str(uuid.uuid4()), 
-            'user_id': user_id, 
-            'apartment_id': apartment_id, 
-            'direction': direction,
-            'created_at': 'now()'
+            'id': str(uuid.uuid4()), 'user_id': user_id, 
+            'apartment_id': apartment_id, 'is_like': is_like
         }
-        print(f"DEBUG: Inserting swipe data: {swipe_data}")
         result = SupabaseService.insert_data('apartment_swipes', swipe_data)
-        print(f"DEBUG: Insert result: {result}")
+        
         if not result['success']:
-            print(f"DEBUG: Insert failed: {result['error']}")
-            return jsonify({'success': False, 'error': f'Failed to record swipe: {result["error"]}'}), 500
+            return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500
         
-        # Create match if liked
-        is_match = action == 'like'
-        if is_match:
+        # If the user liked the apartment, create a match
+        if is_like:
             match_data = {
-                'id': str(uuid.uuid4()), 
-                'user_id': user_id, 
-                'apartment_id': apartment_id, 
-                'created_at': 'now()'
+                'id': str(uuid.uuid4()), 'user_id': user_id, 'apartment_id': apartment_id
             }
-            match_result = SupabaseService.insert_data('apartment_matches', match_data)
-            if match_result['success']:
-                return jsonify({
-                    'success': True, 
-                    'match': True,
-                    'message': 'Apartment liked! Added to your matches.'
-                }), 200
+            SupabaseService.insert_data('apartment_matches', match_data)
+            return jsonify({
+                'success': True, 'match': True,
+                'message': 'Apartment liked! Added to your matches.'
+            }), 200
         
-        return jsonify({
-            'success': True, 
-            'match': False,
-            'message': 'Swipe recorded'
-        }), 200
-        
+        # If it was a 'pass'
+        return jsonify({'success': True, 'match': False, 'message': 'Swipe recorded'}), 200
+
     except Exception as e:
         print(f"Apartment swipe error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': 'An internal server error occurred'}), 500
+
+# --- FALLBACK DATA GENERATION FUNCTIONS ---
+
+def generate_and_save_apartments_for_city(city, state, user):
+    """Generate apartments and save them to the database."""
+    print(f"Generating and saving apartments for {city}, {state}")
+    apartments = generate_realistic_apartments_for_city(city, state, user)
+    
+    # Prepare for bulk insert, removing match_score
+    apartments_to_insert = [{k: v for k, v in apt.items() if k != 'match_score'} for apt in apartments]
+    
+    if apartments_to_insert:
+        result = SupabaseService.insert_data('apartments', apartments_to_insert)
+        if not result['success']:
+            print(f"Warning: Failed to save generated apartments: {result.get('error')}")
+    
+    return apartments
 
 def generate_realistic_apartments_for_city(city, state, user):
-    """Fallback function to generate apartment data if scraper fails."""
-    neighborhoods = {'austin': ['Downtown', 'South Austin'], 'orlando': ['Downtown', 'Lake Nona']}
+    """Fallback function to generate apartment data if scraper and DB fail."""
+    neighborhoods = {'orlando': ['Downtown', 'Lake Nona', 'Winter Park'], 'austin': ['Downtown', 'South Congress']}
     city_neighborhoods = neighborhoods.get(city.lower(), ['Downtown', 'Midtown'])
     
-    user_lat = user.get('lat') or 30.2672
-    user_lng = user.get('lng') or -97.7431
-    budget_min = user.get('budget_min', 1000) 
-    budget_max = user.get('budget_max', 3000)
+    user_lat = user.get('lat', 28.5383)
+    user_lng = user.get('lng', -81.3792)
     
     apartments = []
     apartment_photos = [
@@ -254,38 +240,24 @@ def generate_realistic_apartments_for_city(city, state, user):
         'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&h=400&fit=crop',
     ]
     
-    for i in range(25):
+    for _ in range(20):
         neighborhood = random.choice(city_neighborhoods)
         bedrooms = random.choice([0, 1, 1, 2, 2, 3])
         apartment = {
             'id': str(uuid.uuid4()),
-            'title': f"Spacious {bedrooms}BR in {neighborhood}",
+            'title': f"Spacious {bedrooms if bedrooms > 0 else 'Studio'} in {neighborhood}",
             'address': f"{random.randint(100, 9999)} Main St, {neighborhood}, {city}, {state}",
-            'price': random.randint(max(budget_min - 200, 800), min(budget_max + 300, 5000)),
+            'price': random.randint(1400, 3500),
             'bedrooms': bedrooms,
             'bathrooms': max(1, bedrooms),
-            'square_feet': random.randint(400, 1200),
+            'square_feet': random.randint(500, 1800),
             'lat': float(user_lat) + random.uniform(-0.1, 0.1),
             'lng': float(user_lng) + random.uniform(-0.1, 0.1),
             'photos': random.sample(apartment_photos, 2),
             'description': f"A beautiful apartment in {neighborhood}.",
-            'amenities': ['Pool', 'Gym'],
-            'match_score': round(random.uniform(0.7, 0.95), 2)
+            'amenities': ['Pool', 'Gym', 'Parking'],
+            'match_score': 0.0 # Will be calculated by ML engine
         }
         apartments.append(apartment)
-    
-    return apartments
-
-def generate_and_save_apartments_for_city(city, state, user):
-    """Generate apartments and save them to database."""
-    apartments = generate_realistic_apartments_for_city(city, state, user)
-    
-    # Save apartments to database
-    for apartment in apartments:
-        # Remove match_score before saving to database
-        db_apartment = {k: v for k, v in apartment.items() if k != 'match_score'}
-        result = SupabaseService.insert_data('apartments', db_apartment)
-        if not result['success']:
-            print(f"Warning: Failed to save apartment {apartment['id']}: {result['error']}")
     
     return apartments

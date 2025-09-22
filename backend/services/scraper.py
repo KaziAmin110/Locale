@@ -108,7 +108,6 @@ def scrape_redfin_rentals(location="Orlando, FL", max_listings=25):
                     "image": image,
                 })
         
-        print(f"✅ Scraper found {len(listings_data)} listings.")
         return listings_data
 
     except Exception as e:

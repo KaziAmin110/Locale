@@ -3,7 +3,7 @@ import React from "react";
 interface SwipeControlsProps {
   onPass: () => void;
   onLike: () => void;
-  disabled?: boolean; // Accept the disabled prop
+  disabled?: boolean;
 }
 
 export default function SwipeControls({
@@ -15,7 +15,7 @@ export default function SwipeControls({
     <div className="flex justify-center mt-12 space-x-12">
       <button
         onClick={onPass}
-        disabled={disabled} // Apply the disabled attribute
+        disabled={disabled}
         className="flex items-center justify-center w-16 h-16 transition-all duration-200 bg-white border-2 border-red-200 rounded-full shadow-lg hover:bg-red-50 hover:border-red-300 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         aria-label="Pass"
       >
@@ -36,7 +36,7 @@ export default function SwipeControls({
 
       <button
         onClick={onLike}
-        disabled={disabled} // Apply the disabled attribute
+        disabled={disabled}
         className="flex items-center justify-center w-16 h-16 transition-all duration-200 bg-white border-2 border-green-200 rounded-full shadow-lg hover:bg-green-50 hover:border-green-300 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         aria-label="Like"
       >

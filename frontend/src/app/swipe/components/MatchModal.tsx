@@ -17,7 +17,6 @@ export default function MatchModal({ isOpen, item, type, onClose }: MatchModalPr
   useEffect(() => {
     if (isOpen) {
       setShowAnimation(true)
-      // Auto close after 5 seconds
       const timer = setTimeout(() => {
         onClose()
       }, 5000)
@@ -64,7 +63,6 @@ export default function MatchModal({ isOpen, item, type, onClose }: MatchModalPr
           showAnimation ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
         }`}
       >
-        {/* Animated heart */}
         <div className="relative mb-8">
           <div className="w-20 h-20 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center mx-auto animate-pulse">
             <svg 
@@ -76,7 +74,6 @@ export default function MatchModal({ isOpen, item, type, onClose }: MatchModalPr
             </svg>
           </div>
           
-          {/* Floating hearts animation */}
           <div className="absolute inset-0 pointer-events-none">
             {[...Array(6)].map((_, i) => (
               <div
@@ -103,7 +100,6 @@ export default function MatchModal({ isOpen, item, type, onClose }: MatchModalPr
           {getMatchMessage()}
         </p>
 
-        {/* Item preview */}
         {item.photos && item.photos[0] && (
           <div className="w-16 h-16 rounded-full overflow-hidden mx-auto mb-6 border-4 border-primary/20">
             <img 
@@ -117,7 +113,6 @@ export default function MatchModal({ isOpen, item, type, onClose }: MatchModalPr
         <div className="flex flex-col space-y-3">
           <button
             onClick={() => {
-              // Navigate to appropriate page based on type
               if (type === 'apartments') {
                 window.location.href = '/matches'
               } else if (type === 'people') {
