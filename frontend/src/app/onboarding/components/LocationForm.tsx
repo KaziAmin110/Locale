@@ -92,7 +92,7 @@ const mapStyles = [
   },
 ];
 
-const libraries: "places"[] = ["places"];
+const libraries: ("places" | "geometry")[] = ["places", "geometry"];
 
 type LocationFormProps = {
   updateFormData: (
@@ -131,7 +131,68 @@ const LocationForm = ({ updateFormData, setCurrentStep }: LocationFormProps) => 
   };
   
   const handleGetCurrentLocation = () => {
-    // ... (Your original logic remains the same)
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by this browser.");
+      return;
+    }
+
+    setIsLocating(true);
+    setError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Use reverse geocoding to get the address
+          const geocoder = new window.google.maps.Geocoder();
+          const latlng = { lat: latitude, lng: longitude };
+          
+          geocoder.geocode({ location: latlng }, (results, status) => {
+            if (status === 'OK' && results && results[0]) {
+              const address = results[0].formatted_address;
+              setAddress(address);
+              updateFormData("location", address);
+              updateFormData("lat", latitude);
+              updateFormData("lng", longitude);
+              setMapCenter({ lat: latitude, lng: longitude });
+              setIsLocating(false);
+            } else {
+              setError("Could not find address for your location.");
+              setIsLocating(false);
+            }
+          });
+        } catch (error) {
+          console.error("Error getting current location:", error);
+          setError("Error getting your current location.");
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        let errorMessage = "Error getting your location.";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location permissions.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out.";
+            break;
+        }
+        
+        setError(errorMessage);
+        setIsLocating(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000
+      }
+    );
   };
 
   const variants = {

@@ -18,13 +18,6 @@ export interface Apartment {
   lng?: number;
 }
 
-interface ApiResponse<T> {
-  success: boolean;
-  items: T[];
-  total_available?: number;
-  data_source?: string;
-}
-
 export interface Person {
   id: string;
   name: string;
@@ -46,7 +39,7 @@ export interface User {
   budget_min?: number;
   budget_max?: number;
   interests?: string[];
-  photos?: string[]; // Added photos based on your backend
+  photos?: string[];
   onboarding_complete: boolean;
 }
 
@@ -109,36 +102,67 @@ export class ApiService {
     return this.token;
   }
 
-  static async login(userInfo: { email: string; password: string }) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userInfo),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-
-        throw new Error(
-          errorData.error || `Login failed: ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.token) {
-        this.setToken(data.token);
-        return data;
-      }
-
-      throw new Error(data.error || "Login failed");
-    } catch (error) {
-      console.error("Login error:", error);
-      throw error;
+  static logout() {
+    this.token = null;
+    localStorage.removeItem("auth_token");
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
     }
+  }
+
+  private static async request(endpoint: string, options: RequestInit = {}) {
+    const token = this.getToken();
+    if (!token) {
+      this.logout();
+      throw new Error("Not authenticated");
+    }
+
+    const defaultHeaders: HeadersInit = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+
+    const config: RequestInit = {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+    };
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+
+    if (response.status === 401) {
+      this.logout();
+    }
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: "An unknown API error occurred" }));
+      throw new Error(
+        errorData.error || `API request failed: ${response.statusText}`
+      );
+    }
+
+    return response.json();
+  }
+
+  static async login(userInfo: { email: string; password: string }) {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userInfo),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || `Login failed: ${response.statusText}`);
+    }
+    if (data.success && data.token) {
+      this.setToken(data.token);
+      return data;
+    }
+    throw new Error(data.error || "Login failed");
   }
 
   static async register(userInfo: {
@@ -146,374 +170,117 @@ export class ApiService {
     email: string;
     password: string;
   }) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userInfo),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Registration failed");
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.token) {
-        this.setToken(data.token);
-        return data;
-      } else {
-        throw new Error(data.error || "Registration failed");
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      throw error;
+    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userInfo),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Registration failed");
+    }
+    if (data.success && data.token) {
+      this.setToken(data.token);
+      return data;
+    } else {
+      throw new Error(data.error || "Registration failed");
     }
   }
 
-  static async getApartmentsFeed(): Promise<ApiResponse<Apartment>> {
-    const token = this.getToken();
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${API_BASE_URL}/api/apartments/feed`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok)
-      throw new Error(`API request failed: ${response.statusText}`);
-
-    const data = await response.json();
+  static async getApartmentFeed() {
+    const data = await this.request(`/api/apartments/feed`);
     if (!data.success) throw new Error(data.error);
-
-    // Return the consistent shape your page expects
-    return {
-      success: true,
-      items: data.apartments || [],
-      total_available: data.total_available,
-      data_source: data.data_source,
-    };
+    return data.apartments;
   }
 
-  static async getPeopleFeed(): Promise<ApiResponse<Person>> {
-    const token = this.getToken();
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${API_BASE_URL}/api/people/feed`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok)
-      throw new Error(`API request failed: ${response.statusText}`);
-
-    const data = await response.json();
+  static async getPeopleFeed() {
+    const data = await this.request(`/api/people/feed`);
     if (!data.success) throw new Error(data.error);
-
-    return {
-      success: true,
-      items: data.people || [],
-      total_available: data.total_available,
-      data_source: data.data_source,
-    };
+    return data.people;
   }
 
-  static async getSpotsFeed(): Promise<ApiResponse<Spot>> {
-    const token = this.getToken();
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${API_BASE_URL}/api/spots/feed`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok)
-      throw new Error(`API request failed: ${response.statusText}`);
-
-    const data = await response.json();
+  static async getSpotsFeed() {
+    const data = await this.request(`/api/spots/feed`);
     if (!data.success) throw new Error(data.error);
-
-    return {
-      success: true,
-      items: data.spots || [],
-      total_available: data.total_available,
-      data_source: data.data_source,
-    };
+    return data.spots;
   }
 
-  static async swipeApartment(payload: {
-    item_id: string;
-    action: "like" | "pass";
-  }) {
-    const token = this.getToken();
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${API_BASE_URL}/api/apartments/swipe`, {
+  static async swipeApartment(
+    apartmentId: string,
+    direction: "left" | "right"
+  ) {
+    return this.request(`/api/apartments/swipe`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify({
-        apartment_id: payload.item_id,
-        direction: payload.action === "like" ? "right" : "left",
+        apartment_id: apartmentId,
+        direction: direction,
       }),
     });
-    if (!response.ok)
-      throw new Error(`API request failed: ${response.statusText}`);
-    return response.json();
   }
 
   static async swipePerson(personId: string, direction: "left" | "right") {
-    const token = this.getToken();
-    if (!token) {
-      // Redirect to login if not authenticated
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/people/swipe`, {
+    return this.request(`/api/people/swipe`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify({
         person_id: personId,
         direction: direction,
       }),
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error);
-    return data;
   }
 
   static async swipeSpot(spotId: string, direction: "left" | "right") {
-    const token = this.getToken();
-    if (!token) {
-      // Redirect to login if not authenticated
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
-      throw new Error("Not authenticated");
-    }
-
-    console.log("Spot ID:", spotId);
-    console.log("Direction:", direction);
-
-    const response = await fetch(`${API_BASE_URL}/api/spots/swipe`, {
+    return this.request(`/api/spots/swipe`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify({
         spot_id: spotId,
         direction: direction,
       }),
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error);
-    return data;
   }
 
   static async getMatches() {
-    const token = this.getToken();
-    if (!token) {
-      // Redirect to login if not authenticated
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/matches`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
+    const data = await this.request(`/api/matches`);
     if (!data.success) throw new Error(data.error);
     return data;
   }
 
   static async submitOnboarding(data: any) {
-    const token = this.getToken();
-    if (!token) {
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/onboarding`, {
+    return this.request(`/api/onboarding`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify(data),
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const result = await response.json();
-    if (!result.success) throw new Error(result.error);
-    return result;
   }
 
   static async getProfile(): Promise<User> {
-    const token = this.getToken();
-    if (!token) {
-      // Redirect to login if not authenticated
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/profile`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        errorData.error ||
-          `API request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || "Failed to fetch profile");
-    }
-
+    const data = await this.request(`/api/profile`);
+    if (!data.success) throw new Error(data.error || "Failed to fetch profile");
     return data.user;
   }
 
   // Chat methods
   static async getConversations() {
-    const token = this.getToken();
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
+    const data = await this.request(`/api/chat/conversations`);
     if (!data.success) throw new Error(data.error);
     return data;
   }
 
   static async getConversation(conversationId: string) {
-    const token = this.getToken();
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/chat/${conversationId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
+    const data = await this.request(`/api/chat/${conversationId}`);
     if (!data.success) throw new Error(data.error);
     return data;
   }
 
   static async sendMessage(conversationId: string, content: string) {
-    const token = this.getToken();
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/chat/${conversationId}`, {
+    return this.request(`/api/chat/${conversationId}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify({ content }),
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error);
-    return data;
   }
 
   static async startConversation(userId: string) {
-    const token = this.getToken();
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/chat/start`, {
+    return this.request(`/api/chat/start`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify({ user_id: userId }),
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error);
-    return data;
   }
 }
