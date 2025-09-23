@@ -108,13 +108,21 @@ export default function SwipePage() {
 
       switch (activeTab) {
         case "apartments":
-          response = await ApiService.swipeApartment(currentItem.id, direction);
+          response = await ApiService.swipeApartment(
+            currentItem.id,
+            direction,
+            (currentItem as Apartment).address
+          );
           break;
         case "people":
           response = await ApiService.swipePerson(currentItem.id, direction);
           break;
         case "spots":
-          response = await ApiService.swipeSpot(currentItem.id, direction);
+          response = await ApiService.swipeSpot(
+            currentItem.id,
+            direction,
+            (currentItem as Spot).address
+          );
           break;
       }
 

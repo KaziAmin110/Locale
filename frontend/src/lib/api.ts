@@ -1,3 +1,5 @@
+import { address } from "framer-motion/client";
+
 // API service to connect frontend to Flask backend
 const API_BASE_URL = "http://localhost:5003";
 
@@ -211,13 +213,15 @@ export class ApiService {
 
   static async swipeApartment(
     apartmentId: string,
-    direction: "left" | "right"
+    direction: "left" | "right",
+    address: string
   ) {
     return this.request(`/api/apartments/swipe`, {
       method: "POST",
       body: JSON.stringify({
         apartment_id: apartmentId,
         direction: direction,
+        address: address,
       }),
     });
   }
@@ -232,12 +236,17 @@ export class ApiService {
     });
   }
 
-  static async swipeSpot(spotId: string, direction: "left" | "right") {
+  static async swipeSpot(
+    spotId: string,
+    direction: "left" | "right",
+    address: string
+  ) {
     return this.request(`/api/spots/swipe`, {
       method: "POST",
       body: JSON.stringify({
         spot_id: spotId,
         direction: direction,
+        address: address,
       }),
     });
   }

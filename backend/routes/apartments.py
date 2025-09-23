@@ -139,24 +139,26 @@ def record_apartment_swipe():
         data = request.get_json()
         apartment_id = data.get('apartment_id')
         direction = data.get('direction')
+        address = data.get('address', 'Invalid Address')
 
-        if not apartment_id or not direction:
-            return jsonify({'success': False, 'error': 'Missing apartment_id or direction'}), 400
-        
+        if not apartment_id or not direction or not address:
+            return jsonify({'success': False, 'error': 'Missing apartment_id or direction or address'}), 400
+
         is_like = direction == 'right'
         
         swipe_data = {
             'id': str(uuid.uuid4()), 'user_id': user_id, 
-            'apartment_id': apartment_id, 'direction': direction
+            'is_like': is_like, 'address': address
         }
+
         result = SupabaseService.insert_data('apartment_swipes', swipe_data)
-        
+
         if not result['success']:
             return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500
         
         if is_like:
             match_data = {
-                'id': str(uuid.uuid4()), 'user_id': user_id, 'apartment_id': apartment_id
+                'id': str(uuid.uuid4()), 'user_id': user_id, 'apartment_id': apartment_id, 'address': address
             }
             SupabaseService.insert_data('apartment_matches', match_data)
             return jsonify({

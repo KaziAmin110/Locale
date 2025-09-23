@@ -39,12 +39,12 @@ export interface Spot {
 
 export interface SwipeAction {
   item_id: string;
-  action: 'like' | 'pass';
+  action: "like" | "pass";
 }
 
 export interface Match {
   id: string;
-  type: 'apartment' | 'person' | 'spot';
+  type: "apartment" | "person" | "spot";
   item: Apartment | Person | Spot;
   matched_at: string;
 }
@@ -68,28 +68,32 @@ export interface Conversation {
 
 // Add data source tracking
 interface FeedResponse<T> {
-    success: boolean;
-    data?: T[];
-    apartments?: T[];
-    people?: T[];
-    spots?: T[];
-    total_available: number;
-    data_source: 'real' | 'mock' | 'google' | 'yelp' | 'rentspree' | 'zillow';
-    user_location?: string;
-    user_interests?: string[];
-    error?: string;
-  }
-  
-class ApiService {
-  private static baseURL = 'http://localhost:5002/api';
+  success: boolean;
+  data?: T[];
+  apartments?: T[];
+  people?: T[];
+  spots?: T[];
+  total_available: number;
+  data_source: "real" | "mock" | "google" | "yelp" | "rentspree" | "zillow";
+  user_location?: string;
+  user_interests?: string[];
+  error?: string;
+}
 
-  private static async makeRequest<T>(endpoint: string, method: string = 'GET', body?: any): Promise<T> {
-    const token = localStorage.getItem('token');
+class ApiService {
+  private static baseURL = "http://localhost:5002/api";
+
+  private static async makeRequest<T>(
+    endpoint: string,
+    method: string = "GET",
+    body?: any
+  ): Promise<T> {
+    const token = localStorage.getItem("token");
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method,
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -98,20 +102,21 @@ class ApiService {
       throw new Error(`API request failed: ${response.statusText}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    return data;
   }
 
   // Update feed methods to handle new response format
   static async getApartmentsFeed(): Promise<FeedResponse<Apartment>> {
-    return this.makeRequest('/apartments/feed');
+    return this.makeRequest("/apartments/feed");
   }
 
   static async getPeopleFeed(): Promise<FeedResponse<Person>> {
-    return this.makeRequest('/people/feed');
+    return this.makeRequest("/people/feed");
   }
 
   static async getSpotsFeed(): Promise<FeedResponse<Spot>> {
-    return this.makeRequest('/spots/feed');
+    return this.makeRequest("/spots/feed");
   }
 
   // Add method to check data sources
@@ -124,58 +129,74 @@ class ApiService {
       const [apartments, people, spots] = await Promise.all([
         this.getApartmentsFeed(),
         this.getPeopleFeed(),
-        this.getSpotsFeed()
+        this.getSpotsFeed(),
       ]);
 
       return {
-        apartments: apartments.data_source || 'unknown',
-        people: people.data_source || 'mock',
-        spots: spots.data_source || 'unknown'
+        apartments: apartments.data_source || "unknown",
+        people: people.data_source || "mock",
+        spots: spots.data_source || "unknown",
       };
     } catch (error) {
-      console.error('Failed to get data sources:', error);
+      console.error("Failed to get data sources:", error);
       return {
-        apartments: 'error',
-        people: 'error', 
-        spots: 'error'
+        apartments: "error",
+        people: "error",
+        spots: "error",
       };
     }
   }
 
   // Swipe methods
-  static async swipeApartment(action: SwipeAction): Promise<{ success: boolean; match?: boolean }> {
-    return this.makeRequest('/apartments/swipe', 'POST', action);
+  static async swipeApartment(
+    action: SwipeAction
+  ): Promise<{ success: boolean; match?: boolean }> {
+    return this.makeRequest("/apartments/swipe", "POST", action);
   }
 
-  static async swipePerson(action: SwipeAction): Promise<{ success: boolean; match?: boolean }> {
-    return this.makeRequest('/people/swipe', 'POST', action);
+  static async swipePerson(
+    action: SwipeAction
+  ): Promise<{ success: boolean; match?: boolean }> {
+    return this.makeRequest("/people/swipe", "POST", action);
   }
 
-  static async swipeSpot(action: SwipeAction): Promise<{ success: boolean; match?: boolean }> {
-    return this.makeRequest('/spots/swipe', 'POST', action);
+  static async swipeSpot(
+    action: SwipeAction
+  ): Promise<{ success: boolean; match?: boolean }> {
+    return this.makeRequest("/spots/swipe", "POST", action);
   }
 
   // Matches methods
   static async getMatches(): Promise<{ success: boolean; matches: Match[] }> {
-    return this.makeRequest('/matches');
+    return this.makeRequest("/matches");
   }
 
   // Chat methods
-  static async getConversation(conversationId: string): Promise<{ success: boolean; conversation: Conversation }> {
+  static async getConversation(
+    conversationId: string
+  ): Promise<{ success: boolean; conversation: Conversation }> {
     return this.makeRequest(`/chat/conversation/${conversationId}`);
   }
 
-  static async sendMessage(message: { conversation_id: string; content: string }): Promise<{ success: boolean }> {
-    return this.makeRequest('/chat/send', 'POST', message);
+  static async sendMessage(message: {
+    conversation_id: string;
+    content: string;
+  }): Promise<{ success: boolean }> {
+    return this.makeRequest("/chat/send", "POST", message);
   }
 
   // Auth methods
-  static async register(userData: any): Promise<{ success: boolean; token?: string }> {
-    return this.makeRequest('/auth/register', 'POST', userData);
+  static async register(
+    userData: any
+  ): Promise<{ success: boolean; token?: string }> {
+    return this.makeRequest("/auth/register", "POST", userData);
   }
 
-  static async login(credentials: { email: string; password: string }): Promise<{ success: boolean; token?: string }> {
-    return this.makeRequest('/auth/login', 'POST', credentials);
+  static async login(credentials: {
+    email: string;
+    password: string;
+  }): Promise<{ success: boolean; token?: string }> {
+    return this.makeRequest("/auth/login", "POST", credentials);
   }
 }
 
