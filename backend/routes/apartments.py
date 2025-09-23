@@ -55,17 +55,12 @@ def get_apartment_feed():
         try:
             raw_scraped_data = scrape_redfin_rentals(location=location_query, max_listings=20)
 
-            existing_apartments_result = SupabaseService.get_data('apartments')
-            existing_apartments = [
-                apt for apt in existing_apartments_result['data']
-            ] if existing_apartments_result.get('success') else []
-
-            new_apartments_to_insert = []
+            formatted_scraped_data = []
             for item in raw_scraped_data:
                 price = parse_price(item.get('price'))
                 address = item.get('address')
 
-                if not price or not address or address in existing_apartments:
+                if not price or not address:
                     continue
 
                 bedrooms = item.get('bedrooms')
@@ -91,14 +86,7 @@ def get_apartment_feed():
                     'description': "A spacious apartment available for rent.",
                     'amenities': [],
                 }
-                new_apartments_to_insert.append(apartment_data)
-            
-            if new_apartments_to_insert:
-                insertion_result = SupabaseService.insert_data('apartments', new_apartments_to_insert)
-                if not insertion_result['success']:
-                    print(f"Database insertion failed: {insertion_result.get('error')}")
-            else:
-                print("No new apartments to insert from this scrape.")
+                formatted_scraped_data.append(apartment_data)
 
         except Exception as scraper_error:
             print(f"Scraper threw an exception: {scraper_error}")
@@ -107,7 +95,7 @@ def get_apartment_feed():
         swipes_data = SupabaseService.get_data('apartment_swipes', {'user_id': user_id})
         swiped_ids = {swipe['apartment_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
 
-        available_apartments = [apt for apt in new_apartments_to_insert if apt['id'] not in swiped_ids]
+        available_apartments = [apt for apt in formatted_scraped_data if apt['id'] not in swiped_ids]
 
         if not available_apartments:
             print("No apartments found. Generating fallback data for a first-time user.")
@@ -120,21 +108,21 @@ def get_apartment_feed():
                 "data_source": data_source
             })
         
-        user_vector = ml_engine.create_user_vector(user)
-        recommendations = ml_engine.apartment_recommendations(
-            user_vector, available_apartments, [float(user_lat), float(user_lng)]
-        )
+        # user_vector = ml_engine.create_user_vector(user)
+        # recommendations = ml_engine.apartment_recommendations(
+        #     user_vector, available_apartments, [float(user_lat), float(user_lng)]
+        # )
         
-        result_apartments = []
-        apartment_lookup = {apt['id']: apt for apt in available_apartments}
-        for rec in recommendations[:10]:
-            apartment = apartment_lookup.get(rec['apartment_id'])
-            if apartment:
-                apartment['match_score'] = rec['score']
-                result_apartments.append(apartment)
+        # result_apartments = []
+        # apartment_lookup = {apt['id']: apt for apt in available_apartments}
+        # for rec in recommendations[:10]:
+        #     apartment = apartment_lookup.get(rec['apartment_id'])
+        #     if apartment:
+        #         apartment['match_score'] = rec['score']
+        #         result_apartments.append(apartment)
         
         return jsonify({
-            "success": True, "apartments": result_apartments, "total_available": len(available_apartments),
+            "success": True, "apartments": available_apartments, "total_available": len(available_apartments),
             "data_source": data_source, "location_searched": location_query
         })
         

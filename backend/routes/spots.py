@@ -30,6 +30,7 @@ def get_spots_feed():
         all_spots = []
         data_source = "unknown"
 
+
         if Config.GOOGLE_PLACES_API_KEY:
             print("Attempting to fetch data from Google Places API...")
             google_result = GooglePlacesAPI.search_nearby_by_interest(
@@ -48,37 +49,10 @@ def get_spots_feed():
                 all_spots.extend(yelp_result['spots'])
                 data_source = "yelp"
 
-        if all_spots:
-            new_spots_to_insert = []
-            print("Checking for existing spots in the database...")
-            existing_spots_result = SupabaseService.get_data('spots')
-            existing_external_ids = {
-                spot['external_id'] for spot in existing_spots_result['data']
-                if 'external_id' in spot
-            } if existing_spots_result.get('success') else set()
-            print(f"Found {len(existing_external_ids)} existing spots.")
-
-            for spot in all_spots:
-                external_id = spot.get('external_id')
-                if external_id and external_id not in existing_external_ids:
-                    new_spots_to_insert.append(spot)
-                    existing_external_ids.add(external_id)
-            
-            if new_spots_to_insert:
-                print(f"Inserting {len(new_spots_to_insert)} new spots into the database...")
-                insertion_result = SupabaseService.insert_data('spots', new_spots_to_insert)
-                if not insertion_result.get('success'):
-                    print(f"Database insertion for spots failed: {insertion_result.get('error')}")
-            else:
-                print("No new spots to insert.")
-        else:
-            print("APIs returned no data. No data to insert.")
-
-        db_spots = SupabaseService.get_data('spots')['data']
         swipes_data = SupabaseService.get_data('spot_swipes', {'user_id': user_id})
         swiped_ids = {swipe['spot_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
         
-        available_spots = [spot for spot in db_spots if spot['id'] not in swiped_ids]
+        available_spots = [spot for spot in all_spots if spot['id'] not in swiped_ids]
         
         if not available_spots:
             return jsonify({
@@ -86,27 +60,26 @@ def get_spots_feed():
                 "message": "No new spots to show right now!", "data_source": data_source
             })
 
-        print(f"Ranking {len(available_spots)} spots with ML Engine...")
-        user_vector = ml_engine.create_user_vector(user)
-        recommendations = ml_engine.spot_recommendations(
-            user_vector, 
-            available_spots, 
-            [user_lat, user_lng],
-            user_interests
-        )
+        # user_vector = ml_engine.create_user_vector(user)
+        # recommendations = ml_engine.spot_recommendations(
+        #     user_vector, 
+        #     available_spots, 
+        #     [user_lat, user_lng],
+        #     user_interests
+        # )
         
-        result_spots = []
-        spot_lookup = {spot['id']: spot for spot in available_spots}
+        # result_spots = []
+        # spot_lookup = {spot['id']: spot for spot in available_spots}
 
-        for rec in recommendations:
-            spot = spot_lookup.get(rec['spot_id'])
-            if spot:
-                spot['match_score'] = rec['score']
-                result_spots.append(spot)
+        # for rec in recommendations:
+        #     spot = spot_lookup.get(rec['spot_id'])
+        #     if spot:
+        #         spot['match_score'] = rec['score']
+        #         result_spots.append(spot)
         
         return jsonify({
             "success": True,
-            "spots": result_spots,
+            "spots": available_spots,
             "total_available": len(available_spots),
             "data_source": data_source
         })
