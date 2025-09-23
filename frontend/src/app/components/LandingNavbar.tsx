@@ -185,7 +185,7 @@ const resourcesMegaMenuItems: MegaMenuColumn[] = [
 
 // Featured content for each mega menu (Restyled for dark theme)
 const BuyFeatured = (
-  <div className="flex flex-col items-center justify-center col-span-1 p-6 text-center rounded-lg bg-red-500/10 border border-red-500/20">
+  <div className="flex flex-col items-center justify-center col-span-1 p-6 text-center border rounded-lg bg-red-500/10 border-red-500/20">
     <h4 className="text-lg font-bold text-white">Featured Listings</h4>
     <p className="mt-2 mb-4 text-sm text-red-300">
       Discover exclusive properties in top neighborhoods.
@@ -200,14 +200,14 @@ const BuyFeatured = (
 );
 
 const RentFeatured = (
-  <div className="flex flex-col items-center justify-center col-span-1 p-6 text-center rounded-lg bg-rose-500/10 border border-rose-500/20">
+  <div className="flex flex-col items-center justify-center col-span-1 p-6 text-center border rounded-lg bg-rose-500/10 border-rose-500/20">
     <h4 className="text-lg font-bold text-white">Featured Rentals</h4>
     <p className="mt-2 mb-4 text-sm text-rose-300">
       Find your perfect rental property today.
     </p>
     <a
       href="#"
-      className="px-4 py-2 text-sm font-semibold text-white transition-colors bg-rose-600 rounded-lg hover:bg-rose-700"
+      className="px-4 py-2 text-sm font-semibold text-white transition-colors rounded-lg bg-rose-600 hover:bg-rose-700"
     >
       Browse Rentals
     </a>
@@ -215,7 +215,7 @@ const RentFeatured = (
 );
 
 const ResourcesFeatured = (
-  <div className="flex flex-col items-center justify-center col-span-1 p-6 text-center rounded-lg bg-pink-500/10 border border-pink-500/20">
+  <div className="flex flex-col items-center justify-center col-span-1 p-6 text-center border rounded-lg bg-pink-500/10 border-pink-500/20">
     <h4 className="text-lg font-bold text-white">Expert Insights</h4>
     <p className="mt-2 mb-4 text-sm text-pink-300">
       Get the latest news and advice from our experts.
@@ -334,12 +334,9 @@ const ExtravagantNavbar = ({ user, onLogout }: LandingNavbarProps) => {
               : "bg-transparent border-transparent"
           }`}
         >
-          <div className="flex items-center gap-8 h-full">
-            <a
-              href="/"
-              className="flex items-center flex-shrink-0 gap-3 group"
-            >
-              <div className="flex items-center justify-center w-12 h-12 transition-transform duration-300 rounded-xl shadow-inner bg-gradient-to-br from-red-500 to-pink-500 group-hover:scale-110">
+          <div className="flex items-center h-full gap-8">
+            <a href="/" className="flex items-center flex-shrink-0 gap-3 group">
+              <div className="flex items-center justify-center w-12 h-12 transition-transform duration-300 shadow-inner rounded-xl bg-gradient-to-br from-red-500 to-pink-500 group-hover:scale-110">
                 <Heart className="text-white w-7 h-7" />
               </div>
               <span className="text-2xl font-bold tracking-wide text-white">
@@ -454,8 +451,7 @@ const ExtravagantNavbar = ({ user, onLogout }: LandingNavbarProps) => {
           }`}
           onClick={(e) => e.stopPropagation()}
         >
-          <h2 className="mb-8 text-2xl font-bold text-white">Menu</h2>
-          <div className="space-y-4">
+          <div className="h-full pt-12 mt-8 space-y-4">
             <a
               href="/buy"
               className="block text-lg font-medium text-slate-200 hover:text-red-400"

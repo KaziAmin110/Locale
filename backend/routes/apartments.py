@@ -46,7 +46,6 @@ def get_apartment_feed():
         user_state = user.get('state', 'FL')
         location_query = f"{user_city}, {user_state}" if ',' not in user_city else user_city
         
-        print(f"Prepared location query for scraper: '{location_query}'")
         
         user_lat = user.get('lat') or 28.5383
         user_lng = user.get('lng') or -81.3792
@@ -55,25 +54,23 @@ def get_apartment_feed():
         
         try:
             raw_scraped_data = scrape_redfin_rentals(location=location_query, max_listings=20)
-            
-            print("Checking for existing apartments in the database...")
+
             existing_apartments_result = SupabaseService.get_data('apartments')
-            existing_addresses = {
-                apt['address'] for apt in existing_apartments_result['data']
-            } if existing_apartments_result.get('success') else set()
-            print(f"Found {len(existing_addresses)} existing addresses.")
+            existing_apartments = [
+                apt for apt in existing_apartments_result['data']
+            ] if existing_apartments_result.get('success') else []
 
             new_apartments_to_insert = []
             for item in raw_scraped_data:
                 price = parse_price(item.get('price'))
                 address = item.get('address')
 
-                if not price or not address or address in existing_addresses:
+                if not price or not address or address in existing_apartments:
                     continue
 
-                bedrooms = parse_integer_value(item.get('bedrooms'))
-                bathrooms = parse_integer_value(item.get('bathrooms'))
-                sqft_val = parse_integer_value(item.get('sqft'))
+                bedrooms = item.get('bedrooms')
+                bathrooms = item.get('bathrooms')
+                sqft_val = item.get('sqft')
                 
                 try:
                     address_city = address.split(',')[1].strip()
@@ -82,7 +79,7 @@ def get_apartment_feed():
 
                 apartment_data = {
                     'id': str(uuid.uuid4()),
-                    'title': f"{bedrooms or 'Studio'}, {bathrooms or 1} bath in {address_city}",
+                    'title': f"{bedrooms or 'Studio'}, {bathrooms or 1} {address_city}",
                     'address': address,
                     'price': price,
                     'bedrooms': bedrooms if bedrooms is not None else 0,
@@ -95,10 +92,9 @@ def get_apartment_feed():
                     'amenities': [],
                 }
                 new_apartments_to_insert.append(apartment_data)
-                existing_addresses.add(address)
+                existing_apartments.append(apartment_data)
             
             if new_apartments_to_insert:
-                print(f"Inserting {len(new_apartments_to_insert)} new apartments into the database...")
                 insertion_result = SupabaseService.insert_data('apartments', new_apartments_to_insert)
                 if not insertion_result['success']:
                     print(f"Database insertion failed: {insertion_result.get('error')}")
@@ -109,15 +105,12 @@ def get_apartment_feed():
             print(f"Scraper threw an exception: {scraper_error}")
             traceback.print_exc()
 
-        all_db_apartments_result = SupabaseService.get_data('apartments')
-        all_db_apartments = all_db_apartments_result['data'] if all_db_apartments_result.get('success') else []
-
         swipes_data = SupabaseService.get_data('apartment_swipes', {'user_id': user_id})
         swiped_ids = {swipe['apartment_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
-        
-        available_apartments = [apt for apt in all_db_apartments if apt['id'] not in swiped_ids]
-        
-        if not available_apartments and not all_db_apartments:
+
+        available_apartments = [apt for apt in existing_apartments if apt['id'] not in swiped_ids]
+
+        if not available_apartments:
             print("No apartments found. Generating fallback data for a first-time user.")
             data_source = "fallback_generator"
             available_apartments = generate_and_save_apartments_for_city(user_city, user_state, user)
@@ -141,8 +134,9 @@ def get_apartment_feed():
                 apartment['match_score'] = rec['score']
                 result_apartments.append(apartment)
         
+        
         return jsonify({
-            "success": True, "apartments": result_apartments, "total_available": len(available_apartments),
+            "success": True, "apartments": available_apartments, "total_available": len(available_apartments),
             "data_source": data_source, "location_searched": location_query
         })
         

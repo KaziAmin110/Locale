@@ -145,7 +145,11 @@ export class ApiService {
       );
     }
 
-    return response.json();
+    const data = await response.json();
+
+    console.log(data);
+
+    return data;
   }
 
   static async login(userInfo: { email: string; password: string }) {

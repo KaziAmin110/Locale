@@ -10,9 +10,7 @@ def save_onboarding_data():
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
-        
-        print(f"Onboarding data received: {data}")
-        print(f"Photos data: {data.get('photos')} (type: {type(data.get('photos'))})")
+
         
         required_fields = ['name', 'age', 'location', 'budgetMin', 'budgetMax', 'interests']
         for field in required_fields:
@@ -21,8 +19,6 @@ def save_onboarding_data():
         
         if len(data.get('interests', [])) < 3:
             return jsonify({"error": "Please select at least 3 interests"}), 400
-
-        print("Validated onboarding data:", data)
 
         update_data = {
             'name': data.get('name'),
@@ -35,10 +31,8 @@ def save_onboarding_data():
             'onboarding_complete': True
         }
         
-        print(f"Updating user {user_id} with data: {update_data}")
         result = SupabaseService.update_data('users', update_data, {'id': user_id})
 
-        print(f"Supabase result: {result}")
         
         if result['success']:
             return jsonify({
