@@ -38,30 +38,27 @@ const OnboardingPage = () => {
     lookingFor: "",
   });
 
-  const updateFormData = (
-    field: string,
-    value: any
-  ) => {
-    console.log('updateFormData called:', field, value, typeof value);
+  const updateFormData = (field: string, value: any) => {
+    console.log("updateFormData called:", field, value, typeof value);
     if (field === "budget" && Array.isArray(value) && value.length === 2) {
       setFormData((prev) => ({
-      ...prev,
+        ...prev,
         budgetMin: Number(value[0]),
         budgetMax: Number(value[1]),
       }));
     } else if (field === "photos" && Array.isArray(value)) {
       setFormData((prev) => ({
-      ...prev,
+        ...prev,
         photos: value as string[],
       }));
     } else if (typeof field === "string" && typeof value !== "object") {
-      console.log('Updating field:', field, 'with value:', value);
+      console.log("Updating field:", field, "with value:", value);
       setFormData((prev) => ({
-              ...prev,
+        ...prev,
         [field]: value,
       }));
     } else {
-      console.log('No condition matched for:', field, value, typeof value);
+      console.log("No condition matched for:", field, value, typeof value);
     }
   };
 
