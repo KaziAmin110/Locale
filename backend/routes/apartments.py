@@ -92,7 +92,6 @@ def get_apartment_feed():
                     'amenities': [],
                 }
                 new_apartments_to_insert.append(apartment_data)
-                existing_apartments.append(apartment_data)
             
             if new_apartments_to_insert:
                 insertion_result = SupabaseService.insert_data('apartments', new_apartments_to_insert)
@@ -108,7 +107,7 @@ def get_apartment_feed():
         swipes_data = SupabaseService.get_data('apartment_swipes', {'user_id': user_id})
         swiped_ids = {swipe['apartment_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
 
-        available_apartments = [apt for apt in existing_apartments if apt['id'] not in swiped_ids]
+        available_apartments = [apt for apt in new_apartments_to_insert if apt['id'] not in swiped_ids]
 
         if not available_apartments:
             print("No apartments found. Generating fallback data for a first-time user.")
@@ -134,9 +133,8 @@ def get_apartment_feed():
                 apartment['match_score'] = rec['score']
                 result_apartments.append(apartment)
         
-        
         return jsonify({
-            "success": True, "apartments": available_apartments, "total_available": len(available_apartments),
+            "success": True, "apartments": result_apartments, "total_available": len(available_apartments),
             "data_source": data_source, "location_searched": location_query
         })
         
