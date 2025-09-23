@@ -50,10 +50,10 @@ def get_spots_feed():
                 data_source = "yelp"
 
         swipes_data = SupabaseService.get_data('spot_swipes', {'user_id': user_id})
-        swiped_ids = {swipe['spot_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
-        
-        available_spots = [spot for spot in all_spots if spot['id'] not in swiped_ids]
-        
+        swiped_addresses = {swipe['address'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
+
+        available_spots = [spot for spot in all_spots if spot['address'] not in swiped_addresses]
+
         if not available_spots:
             return jsonify({
                 "success": True, "spots": [],
