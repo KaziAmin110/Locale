@@ -95,18 +95,19 @@ def record_spot_swipe():
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
-        spot_id = data.get('spot_id')
         direction = data.get('direction')
         is_like = direction == 'right'
+        address = data.get('address', 'Invalid Address')
+        spot_id = data.get('spot_id')
 
-        if not spot_id or not direction:
-            return jsonify({'success': False, 'error': 'Missing spot_id or direction'}), 400
-        
+        if not spot_id or not direction or not address:
+            return jsonify({'success': False, 'error': 'Missing spot_id, direction, or address'}), 400
+
         swipe_data = {
             'id': str(uuid.uuid4()),
             'user_id': user_id,
-            'spot_id': spot_id,
-            'is_like': is_like
+            'is_like': is_like,
+            'address': address
         }
         result = SupabaseService.insert_data('spot_swipes', swipe_data)
 
@@ -114,7 +115,17 @@ def record_spot_swipe():
             print(f"Failed to record spot swipe: {result.get('error')}")
             return jsonify({'success': False, 'error': 'Failed to record swipe'}), 500
         
-        return jsonify({'success': True}), 200
+        if is_like:
+            match_data = {
+                'id': str(uuid.uuid4()), 'user_id': user_id, 'spot_id': spot_id, 'address': address
+            }
+            SupabaseService.insert_data('spot_matches', match_data)
+            return jsonify({
+                'success': True, 'match': True,
+                'message': 'Spot liked! Added to your matches.'
+            }), 200
+        
+        return jsonify({'success': True, 'match': False, 'message': 'Swipe recorded'}), 200
 
     except Exception as e:
         print(f"Spot swipe error: {str(e)}")

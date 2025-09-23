@@ -93,9 +93,9 @@ def get_apartment_feed():
             traceback.print_exc()
 
         swipes_data = SupabaseService.get_data('apartment_swipes', {'user_id': user_id})
-        swiped_ids = {swipe['apartment_id'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
+        swiped_addresses = {swipe['address'] for swipe in swipes_data['data']} if swipes_data.get('success') else set()
 
-        available_apartments = [apt for apt in formatted_scraped_data if apt['id'] not in swiped_ids]
+        available_apartments = [apt for apt in formatted_scraped_data if apt['address'] not in swiped_addresses]
 
         if not available_apartments:
             print("No apartments found. Generating fallback data for a first-time user.")
